@@ -58,7 +58,7 @@ export default function ContactPage() {
         </Box>
 
         <Grid container spacing={4}>
-          <Grid size={{ xs: 12, md: 5 }}>
+          <Grid item xs={12} md={5}>
             <Box className="method-cards">
               <div className="method-card">
                 <Box className="contact_icon">
@@ -155,7 +155,7 @@ export default function ContactPage() {
             </Box>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 7 }}>
+          <Grid item xs={12} md={7}>
             <Box
               sx={{
                 width: "100%",

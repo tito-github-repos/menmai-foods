@@ -43,7 +43,7 @@ export default function AboutPage() {
 
         <Box sx={{ mb: 5 }}>
           <Grid container spacing={5} sx={{ mb: 6, alignItems: "center" }}>
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid item xs={12} md={6}>
               <Box
                 sx={{
                   width: "100%",
@@ -65,7 +65,7 @@ export default function AboutPage() {
               </Box>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid item xs={12} md={6}>
               <Typography
                 variant="body2"
                 sx={{
@@ -114,7 +114,7 @@ export default function AboutPage() {
           </Grid>
 
           <Grid container spacing={4} sx={{ mt: 2 }}>
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid item xs={12} md={6}>
               <Box
                 sx={{
                   display: "flex",
@@ -206,7 +206,7 @@ export default function AboutPage() {
               </Box>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid item xs={12} md={6}>
               <Box
                 sx={{
                   display: "flex",
