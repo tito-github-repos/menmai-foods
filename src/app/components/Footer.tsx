@@ -26,7 +26,7 @@ export default function Footer() {
     >
       <Container sx={{ py: 6 }}>
         <Grid container spacing={4}>
-          <Grid size={{ xs: 12, md: 5 }}>
+          <Grid item xs={12} md={5}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
               <Image src="/logo.jpeg" alt="Logo" width={100} height={70} />
             </Box>
@@ -54,7 +54,7 @@ export default function Footer() {
             </Box>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 3 }}>
+          <Grid item xs={12} md={3}>
             <Typography variant="body1" sx={{ mb: 2, color: "var(--glt)" }}>
               Quick Links
             </Typography>
@@ -135,7 +135,7 @@ export default function Footer() {
             </Box>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 4 }}>
+          <Grid item xs={12} md={4}>
             <Typography variant="body1" sx={{ mb: 2, color: "var(--glt)" }}>
               Contact
             </Typography>
