@@ -1,300 +1,222 @@
-// "use client";
-
-// import { Box, Container, Typography, Grid, Link as MuiLink } from "@mui/material";
-// import Link from "next/link";
-
-// const BRAND = "#88391d";
-
-// const FOOTER_LINKS = [
-//   { label: "Home", href: "/" },
-//   { label: "About", href: "/about" },
-//   { label: "Contact", href: "/contact" },
-// ];
-
-// export default function Footer() {
-//   return (
-//     <Box
-//       component="footer"
-//       sx={{
-//         backgroundColor: "#fff7f2",
-//         borderTop: "1px solid rgba(136,57,29,0.15)",
-//         mt: 8,
-//         pt: 6,
-//         pb: 3,
-//       }}
-//     >
-//       <Container maxWidth="lg">
-//         <Grid container spacing={4}>
-
-//           {/* BRAND SECTION */}
-//           <Grid item xs={12} md={4}>
-//             <Typography
-//               variant="h6"
-//               sx={{ color: BRAND, fontWeight: 600, mb: 1 }}
-//             >
-//               Menmai Foods
-//             </Typography>
-
-//             <Typography variant="body2" sx={{ color: "#5a3a2d", lineHeight: 1.7 }}>
-//               Homemade-style food products delivered fresh. Simple, healthy, and tasty.
-//             </Typography>
-//           </Grid>
-
-//           {/* LINKS */}
-//           <Grid item xs={12} md={4}>
-//             <Typography
-//               variant="subtitle1"
-//               sx={{ fontWeight: 600, mb: 1, color: "#3a2015" }}
-//             >
-//               Quick Links
-//             </Typography>
-
-//             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-//               {FOOTER_LINKS.map((link) => (
-//                 <MuiLink
-//                   key={link.href}
-//                   component={Link}
-//                   href={link.href}
-//                   underline="none"
-//                   sx={{
-//                     color: "#5a3a2d",
-//                     fontSize: 14,
-//                     transition: "0.2s",
-//                     "&:hover": {
-//                       color: BRAND,
-//                       transform: "translateX(4px)",
-//                     },
-//                   }}
-//                 >
-//                   {link.label}
-//                 </MuiLink>
-//               ))}
-//             </Box>
-//           </Grid>
-
-//           {/* CONTACT */}
-//           <Grid item xs={12} md={4}>
-//             <Typography
-//               variant="subtitle1"
-//               sx={{ fontWeight: 600, mb: 1, color: "#3a2015" }}
-//             >
-//               Contact
-//             </Typography>
-
-//             <Typography variant="body2" sx={{ color: "#5a3a2d", mb: 1 }}>
-//               📍 Tamil Nadu, India
-//             </Typography>
-
-//             <Typography variant="body2" sx={{ color: "#5a3a2d", mb: 1 }}>
-//               📞 +91 98765 43210
-//             </Typography>
-
-//             <Typography variant="body2" sx={{ color: "#5a3a2d" }}>
-//               ✉️ support@menmaifoods.com
-//             </Typography>
-//           </Grid>
-//         </Grid>
-
-//         {/* BOTTOM BAR */}
-//         <Box
-//           sx={{
-//             mt: 5,
-//             pt: 2,
-//             borderTop: "1px solid rgba(136,57,29,0.15)",
-//             textAlign: "center",
-//           }}
-//         >
-//           <Typography variant="caption" sx={{ color: "#6a4a3a" }}>
-//             © {new Date().getFullYear()} <span style={{ color: BRAND , fontWeight: 600 }}>Menmai</span>. All rights reserved.
-//           </Typography>
-//         </Box>
-//       </Container>
-//     </Box>
-//   );
-// }
-
 "use client";
 
 import {
   Box,
   Container,
-  Typography,
   Grid,
+  Typography,
   Link as MuiLink,
-  IconButton,
-  Stack,
 } from "@mui/material";
-
-import Image from "next/image";
+import "./Footer.css";
 import Link from "next/link";
-
-import InstagramIcon from "@mui/icons-material/Instagram";
-import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import EmailIcon from "@mui/icons-material/Email";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import PhoneIcon from "@mui/icons-material/Phone";
+import Image from "next/image";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+import LocalPhoneOutlinedIcon from "@mui/icons-material/LocalPhoneOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-
-const BRAND = "#88391d";
-
-const FOOTER_LINKS = [
-  { label: "Home", href: "/" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
-];
+import FacebookIcon from "@mui/icons-material/Facebook";
+import InstagramIcon from "@mui/icons-material/Instagram";
 
 export default function Footer() {
   return (
     <Box
-      component="footer"
       sx={{
-        backgroundColor: "#fff7f2",
-        borderTop: "1px solid rgba(136,57,29,0.15)",
-        mt: 8,
-        pt: 6,
-        pb: 3,
+        backgroundColor: "var(--dbr)",
       }}
     >
-      <Container maxWidth="lg">
+      <Container sx={{ py: 6 }}>
         <Grid container spacing={4}>
-          {/* BRAND SECTION */}
-          <Grid item xs={12} md={4}>
-            {/* LOGO */}
-            <Box sx={{ mb: 1 }}>
-              <Image
-                src="/logo3.jpeg"
-                alt="Menmai Foods"
-                width={180}
-                height={80}
-                priority
-                style={{
-                  height: "65px",
-                  width: "auto",
-                  objectFit: "contain",
-                  marginLeft: "-5px",
-                }}
-              />
+          <Grid size={{ xs: 12, md: 5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+              <Image src="/logo.jpeg" alt="Logo" width={100} height={70} />
             </Box>
 
-            <Typography
-              variant="body2"
-              sx={{ color: "#5a3a2d", lineHeight: 1.7 }}
-            >
-              Homemade-style food products delivered fresh. Simple, healthy, and
-              tasty.
+            <Typography variant="body2" sx={{ color: "var(--gray)" }}>
+              Fresh chapathi and poori delivered to your door — made daily with
+              premium ingredients and traditional care in Madurai, Tamil Nadu.
             </Typography>
 
-            {/* SOCIAL ICONS */}
-            <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-              <IconButton
-                sx={{
-                  color: BRAND,
-                  border: "1px solid rgba(136,57,29,0.2)",
-                }}
+            <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
+              <Link
+                href="https://facebook.com"
+                target="_blank"
+                className="contact-card"
               >
-                <InstagramIcon fontSize="small" />
-              </IconButton>
-
-              <IconButton
-                sx={{
-                  color: BRAND,
-                  border: "1px solid rgba(136,57,29,0.2)",
-                }}
+                <FacebookIcon sx={{ color: "var(--glt)" }} />
+              </Link>
+              <Link
+                href="https://instagram.com"
+                target="_blank"
+                className="contact-card"
               >
-                <WhatsAppIcon fontSize="small" />
-              </IconButton>
-
-              <IconButton
-                sx={{
-                  color: BRAND,
-                  border: "1px solid rgba(136,57,29,0.2)",
-                }}
-              >
-                <EmailOutlinedIcon fontSize="small" />
-              </IconButton>
-            </Stack>
+                <InstagramIcon sx={{ color: "var(--glt)" }} />
+              </Link>
+            </Box>
           </Grid>
 
-          {/* LINKS */}
-          <Grid item xs={12} md={4}>
-            <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: 600, mb: 1, color: "#3a2015" }}
-            >
+          <Grid size={{ xs: 12, md: 3 }}>
+            <Typography variant="body1" sx={{ mb: 2, color: "var(--glt)" }}>
               Quick Links
             </Typography>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {FOOTER_LINKS.map((link) => (
-                <MuiLink
-                  key={link.href}
-                  component={Link}
-                  href={link.href}
-                  underline="none"
-                  sx={{
-                    color: "#5a3a2d",
-                    fontSize: 14,
-                    transition: "0.2s",
-                    "&:hover": {
-                      color: BRAND,
-                      transform: "translateX(4px)",
-                    },
-                  }}
-                >
-                  {link.label}
-                </MuiLink>
-              ))}
+              <MuiLink
+                component={Link}
+                href="/"
+                underline="none"
+                variant="body2"
+                sx={{
+                  color: "var(--ivory)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  "& .icon": {
+                    transition: "transform 0.3s ease",
+                  },
+                  "&:hover": {
+                    color: "var(--glt)",
+                  },
+                  "&:hover .icon": {
+                    transform: "translateX(5px)",
+                  },
+                }}
+              >
+                <ChevronRightIcon className="icon" sx={{ fontSize: 18 }} />
+                Home
+              </MuiLink>
+              <MuiLink
+                component={Link}
+                href="/about"
+                underline="none"
+                variant="body2"
+                sx={{
+                  color: "var(--ivory)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  "& .icon": {
+                    transition: "transform 0.3s ease",
+                  },
+                  "&:hover": {
+                    color: "var(--glt)",
+                  },
+                  "&:hover .icon": {
+                    transform: "translateX(5px)",
+                  },
+                }}
+              >
+                <ChevronRightIcon className="icon" sx={{ fontSize: 18 }} />
+                About
+              </MuiLink>
+              <MuiLink
+                component={Link}
+                href="/contact"
+                underline="none"
+                variant="body2"
+                sx={{
+                  color: "var(--ivory)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  "& .icon": {
+                    transition: "transform 0.3s ease",
+                  },
+                  "&:hover": {
+                    color: "var(--glt)",
+                  },
+                  "&:hover .icon": {
+                    transform: "translateX(5px)",
+                  },
+                }}
+              >
+                <ChevronRightIcon className="icon" sx={{ fontSize: 18 }} />
+                Contact
+              </MuiLink>
             </Box>
           </Grid>
 
-          {/* CONTACT */}
-          <Grid item xs={12} md={4}>
-            <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: 600, mb: 1, color: "#3a2015" }}
-            >
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Typography variant="body1" sx={{ mb: 2, color: "var(--glt)" }}>
               Contact
             </Typography>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.2 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <LocationOnIcon sx={{ fontSize: 18, color: BRAND }} />
-                <Typography variant="body2" sx={{ color: "#5a3a2d" }}>
-                  Tamil Nadu, India
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                <Box className="icon-container">
+                  <LocationOnOutlinedIcon
+                    sx={{ fontSize: 18, color: "var(--glt)" }}
+                  />
+                </Box>
+                <Typography variant="body2" sx={{ color: "var(--ivory)" }}>
+                  4/417, Vadivel Nagar, Nagamalai Pudukottai, Madurai, Tamil
+                  Nadu - 625019
                 </Typography>
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PhoneIcon sx={{ fontSize: 18, color: BRAND }} />
-                <Typography variant="body2" sx={{ color: "#5a3a2d" }}>
-                  +91 98765 43210
+                <Box
+                  component="a"
+                  href="tel:9894777825"
+                  className="icon-container"
+                >
+                  <LocalPhoneOutlinedIcon
+                    sx={{ fontSize: 18, color: "var(--glt)" }}
+                  />
+                </Box>
+                <Typography variant="body2" sx={{ color: "var(--ivory)" }}>
+                  +91 9894777825
                 </Typography>
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <EmailIcon sx={{ fontSize: 18, color: BRAND }} />
-                <Typography variant="body2" sx={{ color: "#5a3a2d" }}>
-                  support@menmaifoods.com
+                <Box
+                  component="a"
+                  href="mailto:menmaifoodsmdu@gmail.com"
+                  className="icon-container"
+                >
+                  <EmailOutlinedIcon
+                    sx={{ fontSize: 18, color: "var(--glt)" }}
+                  />
+                </Box>
+                <Typography variant="body2" sx={{ color: "var(--ivory)" }}>
+                  menmaifoodsmdu@gmail.com
                 </Typography>
               </Box>
             </Box>
           </Grid>
         </Grid>
+      </Container>
 
-        {/* BOTTOM BAR */}
+      <Container
+        sx={{
+          borderTop: "1px solid rgba(255, 255, 255, .12)",
+          py: 2,
+        }}
+      >
         <Box
           sx={{
-            mt: 5,
-            pt: 2,
-            borderTop: "1px solid rgba(136,57,29,0.15)",
-            textAlign: "center",
+            maxWidth: "lg",
+            mx: "auto",
+            px: 2,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 1,
           }}
         >
-          <Typography variant="caption" sx={{ color: "#6a4a3a" }}>
-            © {new Date().getFullYear()}{" "}
-            <span style={{ color: BRAND, fontWeight: 600 }}>Menmai Foods</span>.
-            All rights reserved.
+          <Typography variant="body2" sx={{ color: "var(--gray)" }}>
+            © {new Date().getFullYear()} Menmai Foods. All rights reserved.
           </Typography>
+
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Typography variant="body2" sx={{ color: "var(--glt)" }}>
+              Privacy Policy
+            </Typography>
+            <Typography variant="body2" sx={{ color: "var(--glt)" }}>
+              Terms & Conditions
+            </Typography>
+          </Box>
         </Box>
       </Container>
     </Box>

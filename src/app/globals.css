@@ -1,9 +1,26 @@
-:root {
+/* :root {
   --background: #ffffff;
   --foreground: #171717;
 
   --primary: #88391d;
   --primary-light: #88391d20;
+} */
+
+:root {
+  --or: #E8720C;
+  --or2: #F4943A;
+  --gold: #C9860A;
+  --glt: #F0C86A;
+  --cream: #FDF8F0;
+  --ivory: #FFF9F0;
+  --brown: #5C2008;
+  --dbr: #3A1204;
+  --green: #2E6B28;
+  --text: #2A1506;
+  --muted: #8A6040;
+  --white: #FFFFFF;
+  --gray: #ffffffb3;
+  --shadow: 0 8px 32px rgba(92, 32, 8, .12);
 }
 
 /* @media (prefers-color-scheme: dark) {
