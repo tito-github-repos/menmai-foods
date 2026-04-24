@@ -178,13 +178,11 @@ export default function Header() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         transitionDuration={300}
-        slotProps={{
-          paper: {
-            sx: {
-              width: 280,
-              backgroundColor: "var(--brown)",
-              borderLeft: "1px solid rgba(232, 114, 12, .12)",
-            },
+        PaperProps={{
+          sx: {
+            width: 280,
+            backgroundColor: "var(--brown)",
+            borderLeft: "1px solid rgba(232, 114, 12, .12)",
           },
         }}
       >
@@ -231,16 +229,14 @@ export default function Header() {
               >
                 <ListItemText
                   primary={label}
-                  slotProps={{
-                    primary: {
-                      sx: {
-                        fontSize: 14,
-                        fontWeight: 500,
-                        letterSpacing: "0.05em",
-                        color: isActive(href) ? "var(--cream)" : "var(--gray)",
-                        ":hover": {
-                          color: "var(--cream)",
-                        },
+                  primaryTypographyProps={{
+                    sx: {
+                      fontSize: 14,
+                      fontWeight: 500,
+                      letterSpacing: "0.05em",
+                      color: isActive(href) ? "var(--cream)" : "var(--gray)",
+                      ":hover": {
+                        color: "var(--cream)",
                       },
                     },
                   }}
