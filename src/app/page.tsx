@@ -805,7 +805,7 @@ export default function Home() {
 
                 {/* MAIN HIGHLIGHT */}
                 <Typography sx={{ fontSize: 18, fontWeight: 600 }}>
-                  Delivering across
+                  Delivering at the home step
                 </Typography>
 
                 <Typography
