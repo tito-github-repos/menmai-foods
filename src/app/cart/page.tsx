@@ -58,7 +58,7 @@ const initialCartItems = [
     mrp: 50,
     price: 40,
     qty: 1,
-    img: "/img/products/chapthi1.jpeg",
+    img: "/img/products/chapathi1.jpeg",
   },
   {
     id: 2,
