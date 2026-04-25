@@ -12,38 +12,37 @@ export default function AboutPage() {
       }}
     >
       <Container maxWidth="lg">
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h4"
-            sx={{
-              fontSize: ".74rem",
-              fontWeight: 500,
-              letterSpacing: ".14em",
-              textTransform: "uppercase",
-              color: "var(--or)",
-            }}
-          >
-            About Menmai Foods
-          </Typography>
-
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 700,
-              color: "var(--brown)",
-              fontFamily: "'Cormorant Garamond', serif",
-              fontSize: "clamp(1.9rem, 3vw, 2.7rem)",
-              lineHeight: 1.15,
-              margin: "8px 0 12px",
-            }}
-          >
-            Bringing Freshness to Every Home
-          </Typography>
-        </Box>
-
         <Box sx={{ mb: 5 }}>
           <Grid container spacing={5} sx={{ mb: 6, alignItems: "center" }}>
             <Grid item xs={12} md={6}>
+              <Box sx={{ mb: 4 }}>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontSize: ".74rem",
+                    fontWeight: 500,
+                    letterSpacing: ".14em",
+                    textTransform: "uppercase",
+                    color: "var(--or)",
+                  }}
+                >
+                  About Menmai Foods
+                </Typography>
+
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 700,
+                    color: "var(--brown)",
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontSize: "clamp(1.9rem, 3vw, 2.7rem)",
+                    lineHeight: 1.15,
+                    margin: "8px 0 12px",
+                  }}
+                >
+                  Bringing Freshness to Every Home
+                </Typography>
+              </Box>
               <Box
                 sx={{
                   width: "100%",
@@ -113,192 +112,235 @@ export default function AboutPage() {
             </Grid>
           </Grid>
 
-          <Grid container spacing={4} sx={{ mt: 2 }}>
-            <Grid item xs={12} md={6}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 2,
-                  p: 3,
-                  borderRadius: "16px",
-                  background: "var(--white)",
-                  borderLeft: "4px solid var(--brown)",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    transform: "translateY(-6px)",
-                  },
-                }}
-              >
-                <Box
-                  sx={{
-                    minWidth: 50,
-                    height: 50,
-                    borderRadius: "12px",
-                    background: "rgba(180, 80, 40, 0.15)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "20px",
-                  }}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="var(--brown)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M9 18h6" />
-                    <path d="M10 22h4" />
-                    <path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z" />
-                  </svg>
-                </Box>
+          <Box sx={{ textAlign: "center", mb: 5 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                color: "var(--brown)",
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: "clamp(1.6rem, 2.5vw, 2.2rem)",
+                mb: 4,
+              }}
+            >
+              Our Mission &amp; Vision
+            </Typography>
 
+            <Grid container spacing={3} justifyContent="center" sx={{ mb: 4 }}>
+              <Grid item xs={12} md={6}>
                 <Box
                   sx={{
+                    background: "#fff",
+                    borderRadius: "16px",
+                    p: { xs: 3, md: 4 },
+                    boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
                     display: "flex",
-                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    gap: 2.5,
+                    textAlign: "left",
                     height: "100%",
+                    position: "relative",
+                    overflow: "hidden",
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      right: -20,
+                      bottom: -20,
+                      width: 100,
+                      height: 100,
+                      borderRadius: "50%",
+                      background: "rgba(224,122,47,0.06)",
+                    },
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-6px)",
+                    },
                   }}
                 >
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: 700, color: "var(--brown)", mb: 0.5 }}
-                  >
-                    Our Vision
-                  </Typography>
-
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "var(--muted)", lineHeight: 1.8 }}
-                  >
-                    To become a trusted household name in ready-to-cook foods
-                    across Tamil Nadu and beyond.
-                  </Typography>
-
-                  <Box sx={{ flexGrow: 1 }} />
-
-                  <Divider
+                  <Box
                     sx={{
-                      borderColor: "var(--brown)",
-                      opacity: 0.5,
-                      mt: 2,
-                    }}
-                  />
-
-                  {/* Tagline */}
-                  <Typography
-                    sx={{
-                      fontStyle: "italic",
-                      fontSize: "1rem",
-                      color: "var(--brown)",
-                      fontFamily: "'Cormorant Garamond', serif",
-                      mt: 2,
+                      width: 64,
+                      height: 64,
+                      borderRadius: "50%",
+                      background: "rgba(224,122,47,0.10)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
                     }}
                   >
-                    "A name every Tamil home trusts"
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="var(--brown)"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M9 18h6" />
+                      <path d="M10 22h4" />
+                      <path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z" />
+                    </svg>
+                  </Box>
 
-            <Grid item xs={12} md={6}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 2,
-                  p: 3,
-                  borderRadius: "16px",
-                  background: "var(--white)",
-                  borderLeft: "4px solid var(--brown)",
-                  boxShadow: "var(--shadow)",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    transform: "translateY(-6px)",
-                  },
-                }}
-              >
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: "1.05rem",
+                        color: "var(--brown)",
+                        mb: 0.5,
+                      }}
+                    >
+                      Our Vision
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "var(--muted)", lineHeight: 1.8 }}
+                    >
+                      To become a trusted household name in ready-to-cook foods
+                      across Tamil Nadu and beyond.
+                    </Typography>
+
+                    <Box sx={{ flexGrow: 1 }} />
+
+                    <Divider
+                      sx={{
+                        borderColor: "var(--brown)",
+                        opacity: 0.5,
+                        mt: 2,
+                      }}
+                    />
+
+                    {/* Tagline */}
+                    <Typography
+                      sx={{
+                        fontStyle: "italic",
+                        fontSize: "1rem",
+                        color: "var(--brown)",
+                        fontFamily: "'Cormorant Garamond', serif",
+                        mt: 2,
+                      }}
+                    >
+                      "A name every Tamil home trusts"
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
                 <Box
                   sx={{
-                    minWidth: 50,
-                    height: 50,
-                    borderRadius: "12px",
-                    background: "rgba(180, 80, 40, 0.15)",
+                    background: "var(--white)",
+                    borderRadius: "16px",
+                    p: { xs: 3, md: 4 },
+                    boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "20px",
-                    color: "var(--brown)",
-                  }}
-                >
-                  <svg
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="var(--brown)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <circle cx="12" cy="12" r="6" />
-                    <circle cx="12" cy="12" r="2" />
-                  </svg>
-                </Box>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    gap: 2.5,
+                    textAlign: "left",
                     height: "100%",
+                    position: "relative",
+                    overflow: "hidden",
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      right: -20,
+                      bottom: -20,
+                      width: 100,
+                      height: 100,
+                      borderRadius: "50%",
+                      background: "rgba(58,107,53,0.06)",
+                    },
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-6px)",
+                    },
                   }}
                 >
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: 700, color: "var(--brown)", mb: 0.5 }}
-                  >
-                    Our Mission
-                  </Typography>
-
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "var(--muted)", lineHeight: 1.8 }}
-                  >
-                    To provide fresh, hygienic, and time-saving food solutions
-                    that fit seamlessly into everyday life.
-                  </Typography>
-
-                  <Box sx={{ flexGrow: 1 }} />
-
-                  <Divider
+                  <Box
                     sx={{
-                      borderColor: "var(--brown)",
-                      opacity: 0.5,
-                      mt: 2,
-                    }}
-                  />
-
-                  <Typography
-                    sx={{
-                      fontStyle: "italic",
-                      fontSize: "1rem",
-                      color: "var(--brown)",
-                      fontFamily: "'Cormorant Garamond', serif",
-                      mt: 2,
+                      width: 64,
+                      height: 64,
+                      borderRadius: "50%",
+                      background: "rgba(58,107,53,0.10)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
                     }}
                   >
-                    "Fresh food, everyday convenience"
-                  </Typography>
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="var(--green)"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <circle cx="12" cy="12" r="6" />
+                      <circle cx="12" cy="12" r="2" />
+                    </svg>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      height: "100%",
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: "1.05rem",
+                        color: "var(--green)",
+                        mb: 0.5,
+                      }}
+                    >
+                      Our Mission
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "var(--muted)", lineHeight: 1.8 }}
+                    >
+                      To provide fresh, hygienic, and time-saving food solutions
+                      that fit seamlessly into everyday life.
+                    </Typography>
+
+                    <Box sx={{ flexGrow: 1 }} />
+
+                    <Divider
+                      sx={{
+                        borderColor: "var(--brown)",
+                        opacity: 0.5,
+                        mt: 2,
+                      }}
+                    />
+
+                    <Typography
+                      sx={{
+                        fontStyle: "italic",
+                        fontSize: "1rem",
+                        color: "var(--brown)",
+                        fontFamily: "'Cormorant Garamond', serif",
+                        mt: 2,
+                      }}
+                    >
+                      "Fresh food, everyday convenience"
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
+              </Grid>
             </Grid>
-          </Grid>
+          </Box>
         </Box>
       </Container>
     </Box>
