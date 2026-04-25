@@ -148,7 +148,7 @@
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import LocalDiningIcon from "@mui/icons-material/LocalDining";
 import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 import NoFoodIcon from "@mui/icons-material/NoFood";
@@ -167,6 +167,9 @@ import {
   Paper,
 } from "@mui/material";
 import BulkOrderSection from "./components/BulkOrderSection";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import { Fab } from "@mui/material";
+
 
 const banners = [
   "/img/banners/banners1.jpg",
@@ -201,31 +204,32 @@ export default function Home() {
   const [current, setCurrent] = useState(0);
   const router = useRouter();
   const clickTimeout = useRef<NodeJS.Timeout | null>(null);
+  const stripTexts = [
+  "Freshly made chapathi daily",
+  "Free delivery above ₹199",
+  "No preservatives",
+  ];
+
+  const [stripIndex, setStripIndex] = useState(0);
+  const [animateKey, setAnimateKey] = useState(0);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % banners.length);
-    }, 4000);
+    }, 3000); // change every 3 sec
 
     return () => clearInterval(interval);
   }, []);
 
-  return (
-    <Box sx={{ bgcolor: "#fffaf5" }}>
-      
-      {/* TOP STRIP */}
-      <Box
-        sx={{
-          bgcolor: "#5C2008",
-          color: "#fff",
-          py: 1,
-          textAlign: "center",
-          fontSize: 14,
-          fontWeight: 500,
-        }}
-      >
-        Freshly made chapathi daily • Free delivery above ₹199 • No preservatives
-      </Box>
-
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStripIndex((prev) => (prev + 1) % stripTexts.length);
+      setAnimateKey((prev) => prev + 1); 
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+    return (
+      <Box sx={{ bgcolor: "#fffaf5" }}>
       {/* HERO */}
       <Box sx={{ position: "relative", height: { xs: "55vh", md: "70vh" } }}>
         <Box
@@ -250,16 +254,16 @@ export default function Home() {
           }}
         >
           <Box sx={{ textAlign: "center", px: 2 }}>
-            <Typography
+            {/* <Typography
               variant="h2"
               sx={{
-                color: "#fff",
+                color: "#FFF9F0",
                 fontWeight: 800,
                 fontSize: { xs: "32px", md: "52px" },
               }}
             >
               Fresh Homemade Food
-            </Typography>
+            </Typography> */}
 
             <Typography sx={{ color: "#eee", mt: 2 }}>
               Soft • Healthy • Ready in Seconds
@@ -283,6 +287,38 @@ export default function Home() {
           </Box>
         </Box>
       </Box>
+      {/* <Box
+        sx={{
+          bgcolor: "#5C2008",
+          color: "#fff",
+          py: 1,
+          overflow: "hidden",
+          position: "relative",
+          height: 30,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={stripIndex}
+            initial={{ x: "100%", opacity: 0 }}
+            animate={{ x: "0%", opacity: 1 }}
+            exit={{ x: "-100%", opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            style={{
+              position: "absolute",
+              whiteSpace: "nowrap",
+              fontSize: 14,
+              fontWeight: 500,
+              fontFamily: "'Poppins', sans-serif",
+            }}
+          >
+            {stripTexts[stripIndex]}
+          </motion.div>
+        </AnimatePresence>
+      </Box> */}
 
       <Container maxWidth="xl" disableGutters sx={{ py: 8, px: { xs: 2, md: 8 } }}>
         {/* PRODUCT SECTION */}
@@ -352,7 +388,7 @@ export default function Home() {
               />
                 <Box
                   component="img"
-                  src="/img/products/chapthi1.jpeg"
+                  src="/img/products/chapathi1.jpeg"
                   sx={{
                     width: "45%",
                     objectFit: "cover",
@@ -485,7 +521,7 @@ export default function Home() {
               >
               {/* ALWAYS FIXED PACK */}
               <Chip
-                label="Pack of 10"
+                label="Pack of 15"
                 size="small"
                 sx={{
                   position: "absolute",
@@ -836,22 +872,31 @@ export default function Home() {
         </Container>
 
       {/* WHATSAPP FLOAT */}
-      <Button
-        href="https://wa.me/91XXXXXXXXXX"
+      <Fab
+        href="https://wa.me/919847778825"
+        target="_blank"
+        rel="noopener noreferrer"
         sx={{
           position: "fixed",
           bottom: 20,
           right: 20,
-          borderRadius: "50%",
-          width: 60,
-          height: 60,
-          bgcolor: "#25d366",
+          bgcolor: "#25D366",
           color: "#fff",
-          fontSize: 24,
+          width: 58,
+          height: 58,
+          boxShadow: "0 10px 25px rgba(37, 211, 102, 0.35)",
+          transition: "0.3s",
+
+          "&:hover": {
+            bgcolor: "#1ebe5d",
+            transform: "scale(1.08)",
+            boxShadow: "0 14px 30px rgba(37, 211, 102, 0.45)",
+          },
         }}
       >
-        💬
-      </Button>
+        <WhatsAppIcon sx={{ fontSize: 30 }} />
+      </Fab>
+      
     </Box>
   );
 }

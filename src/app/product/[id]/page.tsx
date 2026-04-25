@@ -20,7 +20,7 @@ import {
   Alert,
   Rating,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
@@ -30,25 +30,50 @@ import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import src from "@emotion/cache";
+import { i } from "framer-motion/client";
 
 const MotionBox = motion(Box);   // for layout (supports sx)
 const MotionImg = motion.img;    // for images (supports src)
 const MotionPaper = motion(Paper);
+
 
 const products: Record<string, any> = {
   chapathi: {
     name: "Chapathi",
     desc: "Soft homemade chapathi prepared fresh daily with traditional taste and no preservatives.",
     mrp: 50,
-    images: ["/img/products/chapthi1.jpeg", "/img/products/chapthi2.jpeg"],
+    images: ["/img/products/chapathi1.jpeg", "/img/products/chapathi2.jpeg"],
     packs: [
       { label: "10 PCS", price: 40 },
     ],
+    // cookSteps: [
+    //   { title: "Preheat Pan", desc: "Heat tawa on medium flame for 2 min." },
+    //   { title: "Place Chapathi", desc: "Lay flat, cook until bubbles form." },
+    //   { title: "Flip & Cook", desc: "Cook both sides evenly, ~30 sec each." },
+    //   { title: "Serve Fresh", desc: "Serve hot with ghee or curry." },
+    // ]
     cookSteps: [
-      { title: "Preheat Pan", desc: "Heat tawa on medium flame for 2 min." },
-      { title: "Place Chapathi", desc: "Lay flat, cook until bubbles form." },
-      { title: "Flip & Cook", desc: "Cook both sides evenly, ~30 sec each." },
-      { title: "Serve Fresh", desc: "Serve hot with ghee or curry." },
+      {
+        title: "Preheat Pan",
+        desc: "Heat tawa on medium flame for 2 min.",
+        img: "/img/procedure/cpan_heat.png",
+      },
+      {
+        title: "Place Chapathi",
+        desc: "Lay flat, cook until bubbles form.",
+        img: "/img/procedure/c_place.png",
+      },
+      {
+        title: "Flip & Cook",
+        desc: "Cook both sides evenly, ~30 sec each.",
+        img: "/img/procedure/c_flip.png",
+      },
+      {
+        title: "Serve Fresh",
+        desc: "Serve hot with ghee or curry.",
+        img: "/img/procedure/c_serve.png",
+      },
     ],
     highlights: ["100% Whole Wheat", "Zero Maida", "Stone Ground Flour"],
   },
@@ -60,11 +85,33 @@ const products: Record<string, any> = {
     packs: [
       { label: "15 PCS", price: 45 },
     ],
+    // cookSteps: [
+    //   { title: "Heat Oil", desc: "Pour oil in kadai, heat on high flame." },
+    //   { title: "Slide In Poori", desc: "Gently slide poori into hot oil." },
+    //   { title: "Press & Puff", desc: "Press lightly until poori puffs up." },
+    //   { title: "Drain & Serve", desc: "Drain oil, serve with masala." },
+    // ],
     cookSteps: [
-      { title: "Heat Oil", desc: "Pour oil in kadai, heat on high flame." },
-      { title: "Slide In Poori", desc: "Gently slide poori into hot oil." },
-      { title: "Press & Puff", desc: "Press lightly until poori puffs up." },
-      { title: "Drain & Serve", desc: "Drain oil, serve with masala." },
+      {
+        title: "Heat Oil",
+        desc: "Pour oil in kadai, heat on high flame.",
+        img: "/img/procedure/ppan_heat.png",
+      },
+      {
+        title: "Slide In Poori",
+        desc: "Gently slide poori into hot oil.",
+        img: "/img/procedure/p_place.png",
+      },
+      {
+        title: "Press & Puff",
+        desc: "Press lightly until poori puffs up.",
+        img: "/img/procedure/p_flip.png",
+      },
+      {
+        title: "Drain & Serve",
+        desc: "Drain oil, serve with masala.",
+        img: "/img/procedure/p_serve.png",
+      },
     ],
     highlights: ["Puffed to Perfection", "Traditional Recipe", "No Artificial Color"],
   },
@@ -80,8 +127,7 @@ export default function ProductPage() {
   const params = useParams();
   const id = params.id as string;
   const product = products[id];
-  if (!product) return notFound();
-
+  if (!id || !product) return notFound();
   const [qty, setQty] = useState(1);
   const [img, setImg] = useState(product.images[0]);
   const [pincode, setPincode] = useState("");
@@ -94,6 +140,7 @@ export default function ProductPage() {
   const [bulkNote, setBulkNote] = useState("");
   const [snackOpen, setSnackOpen] = useState(false);
   const [cartSnack, setCartSnack] = useState(false);
+  const [imgIndex, setImgIndex] = useState(0);
 
   const discount = Math.round(
     ((product.mrp - selectedPack.price) / product.mrp) * 100
@@ -112,113 +159,159 @@ export default function ProductPage() {
     setSnackOpen(true);
   };
   const MotionImg = motion.img;
+  const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % product.cookSteps.length);
+    }, 2200);
+
+    return () => clearInterval(interval);
+  }, [product.cookSteps.length]);
+
+  const handlePrev = () => {
+    const newIndex =
+      imgIndex === 0 ? product.images.length - 1 : imgIndex - 1;
+
+    setImgIndex(newIndex);
+    setImg(product.images[newIndex]);
+  };
+
+  const handleNext = () => {
+    const newIndex =
+      imgIndex === product.images.length - 1 ? 0 : imgIndex + 1;
+
+    setImgIndex(newIndex);
+    setImg(product.images[newIndex]);
+  };
+    
   return (
+    
     <Box
       sx={{
         minHeight: "100vh",
         background: `linear-gradient(160deg, ${BRAND_LIGHT} 0%, #f5e6d8 60%, #eddac8 100%)`,
-        fontFamily: "'Poppins', sans-serif",
+        fontFamily: "'Playfair Display', serif",
       }}
     >
 
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
-        <Grid container spacing={4} alignItems="flex-start">
-
-          {/* ── IMAGE SECTION ── */}
+        <Grid container spacing={6}>
+          {/* IMAGE SECTION */}
           <Grid item xs={12} md={6}>
-            <MotionPaper
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              sx={{
-                borderRadius: 5,
-                overflow: "hidden",
-                boxShadow: "0 20px 60px rgba(59,31,14,0.15)",
-                background: "#fff",
+            <Box>
+              {/* MAIN IMAGE */}
+              <Box
+                sx={{
+                  width: "100%",
+                  aspectRatio: "1 / 1",
+                  height: 500,
+                  borderRadius: 3,
+                  overflow: "hidden",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  boxShadow: "0 15px 40px rgba(0,0,0,0.08)",
+                  position: "relative",
+                  "&:hover .navArrow": {
+                    opacity: 1,
+                  },
               }}
             >
-              <AnimatePresence mode="wait">
-                <MotionImg
-                    key={img}
-                    src={img}   // ✅ now this works
-                    alt={product.name}
-                    initial={{ opacity: 0, scale: 1.04 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.35 }}
-                    style={{
-                    width: "100%",
-                    height: "370px",
-                    objectFit: "cover",
-                    display: "block",
-                    borderRadius: "12px",
-                    }}
-                />
-                </AnimatePresence>
-              {/* Thumbnails */}
+              <img
+                src={img}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+              {/* LEFT ARROW */}
+                <IconButton
+                  onClick={handlePrev}
+                  className="navArrow"
+                  sx={{
+                    position: "absolute",
+                    left: 10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    fontSize: 34,
+                    color: "rgba(255,255,255,0.65)", // minimal white
+                    cursor: "pointer",
+                    // color: "#fff",
+                    opacity: 0,
+                    transition: "0.3s",
+                    userSelect: "none",
+                    textShadow: "0 2px 8px rgba(0,0,0,0.35)",
+                    "&:hover": { 
+                      color: "#fff",
+                      transform: "translateY(-50%) scale(1.1)",
+                     },
+                  }}
+                >
+                  ‹
+                </IconButton>
+
+                {/* RIGHT ARROW */}
+                <IconButton
+                  onClick={handleNext}
+                  className="navArrow"
+                  sx={{
+                    position: "absolute",
+                    right: 10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    fontSize: 34,
+                    color: "rgba(255,255,255,0.65)", 
+                    // color: "#fff",
+                    cursor: "pointer",
+                    opacity: 0,
+                    transition: "0.3s",
+                    userSelect: "none",
+                    "&:hover": { 
+                       color: "#fff",
+                        transform: "translateY(-50%) scale(1.1)",
+                    },
+                  }}
+                >
+                  ›
+                </IconButton>
+              </Box>
+
+              {/* THUMBNAILS */}
               <Box
-                display="flex"
-                justifyContent="center"
-                gap={2}
-                px={3}
-                py={2}
-                sx={{ borderTop: "1px solid #f0e0d0" }}
+                sx={{
+                  display: "flex",
+                  gap: 1.5,
+                  mt: 2,
+                  overflowX: "auto",
+                  pb: 1,
+                }}
               >
-                {product.images.map((src: string, idx: number) => (
+                {product.images.map((src:string, i:number) => (
                   <Box
-                    key={idx}
+                    key={i}
                     component="img"
                     src={src}
                     onClick={() => setImg(src)}
                     sx={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: 2.5,
-                      objectFit: "cover",
+                      width: 70,
+                      height: 70,
+                      borderRadius: 2,
                       cursor: "pointer",
-                      border:
-                        img === src
-                          ? `2.5px solid ${BRAND_DARK}`
-                          : "2px solid transparent",
-                      outline:
-                        img === src ? `3px solid ${BRAND_CHIP_BG}` : "none",
-                      transition: "all 0.2s",
-                      "&:hover": { transform: "scale(1.08)" },
+                      objectFit: "cover",
+                      border: img === src
+                        ? "2px solid #88391d"
+                        : "2px solid transparent",
+                      transition: "0.25s",
+                      "&:hover": {
+                        transform: "scale(1.05)",
+                      },
                     }}
                   />
                 ))}
               </Box>
-            </MotionPaper>
-
-            {/* Product Highlights Strip */}
-            <MotionBox
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.4 }}
-              sx={{
-                mt: 2.5,
-                display: "flex",
-                gap: 1.5,
-                flexWrap: "wrap",
-              }}
-            >
-              {product.highlights.map((h: string, i: number) => (
-                <Chip
-                  key={i}
-                  icon={<CheckCircleOutlineIcon sx={{ fontSize: 15, color: BRAND_MID }} />}
-                  label={h}
-                  size="small"
-                  sx={{
-                    bgcolor: BRAND_CHIP_BG,
-                    color: BRAND_DARK,
-                    fontWeight: 600,
-                    fontSize: 11.5,
-                    px: 0.5,
-                    fontFamily: "'Sora', sans-serif",
-                  }}
-                />
-              ))}
-            </MotionBox>
+            </Box>
           </Grid>
 
           {/* ── DETAILS SECTION ── */}
@@ -270,20 +363,20 @@ export default function ProductPage() {
                       color: BRAND_MID,
                       fontWeight: 600,
                       fontSize: 12,
-                      fontFamily: "'Sora', sans-serif",
+                      fontFamily: "'Playfair Display', serif",
                     }}
                   />
                 ))}
               </Box>
 
-              <Typography mt={2.5} fontSize={14.5} color="#7a5140" lineHeight={1.7}>
+              <Typography mt={2.5}  mb={3.5} fontSize={14.5} color="#7a5140" lineHeight={1.7}>
                 {product.desc}
               </Typography>
 
-              <Divider sx={{ my: 3, borderColor: "#e8d4c4" }} />
+              {/* <Divider sx={{ my: 3, borderColor: "#e8d4c4" }} /> */}
 
               {/* Pack Selection */}
-              <Typography fontSize={13} fontWeight={700} color={BRAND_DARK} letterSpacing={0.5} mb={1.5}>
+              <Typography fontSize={13} fontWeight={700} color={BRAND_DARK} letterSpacing={0.5} mb={0.8}>
                 SELECT PACK
               </Typography>
 
@@ -304,7 +397,7 @@ export default function ProductPage() {
                           py: 1.2,
                           fontSize: 13,
                           fontWeight: 700,
-                          fontFamily: "'Sora', sans-serif",
+                          fontFamily: "'Playfair Display', serif",
                           bgcolor: selected ? BRAND_DARK : "#fff",
                           color: selected ? "#fff" : BRAND_DARK,
                           border: `2px solid ${selected ? BRAND_DARK : "#d4b9a8"}`,
@@ -341,7 +434,7 @@ export default function ProductPage() {
                     lineHeight: 1,
                   }}
                 >
-                  ₹{selectedPack.price}
+                  ₹{selectedPack.price * qty}
                 </Typography>
                 <Typography
                   fontSize={16}
@@ -357,7 +450,7 @@ export default function ProductPage() {
                     color: "#c05e00",
                     fontWeight: 800,
                     fontSize: 12,
-                    fontFamily: "'Sora', sans-serif",
+                    fontFamily: "'Playfair Display', serif",
                   }}
                 />
               </Box>
@@ -436,7 +529,7 @@ export default function ProductPage() {
                     sx={{
                       borderRadius: "12px",
                       bgcolor: BRAND_DARK,
-                      fontFamily: "'Sora', sans-serif",
+                      fontFamily: "'Playfair Display', serif",
                       fontWeight: 700,
                       fontSize: 13,
                       px: 2.5,
@@ -464,7 +557,7 @@ export default function ProductPage() {
                     borderRadius: "14px",
                     borderColor: BRAND_DARK,
                     color: BRAND_DARK,
-                    fontFamily: "'Sora', sans-serif",
+                    fontFamily: "'Playfair Display', serif",
                     fontWeight: 700,
                     fontSize: 14,
                     py: 1.3,
@@ -483,11 +576,12 @@ export default function ProductPage() {
                   <Button
                     fullWidth
                     variant="contained"
-                    onClick={() => setCartSnack(true)}
+                    onClick={() => 
+                      setCartSnack(true)}
                     sx={{
                       borderRadius: "14px",
                       py: 1.7,
-                      fontFamily: "'Sora', sans-serif",
+                      fontFamily: "'Playfair Display', serif",
                       fontWeight: 800,
                       fontSize: 15,
                       letterSpacing: 0.5,
@@ -499,7 +593,7 @@ export default function ProductPage() {
                       },
                     }}
                   >
-                    ADD TO CART · ₹{selectedPack.price * qty}
+                    ADD TO CART   ₹{selectedPack.price * qty}
                   </Button>
                 </MotionBox>
               </Box>
@@ -508,7 +602,7 @@ export default function ProductPage() {
         </Grid>
 
         {/* ── HOW TO COOK ── */}
-        <Box mt={10}>
+        {/* <Box mt={10}>
           <Box textAlign="center" mb={5}>
             <Typography
               sx={{
@@ -573,11 +667,23 @@ export default function ProductPage() {
                   >
                     {i + 1}
                   </Box>
+                  <Box
+                      component="img"
+                      src={step.img}
+                      alt={step.title}
+                      sx={{
+                        width: 80,
+                        height: 80,
+                        objectFit: "contain",
+                        mx: "auto",
+                        mb: 1.5,
+                      }}
+                    />
                   <Typography
                     fontWeight={700}
                     fontSize={15}
                     color={BRAND_DARK}
-                    fontFamily="'Sora', sans-serif"
+                    fontFamily="'Playfair Display', serif"
                     mb={0.5}
                   >
                     {step.title}
@@ -589,8 +695,164 @@ export default function ProductPage() {
               </Grid>
             ))}
           </Grid>
+        </Box> */}
+
+        <Box mt={8} position="relative">
+
+          {/* HEADER */}
+          <Box textAlign="center" mb={8}>
+            <Typography
+              sx={{
+                fontFamily: "'Playfair Display', serif",
+                fontSize: { xs: 30, md: 42 },
+                fontWeight: 900,
+                color: BRAND_DARK,
+              }}
+            >
+              How to cook
+            </Typography>
+
+            <Typography fontSize={14} color="#9e7060" >
+              From dough to delight in minutes
+            </Typography>
+          </Box>
+
+          {/* HEAT FLOW PATH */}
+          <svg
+            viewBox="0 0 800 200"
+            preserveAspectRatio="none"
+            style={{
+              position: "absolute",
+              top: 80,
+              left: 0,
+              width: "100%",
+              height: 200,
+              zIndex: 0,
+            }}
+          >
+            <motion.path
+              d="M50 150 C200 0, 600 300, 750 100"
+              stroke={BRAND_ACCENT}
+              strokeWidth="3"
+              fill="transparent"
+              strokeDasharray="4 14"
+              strokeLinecap="round"
+              // opacity="2"
+              transition={{
+                duration: 2,
+                ease: "easeOut",
+              }}
+            />
+          </svg>
+
+          {/* STEPS */}
+          <Box
+            sx={{
+              position: "relative",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              px: { xs: 2, md: 6 },
+              zIndex: 2,
+              flexWrap: "wrap",
+              gap: 4,
+            }}
+          >
+            {product.cookSteps.map((step: any, i: number) => {
+              const isActive = activeStep === i;
+
+              return (
+                <MotionBox
+                  key={i}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.15 }}
+                  sx={{ textAlign: "center", maxWidth: 180 }}
+                >
+                  {/* IMAGE */}
+                  <MotionBox
+                    animate={{
+                      scale: isActive ? 1.12 : 0.9,
+                      opacity: isActive ? 1 : 0.4,
+                      y: isActive ? [0, -6, 0] : 0,
+                    }}
+                    transition={{ duration: 0.6 }}
+                    sx={{ borderRadius: "50%", display: "inline-block", p: 1 }}
+                  >
+                    {/* GLOW */}
+                    <MotionBox
+                      animate={
+                        isActive
+                          ? {
+                              boxShadow: [
+                                "0 0 0px rgba(224,123,57,0)",
+                                "0 0 30px rgba(224,123,57,0.6)",
+                                "0 0 0px rgba(224,123,57,0)",
+                              ],
+                            }
+                          : { boxShadow: "none" }
+                      }
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                      sx={{ borderRadius: "50%", p: 1 }}
+                    >
+                      <Box
+                        component="img"
+                        src={step.img}
+                        alt={step.title}
+                        sx={{
+                          width: 100,
+                          height: 100,
+                          objectFit: "contain",
+                        }}
+                      />
+                    </MotionBox>
+                  </MotionBox>
+
+                  <Box
+                    sx={{
+                      width: 25,
+                      height: 25,
+                      borderRadius: "50%",
+                      background: `linear-gradient(135deg, ${BRAND_ACCENT}, ${BRAND_MID})`,
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      mx: "auto",
+                      mb: 2,
+                      fontWeight: 500,
+                      fontSize: 14,
+                      fontFamily: "'Playfair Display', serif",
+                      boxShadow: "0 4px 12px rgba(224,123,57,0.35)",
+                    }}
+                  >
+                    {i + 1}
+                  </Box>
+
+                  {/* TITLE */}
+                  <Typography
+                    fontWeight={800}
+                    fontSize={15}
+                    color={isActive ? BRAND_DARK : "#9e7060"}
+                  >
+                    {step.title}
+                  </Typography>
+
+                  {/* DESC */}
+                  <Typography fontSize={12.5} color="#9e7060" lineHeight={1.5}>
+                    {step.desc}
+                  </Typography>
+                </MotionBox>
+              );
+            })}
+          </Box>
         </Box>
 
+                
         {/* ── WHY MENMAI STRIP ── */}
         <MotionBox
           initial={{ opacity: 0, y: 20 }}
@@ -630,7 +892,7 @@ export default function ProductPage() {
             sx={{
               bgcolor: "#fff",
               color: BRAND_DARK,
-              fontFamily: "'Sora', sans-serif",
+              fontFamily: "'Playfair Display', serif",
               fontWeight: 800,
               fontSize: 14,
               px: 4,
@@ -739,7 +1001,7 @@ export default function ProductPage() {
             onClick={() => setBulkOpen(false)}
             sx={{
               color: "#999",
-              fontFamily: "'Sora', sans-serif",
+              fontFamily: "'Playfair Display', serif",
               fontWeight: 600,
               borderRadius: "12px",
             }}
@@ -753,7 +1015,7 @@ export default function ProductPage() {
             sx={{
               borderRadius: "12px",
               bgcolor: BRAND_DARK,
-              fontFamily: "'Sora', sans-serif",
+              fontFamily: "'Playfair Display', serif",
               fontWeight: 700,
               px: 4,
               py: 1.2,
@@ -767,13 +1029,13 @@ export default function ProductPage() {
 
       {/* Snackbars */}
       <Snackbar open={snackOpen} autoHideDuration={4000} onClose={() => setSnackOpen(false)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
-        <Alert severity="success" sx={{ borderRadius: 3, fontFamily: "'Sora', sans-serif" }}>
+        <Alert severity="success" sx={{ borderRadius: 3, fontFamily: "'Playfair Display', serif" }}>
           🎉 Bulk order submitted! We'll call you shortly.
         </Alert>
       </Snackbar>
 
       <Snackbar open={cartSnack} autoHideDuration={3000} onClose={() => setCartSnack(false)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
-        <Alert severity="success" sx={{ borderRadius: 3, fontFamily: "'Sora', sans-serif" }}>
+        <Alert severity="success" sx={{ borderRadius: 3, fontFamily: "'Playfair Display', serif" }}>
           🛒 Added {qty} × {selectedPack.label} {product.name} to cart!
         </Alert>
       </Snackbar>
@@ -785,10 +1047,10 @@ export default function ProductPage() {
 const dialogFieldSx = {
   "& .MuiOutlinedInput-root": {
     borderRadius: "12px",
-    fontFamily: "'Sora', sans-serif",
+    fontFamily: "'Playfair Display', serif",
     "& fieldset": { borderColor: "#d4b9a8" },
     "&:hover fieldset": { borderColor: "#6b3a1f" },
     "&.Mui-focused fieldset": { borderColor: "#3b1f0e" },
   },
-  "& .MuiInputLabel-root": { fontFamily: "'Sora', sans-serif" },
+  "& .MuiInputLabel-root": { fontFamily: "'Playfair Display', serif" },
 };

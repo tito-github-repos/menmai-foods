@@ -1,6 +1,6 @@
 .contact_icon {
   background-color: color-mix(in srgb, var(--or), transparent 90%);
-  color: var(--or);
+  color: var(--brown);
   width: 50px;
   height: 50px;
   border-radius: 30%;
@@ -64,7 +64,7 @@
 
 /* ARROW */
 .mc-arrow {
-  color: var(--or);
+  color: var(--brown);
   font-size: 1.1rem;
   opacity: 0;
   transform: translateX(-4px);
