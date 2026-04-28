@@ -23,12 +23,24 @@ import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import LocalPhoneOutlinedIcon from "@mui/icons-material/LocalPhoneOutlined";
+import { ListItemIcon } from "@mui/material";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 
 const NAV_LINKS = [
-  { label: "Home", href: "/" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
+  { label: "Home", href: "/", icon: <HomeOutlinedIcon fontSize="small" /> },
+  {
+    label: "About",
+    href: "/about",
+    icon: <GroupOutlinedIcon fontSize="small" />,
+  },
+  {
+    label: "Contact",
+    href: "/contact",
+    icon: <LocalPhoneOutlinedIcon fontSize="small" />,
+  },
 ] as const;
 
 export default function Header() {
@@ -64,7 +76,7 @@ export default function Header() {
           right: 0,
           width: "100%",
           zIndex: 1100,
-          backgroundColor: "var(--brown)",
+          backgroundColor: "var(--white)",
           // backgroundColor: "rgba(255, 253, 248, .97)",
           backdropFilter: "blur(12px)",
           borderBottom: "1px solid rgba(232, 114, 12, .12)",
@@ -113,12 +125,17 @@ export default function Header() {
                     href={href}
                     disableRipple
                     sx={{
-                      // color: isActive(href) ? "var(--or)" : "var(--brown)",
-                      color: isActive(href) ? "var(--cream)" : "var(--gray)",
+                      color: isActive(href)
+                        ? "var(--primary-teal-dark)"
+                        : "var(--primary-maroon-dark)",
                       padding: "8px 14px",
-                      "&:hover": { background: "none", color: "var(--cream)" },
+                      fontWeight: "500",
+                      "&:hover": {
+                        background: "none",
+                        color: "var(--primary-teal-dark)",
+                      },
                       "&::after": {
-                        background: "var(--cream)",
+                        background: "var(--primary-teal-dark)",
                         transform: isActive(href) ? "scaleX(1)" : "scaleX(0)",
                       },
                     }}
@@ -161,7 +178,7 @@ export default function Header() {
                   onClick={handleDrawerOpen}
                   sx={{
                     transition: "transform 0.3s ease",
-                    color: "var(--cream)",
+                    color: "var(--primary-teal-dark)",
                   }}
                 >
                   <MenuIcon />
@@ -181,7 +198,7 @@ export default function Header() {
         PaperProps={{
           sx: {
             width: 280,
-            backgroundColor: "var(--brown)",
+            backgroundColor: "var(--white)",
             borderLeft: "1px solid rgba(232, 114, 12, .12)",
           },
         }}
@@ -194,21 +211,19 @@ export default function Header() {
               justifyContent: "space-between",
               alignItems: "center",
               fontWeight: 600,
-              color: "var(--cream)",
+              color: "var(--primary-teal-dark)",
               letterSpacing: "0.08em",
               textTransform: "uppercase",
             }}
           >
             Menu
             <IconButton onClick={handleDrawerClose}>
-              <CloseIcon sx={{ color: "var(--cream)" }} />
+              <CloseIcon sx={{ color: "var(--primary-teal-dark)" }} />
             </IconButton>
           </Box>
 
-          <Divider sx={{ borderColor: "rgba(232, 114, 12, .12)" }} />
-
           <List>
-            {NAV_LINKS.map(({ label, href }) => (
+            {NAV_LINKS.map(({ label, href, icon }) => (
               <ListItemButton
                 key={href}
                 component={Link}
@@ -216,17 +231,49 @@ export default function Header() {
                 sx={{
                   mx: 1.5,
                   my: 0.5,
+                  borderRadius: 3,
                   transition: "all 0.2s ease",
-                  backgroundColor: isActive(href)
-                    ? "rgba(255, 255, 255, .07)"
-                    : "transparent",
 
-                  "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, .07)",
+                  "&.MuiListItemButton-root": {
+                    background: isActive(href)
+                      ? "linear-gradient(90deg, var(--primary-teal-dark) 0%, var(--primary-teal-mid) 100%)"
+                      : "transparent",
+
+                    borderBottom: isActive(href)
+                      ? "none"
+                      : "1px solid rgba(232, 114, 12, .12)",
+                  },
+
+                  "& .MuiListItemText-primary": {
+                    color: isActive(href)
+                      ? "var(--white)"
+                      : "var(--primary-maroon-dark)",
+                  },
+                  "&.MuiListItemButton-root:hover": {
+                    background:
+                      "linear-gradient(90deg, var(--primary-teal-dark) 0%, var(--primary-teal-mid) 100%)",
                     transform: "translateX(4px)",
+                    borderBottom: "none",
+
+                    "& .MuiListItemText-primary": {
+                      color: "var(--white)",
+                    },
                   },
                 }}
               >
+                <ListItemIcon
+                  sx={{
+                    minWidth: "40px",
+                    color: isActive(href)
+                      ? "var(--white)"
+                      : "var(--primary-maroon-dark)",
+                    ".MuiListItemButton-root:hover &": {
+                      color: "var(--white)",
+                    },
+                  }}
+                >
+                  {icon}
+                </ListItemIcon>
                 <ListItemText
                   primary={label}
                   primaryTypographyProps={{
@@ -234,10 +281,6 @@ export default function Header() {
                       fontSize: 14,
                       fontWeight: 500,
                       letterSpacing: "0.05em",
-                      color: isActive(href) ? "var(--cream)" : "var(--gray)",
-                      ":hover": {
-                        color: "var(--cream)",
-                      },
                     },
                   }}
                 />
@@ -257,7 +300,7 @@ function CartIcon({ cartCount }: { cartCount: number }) {
       href="/cart"
       sx={{
         transition: "transform 0.3s ease",
-        color: "var(--cream)",
+        color: "var(--primary-maroon-dark)",
       }}
     >
       <Badge badgeContent={cartCount} color="error">

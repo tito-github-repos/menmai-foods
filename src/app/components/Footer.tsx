@@ -19,11 +19,7 @@ import InstagramIcon from "@mui/icons-material/Instagram";
 
 export default function Footer() {
   return (
-    <Box
-      sx={{
-        backgroundColor: "var(--dbr)",
-      }}
-    >
+    <Box sx={{ backgroundColor: "var(--primary-maroon-dark)" }}>
       <Container sx={{ py: 6 }}>
         <Grid container spacing={4}>
           <Grid item xs={12} md={5}>
@@ -189,8 +185,24 @@ export default function Footer() {
 
       <Container
         sx={{
-          borderTop: "1px solid rgba(255, 255, 255, .12)",
           py: 2,
+          position: "relative",
+
+          // 🔥 Gopuram ABOVE border
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: "-135px",
+            left: 0,
+            width: "100%",
+            height: "170px",
+            backgroundImage: "url('/footer.png')",
+            backgroundRepeat: "repeat-x",
+            backgroundPosition: "bottom",
+            backgroundSize: "contain",
+            opacity: 0.35,
+            pointerEvents: "none",
+          },
         }}
       >
         <Box
