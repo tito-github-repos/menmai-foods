@@ -69,7 +69,17 @@ export function DeliverySection() {
   };
 
   return (
-<Box
+    <Box
+    sx={{
+      width: "100%",
+      py: { xs: 4, md: 6 },
+      px: { xs: 2, md: 4 },
+      background: "#fdf6ec",
+      position: "relative",
+      overflow: "hidden",
+    }}
+  >
+    <Box
   sx={{
     maxWidth: "1100px",
     mx: "auto",
@@ -193,7 +203,7 @@ export function DeliverySection() {
       display: "block",
     }}
   />
-
+</Box>
 </Box>
   );
 }
