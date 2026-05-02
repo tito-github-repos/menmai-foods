@@ -132,369 +132,412 @@ export default function CartCheckout() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box
-        sx={{
-          py: 8,
-          background:
-            "linear-gradient(135deg, var(--ivory) 0%, var(--cream) 100%)",
-        }}
-      >
-        <Container maxWidth="lg">
-          <Box sx={{ mb: 4 }}>
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 700,
-                color: "var(--brown)",
-                fontFamily: "'Cormorant Garamond', serif",
-                // fontSize: "clamp(1.9rem, 3vw, 2.7rem)",
-                // lineHeight: 1.15,
-                // margin: "8px 0 12px",
-              }}
-            >
-              Your Cart &amp; Checkout
-            </Typography>
-
-            <Typography
-              variant="body2"
-              sx={{
-                color: "var(--text)",
-                // fontSize: ".95rem",
-                // lineHeight: 1.8,
-              }}
-            >
-              Review your items and place your order
-            </Typography>
-          </Box>
-
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Paper
-                elevation={0}
+      <Box sx={{ pb: 8 }}>
+        <Box
+          sx={{
+            py: 4,
+            backgroundColor: "#f7f6f3",
+          }}
+        >
+          <Container maxWidth="lg">
+            <Box sx={{ position: "relative", zIndex: 1 }}>
+              <Box
                 sx={{
-                  borderRadius: 3,
-                  p: 2.5,
-                  border: "1px solid var(--ivory)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  mb: 1,
                 }}
               >
-                <Box
+                <Typography
+                  variant="h4"
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    mb: 2,
+                    fontSize: ".74rem",
+                    fontWeight: 500,
+                    letterSpacing: ".14em",
+                    textTransform: "uppercase",
+                    color: "var(--primary-teal-dark)",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box
-                      sx={{
-                        bgcolor: "#FFF3E8",
-                        borderRadius: 2,
-                        p: 0.8,
-                        display: "flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      <ShoppingCartOutlinedIcon
-                        sx={{ color: "var(--brown)", fontSize: 20 }}
-                      />
-                    </Box>
-                    <Typography fontWeight={700} fontSize={15}>
-                      Your Cart{" "}
-                      <Typography
-                        component="span"
-                        color="text.secondary"
-                        fontSize={14}
-                        fontWeight={400}
-                      >
-                        ({cartItems.length} Items)
-                      </Typography>
-                    </Typography>
-                  </Box>
-
-                  <Button
-                    variant="outlined"
-                    sx={{
-                      color: "var(--brown)",
-                      fontWeight: 600,
-                      fontSize: 13,
-                      borderColor: "var(--brown)",
-                      "&:hover": {
-                        borderColor: "var(--brown)",
-                        bgcolor: "var(--brown)",
-                        color: "var(--ivory)",
-                      },
-                    }}
-                  >
-                    + Add Items
-                  </Button>
-                </Box>
-                <Divider sx={{ mb: 2 }} />
-
-                {/* Cart Items */}
-                <Stack spacing={2.5}>
-                  {cartItems.map((item) => (
-                    <Box key={item.id}>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 2 }}
-                      >
-                        <Box
-                          component="img"
-                          src={item.img}
-                          alt={item.name}
-                          sx={{
-                            width: 80,
-                            height: 80,
-                            borderRadius: 2.5,
-                            objectFit: "cover",
-                            flexShrink: 0,
-                            border: "1px solid #F0F0F0",
-                          }}
-                          onError={(e: any) => {
-                            e.target.src =
-                              "https://via.placeholder.com/80x80?text=Food";
-                          }}
-                        />
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                            }}
-                          >
-                            <Box>
-                              <Typography fontWeight={700} fontSize={14}>
-                                {item.name}
-                              </Typography>
-                              <Typography fontSize={12} color="text.secondary">
-                                Pack of {item.pieces}
-                              </Typography>
-                            </Box>
-                            <Box>
-                              <Typography fontWeight={700} fontSize={15}>
-                                ₹{item.price * item.qty}.00
-                              </Typography>
-                              <Typography
-                                fontSize={11}
-                                color="text.secondary"
-                                sx={{ textDecoration: "line-through" }}
-                              >
-                                ₹ {item.mrp * item.qty}.00
-                              </Typography>
-                            </Box>
-                          </Box>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              mt: 1,
-                            }}
-                          >
-                            {/* Qty Control */}
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                border: "1px solid #E0E0E0",
-                                borderRadius: 2,
-                                px: 1,
-                                py: 0.3,
-                              }}
-                            >
-                              <IconButton
-                                size="small"
-                                onClick={() => updateQty(item.id, -1)}
-                                sx={{
-                                  p: 0.3,
-                                  color: "var(--brown)",
-                                }}
-                              >
-                                <RemoveIcon sx={{ fontSize: 16 }} />
-                              </IconButton>
-                              <Typography
-                                fontWeight={700}
-                                fontSize={14}
-                                sx={{ minWidth: 20, textAlign: "center" }}
-                              >
-                                {item.qty}
-                              </Typography>
-                              <IconButton
-                                size="small"
-                                onClick={() => updateQty(item.id, 1)}
-                                sx={{ p: 0.3, color: "var(--brown)" }}
-                              >
-                                <AddIcon sx={{ fontSize: 16 }} />
-                              </IconButton>
-                            </Box>
-
-                            <IconButton
-                              size="small"
-                              onClick={() => removeItem(item.id)}
-                              sx={{
-                                color: "error.main",
-                                p: 0.5,
-                              }}
-                            >
-                              <DeleteOutlineIcon fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        </Box>
-                      </Box>
-                      <Divider sx={{ mt: 2.5 }} />
-                    </Box>
-                  ))}
-                </Stack>
-
-                {/* Free Delivery Banner */}
+                  Review Your Items and Place Your Order
+                </Typography>
                 <Box
                   sx={{
-                    mt: 2.5,
-                    bgcolor: "#F0FFF4",
-                    border: "1px solid #C8E6C9",
-                    borderRadius: 2.5,
-                    px: 2,
-                    py: 1.5,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
+                    width: 35,
+                    height: 32,
+                    backgroundColor: "var(--green)",
+                    mask: "url('/plant.png') no-repeat center / contain",
+                    WebkitMask: "url('/plant.png') no-repeat center / contain",
+                    opacity: 0.7,
+                    zIndex: 100,
                   }}
-                >
-                  <LocalShippingOutlinedIcon
-                    sx={{ color: "var(--green)", fontSize: 26 }}
-                  />
-                  <Box>
-                    <Typography
-                      fontWeight={700}
-                      fontSize={13}
-                      color="var(--green)"
-                    >
-                      Free Delivery
-                    </Typography>
-                    <Typography fontSize={12} color="var(--green)">
-                      For the above order
-                    </Typography>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
+                />
+              </Box>
 
-            {/* RIGHT: Delivery + Summary */}
-            <Grid item xs={12} md={6}>
-              <Stack spacing={2.5}>
-                {/* Delivery Details */}
+              <Typography
+                sx={{
+                  fontSize: { xs: "1.9rem", md: "2.5rem" },
+                  fontWeight: 700,
+                  fontFamily: "var(--font-heading)",
+                  color: "var(--primary-maroon-dark)",
+                  lineHeight: 1.25,
+                  mb: 2,
+                }}
+              >
+                Your Cart &amp; Checkout
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontSize: "1rem",
+                  color: "var(--text)",
+                  lineHeight: 1.7,
+                  mb: 3,
+                  maxWidth: 480,
+                }}
+              >
+                Fresh, Hygienic & Homemade - delivered to your door.
+              </Typography>
+            </Box>
+          </Container>
+        </Box>
+
+        <Container maxWidth="lg">
+          <Box sx={{ py: 4 }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
                 <Paper
                   elevation={0}
                   sx={{
                     borderRadius: 3,
                     p: 2.5,
-                    border: "1px solid var(--ivory)",
+                    border:
+                      "1.5px solid color-mix(in srgb, var(--primary-teal-dark), transparent 70%)",
                   }}
                 >
                   <Box
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 1,
+                      justifyContent: "space-between",
                       mb: 2,
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Box
+                        sx={{
+                          bgcolor: "var(--primary-teal-dark)",
+                          borderRadius: 2,
+                          p: 0.8,
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        <ShoppingCartOutlinedIcon
+                          sx={{ color: "var(--white)", fontSize: 20 }}
+                        />
+                      </Box>
+                      <Typography fontWeight={700} fontSize={15}>
+                        Your Cart{" "}
+                        <Typography
+                          component="span"
+                          color="text.secondary"
+                          fontSize={14}
+                          fontWeight={400}
+                        >
+                          ({cartItems.length} Items)
+                        </Typography>
+                      </Typography>
+                    </Box>
+
+                    <Button
+                      variant="outlined"
+                      sx={{
+                        color: "var(--primary-teal-dark)",
+                        fontWeight: 600,
+                        fontSize: 13,
+                        borderColor: "var(--primary-teal-dark)",
+                        "&:hover": {
+                          borderColor: "var(--primary-teal-mid)",
+                          bgcolor: "var(--primary-teal-mid)",
+                          color: "var(--white)",
+                        },
+                      }}
+                    >
+                      + Add Items
+                    </Button>
+                  </Box>
+                  <Divider sx={{ mb: 2 }} />
+
+                  {/* Cart Items */}
+                  <Stack spacing={2.5}>
+                    {cartItems.map((item) => (
+                      <Box key={item.id}>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                        >
+                          <Box
+                            component="img"
+                            src={item.img}
+                            alt={item.name}
+                            sx={{
+                              width: 80,
+                              height: 80,
+                              borderRadius: 2.5,
+                              objectFit: "cover",
+                              flexShrink: 0,
+                              border: "1px solid #F0F0F0",
+                            }}
+                            onError={(e: any) => {
+                              e.target.src =
+                                "https://via.placeholder.com/80x80?text=Food";
+                            }}
+                          />
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "flex-start",
+                              }}
+                            >
+                              <Box>
+                                <Typography fontWeight={700} fontSize={14}>
+                                  {item.name}
+                                </Typography>
+                                <Typography
+                                  fontSize={12}
+                                  color="text.secondary"
+                                >
+                                  Pack of {item.pieces}
+                                </Typography>
+                              </Box>
+                              <Box>
+                                <Typography fontWeight={700} fontSize={15}>
+                                  ₹{item.price * item.qty}.00
+                                </Typography>
+                                <Typography
+                                  fontSize={11}
+                                  color="text.secondary"
+                                  sx={{ textDecoration: "line-through" }}
+                                >
+                                  ₹ {item.mrp * item.qty}.00
+                                </Typography>
+                              </Box>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                mt: 1,
+                              }}
+                            >
+                              {/* Qty Control */}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                  border: "1px solid #E0E0E0",
+                                  borderRadius: 2,
+                                  px: 1,
+                                  py: 0.3,
+                                }}
+                              >
+                                <IconButton
+                                  size="small"
+                                  onClick={() => updateQty(item.id, -1)}
+                                  sx={{
+                                    p: 0.3,
+                                    color: "var(--brown)",
+                                  }}
+                                >
+                                  <RemoveIcon sx={{ fontSize: 16 }} />
+                                </IconButton>
+                                <Typography
+                                  fontWeight={700}
+                                  fontSize={14}
+                                  sx={{ minWidth: 20, textAlign: "center" }}
+                                >
+                                  {item.qty}
+                                </Typography>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => updateQty(item.id, 1)}
+                                  sx={{ p: 0.3, color: "var(--brown)" }}
+                                >
+                                  <AddIcon sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Box>
+
+                              <IconButton
+                                size="small"
+                                onClick={() => removeItem(item.id)}
+                                sx={{
+                                  color: "error.main",
+                                  p: 0.5,
+                                }}
+                              >
+                                <DeleteOutlineIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        </Box>
+                        <Divider sx={{ mt: 2.5 }} />
+                      </Box>
+                    ))}
+                  </Stack>
+
+                  {/* Free Delivery Banner */}
+                  <Box
+                    sx={{
+                      mt: 2.5,
+                      bgcolor: "#F0FFF4",
+                      border: "1px solid #C8E6C9",
+                      borderRadius: 2.5,
+                      px: 2,
+                      py: 1.5,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                    }}
+                  >
+                    <LocalShippingOutlinedIcon
+                      sx={{ color: "var(--green)", fontSize: 26 }}
+                    />
+                    <Box>
+                      <Typography
+                        fontWeight={700}
+                        fontSize={13}
+                        color="var(--green)"
+                      >
+                        Free Delivery
+                      </Typography>
+                      <Typography fontSize={12} color="var(--green)">
+                        For the above order
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Paper>
+              </Grid>
+
+              {/* RIGHT: Delivery + Summary */}
+              <Grid item xs={12} md={6}>
+                <Stack spacing={2.5}>
+                  {/* Delivery Details */}
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      borderRadius: 3,
+                      p: 2.5,
+                      border:
+                        "1.5px solid color-mix(in srgb, var(--primary-teal-dark), transparent 70%)",
                     }}
                   >
                     <Box
                       sx={{
-                        bgcolor: "#FFF3E8",
-                        borderRadius: 2,
-                        p: 0.8,
                         display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 2,
                       }}
                     >
-                      <LocationOnOutlinedIcon
-                        sx={{ color: "var(--brown)", fontSize: 20 }}
-                      />
+                      <Box
+                        sx={{
+                          bgcolor: "var(--primary-teal-dark)",
+                          borderRadius: 2,
+                          p: 0.8,
+                          display: "flex",
+                        }}
+                      >
+                        <LocationOnOutlinedIcon
+                          sx={{ color: "var(--white)", fontSize: 20 }}
+                        />
+                      </Box>
+                      <Typography fontWeight={700} fontSize={15}>
+                        Delivery Details
+                      </Typography>
                     </Box>
-                    <Typography fontWeight={700} fontSize={15}>
-                      Delivery Details
-                    </Typography>
-                  </Box>
 
-                  <Divider sx={{ mb: 2 }} />
+                    <Divider sx={{ mb: 2 }} />
 
-                  <Stack spacing={2}>
-                    <Box>
-                      <Typography fontSize={13} fontWeight={600} mb={0.5}>
-                        Full Name
-                      </Typography>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        placeholder="Enter your full name"
-                        value={form.fullName}
-                        onChange={(e) =>
-                          setForm({ ...form, fullName: e.target.value })
-                        }
-                      />
-                    </Box>
-                    <Box>
-                      <Typography fontSize={13} fontWeight={600} mb={0.5}>
-                        Phone Number
-                      </Typography>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        placeholder="Enter your phone number"
-                        value={form.phone}
-                        onChange={(e) =>
-                          setForm({ ...form, phone: e.target.value })
-                        }
-                      />
-                    </Box>
-                    <Box>
-                      <Typography fontSize={13} fontWeight={600} mb={0.5}>
-                        Delivery Address
-                      </Typography>
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={3}
-                        placeholder="House / Street / Area"
-                        value={form.address}
-                        onChange={(e) =>
-                          setForm({ ...form, address: e.target.value })
-                        }
-                      />
-                    </Box>
-                    <Grid container>
-                      <Grid item xs={6} pr={2}>
+                    <Stack spacing={2}>
+                      <Box>
                         <Typography fontSize={13} fontWeight={600} mb={0.5}>
-                          City / Town
+                          Full Name
                         </Typography>
                         <TextField
                           fullWidth
                           size="small"
-                          placeholder="Enter city"
-                          value={form.city}
+                          placeholder="Enter your full name"
+                          value={form.fullName}
                           onChange={(e) =>
-                            setForm({ ...form, city: e.target.value })
+                            setForm({ ...form, fullName: e.target.value })
                           }
                         />
-                      </Grid>
-                      <Grid item xs={6}>
+                      </Box>
+                      <Box>
                         <Typography fontSize={13} fontWeight={600} mb={0.5}>
-                          Pincode
+                          Phone Number
                         </Typography>
                         <TextField
                           fullWidth
                           size="small"
-                          placeholder="Enter pincode"
-                          value={form.pincode}
+                          placeholder="Enter your phone number"
+                          value={form.phone}
                           onChange={(e) =>
-                            setForm({ ...form, pincode: e.target.value })
+                            setForm({ ...form, phone: e.target.value })
                           }
                         />
+                      </Box>
+                      <Box>
+                        <Typography fontSize={13} fontWeight={600} mb={0.5}>
+                          Delivery Address
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          multiline
+                          rows={3}
+                          placeholder="House / Street / Area"
+                          value={form.address}
+                          onChange={(e) =>
+                            setForm({ ...form, address: e.target.value })
+                          }
+                        />
+                      </Box>
+                      <Grid container>
+                        <Grid item xs={6} pr={2}>
+                          <Typography fontSize={13} fontWeight={600} mb={0.5}>
+                            City / Town
+                          </Typography>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            placeholder="Enter city"
+                            value={form.city}
+                            onChange={(e) =>
+                              setForm({ ...form, city: e.target.value })
+                            }
+                          />
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography fontSize={13} fontWeight={600} mb={0.5}>
+                            Pincode
+                          </Typography>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            placeholder="Enter pincode"
+                            value={form.pincode}
+                            onChange={(e) =>
+                              setForm({ ...form, pincode: e.target.value })
+                            }
+                          />
+                        </Grid>
                       </Grid>
-                    </Grid>
-                    {/* <FormControlLabel
+                      {/* <FormControlLabel
                       control={
                         <Checkbox
                           size="small"
@@ -514,139 +557,149 @@ export default function CartCheckout() {
                         </Typography>
                       }
                     /> */}
-                  </Stack>
-                </Paper>
+                    </Stack>
+                  </Paper>
 
-                {/* Order Summary */}
-                <Paper
-                  elevation={0}
-                  sx={{ borderRadius: 3, p: 2.5, border: "1px solid #ECECEC" }}
-                >
-                  <Box
+                  {/* Order Summary */}
+                  <Paper
+                    elevation={0}
                     sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      mb: 2,
+                      borderRadius: 3,
+                      p: 2.5,
+                      border:
+                        "1.5px solid color-mix(in srgb, var(--primary-teal-dark), transparent 70%)",
                     }}
                   >
                     <Box
                       sx={{
-                        bgcolor: "var(--ivory)",
-                        borderRadius: 2,
-                        p: 0.8,
                         display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 2,
                       }}
                     >
-                      <CalendarViewMonthOutlinedIcon
-                        sx={{ color: "var(--brown)", fontSize: 20 }}
-                      />
+                      <Box
+                        sx={{
+                          bgcolor: "var(--primary-teal-dark)",
+                          borderRadius: 2,
+                          p: 0.8,
+                          display: "flex",
+                        }}
+                      >
+                        <CalendarViewMonthOutlinedIcon
+                          sx={{ color: "var(--white)", fontSize: 20 }}
+                        />
+                      </Box>
+                      <Typography fontWeight={700} fontSize={15}>
+                        Order Summary
+                      </Typography>
                     </Box>
-                    <Typography fontWeight={700} fontSize={15}>
-                      Order Summary
-                    </Typography>
-                  </Box>
 
-                  <Divider sx={{ mb: 2 }} />
+                    <Divider sx={{ mb: 2 }} />
 
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      mb: 1.2,
-                    }}
-                  >
-                    <Typography fontSize={14} color="text.secondary">
-                      Subtotal
-                    </Typography>
-                    <Typography fontSize={14} fontWeight={500}>
-                      ₹{subtotal}.00
-                    </Typography>
-                  </Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      mb: 1.5,
-                    }}
-                  >
-                    <Typography fontSize={14} color="text.secondary">
-                      Delivery Charge
-                    </Typography>
-                    <Typography fontSize={14} fontWeight={700} color="#2E7D32">
-                      FREE
-                    </Typography>
-                  </Box>
-                  <Divider sx={{ borderStyle: "dashed", mb: 1.5 }} />
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      mb: 2.5,
-                    }}
-                  >
-                    <Typography fontSize={15} fontWeight={700}>
-                      Total Amount
-                    </Typography>
-                    <Typography
-                      fontSize={17}
-                      fontWeight={800}
-                      color="var(--brown)"
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 1.2,
+                      }}
                     >
-                      ₹{subtotal}.00
-                    </Typography>
-                  </Box>
+                      <Typography fontSize={14} color="text.secondary">
+                        Subtotal
+                      </Typography>
+                      <Typography fontSize={14} fontWeight={500}>
+                        ₹{subtotal}.00
+                      </Typography>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 1.5,
+                      }}
+                    >
+                      <Typography fontSize={14} color="text.secondary">
+                        Delivery Charge
+                      </Typography>
+                      <Typography
+                        fontSize={14}
+                        fontWeight={700}
+                        color="#2E7D32"
+                      >
+                        FREE
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ borderStyle: "dashed", mb: 1.5 }} />
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 2.5,
+                      }}
+                    >
+                      <Typography fontSize={15} fontWeight={700}>
+                        Total Amount
+                      </Typography>
+                      <Typography
+                        fontSize={17}
+                        fontWeight={800}
+                        color="var(--brown)"
+                      >
+                        ₹{subtotal}.00
+                      </Typography>
+                    </Box>
 
-                  {/* Place Order Button */}
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    startIcon={<LockOutlinedIcon />}
-                    sx={{
-                      bgcolor: "var(--brown)",
-                      "&:hover": { bgcolor: "#6e2f18" },
-                      py: 1.6,
-                      fontSize: 15,
-                      fontWeight: 700,
-                      borderRadius: 2.5,
-                      boxShadow: "0 4px 16px rgba(232,101,10,0.3)",
-                    }}
-                  >
-                    Place Order &amp; Pay
-                  </Button>
+                    {/* Place Order Button */}
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<LockOutlinedIcon />}
+                      sx={{
+                        bgcolor: "var(--primary-teal-dark)",
+                        "&:hover": { bgcolor: "var(--primary-teal-mid)" },
+                        py: 1.6,
+                        fontSize: 15,
+                        fontWeight: 700,
+                        borderRadius: 2.5,
+                        // boxShadow: "0 4px 16px var(--primary-teal-mid)",
+                      }}
+                    >
+                      Place Order &amp; Pay
+                    </Button>
 
-                  <Typography
-                    fontSize={12}
-                    color="text.secondary"
-                    textAlign="center"
-                    mt={1}
-                  >
-                    🔒 You will be redirected to Razorpay
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      gap: 0.5,
-                      mt: 0.5,
-                    }}
-                  >
-                    <VerifiedOutlinedIcon
-                      sx={{ color: "var(--green)", fontSize: 15 }}
-                    />
                     <Typography
                       fontSize={12}
-                      color="var(--green)"
-                      fontWeight={500}
+                      color="text.secondary"
+                      textAlign="center"
+                      mt={1}
                     >
-                      Secure Payments
+                      🔒 You will be redirected to Razorpay
                     </Typography>
-                  </Box>
-                </Paper>
-              </Stack>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        gap: 0.5,
+                        mt: 0.5,
+                      }}
+                    >
+                      <VerifiedOutlinedIcon
+                        sx={{ color: "var(--green)", fontSize: 15 }}
+                      />
+                      <Typography
+                        fontSize={12}
+                        color="var(--green)"
+                        fontWeight={500}
+                      >
+                        Secure Payments
+                      </Typography>
+                    </Box>
+                  </Paper>
+                </Stack>
+              </Grid>
             </Grid>
-          </Grid>
+          </Box>
 
           {/* Trust Badges */}
           <Paper
@@ -660,6 +713,8 @@ export default function CartCheckout() {
                     <Box
                       sx={{
                         bgcolor: "var(--ivory)",
+                        border:
+                          "1.5px solid color-mix(in srgb, var(--primary-maroon-mid), transparent 70%)",
                         borderRadius: 2,
                         p: 1,
                         display: "flex",
