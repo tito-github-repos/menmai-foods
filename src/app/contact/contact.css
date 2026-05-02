@@ -1,9 +1,9 @@
 .contact_icon {
-  background-color: color-mix(in srgb, var(--or), transparent 90%);
-  color: var(--brown);
+  background-color: var(--primary-teal-dark);
+  color: var(--white);
   width: 50px;
   height: 50px;
-  border-radius: 30%;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -20,58 +20,51 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  background: #fff;
+  background: color-mix(in srgb, var(--primary-teal-mid), transparent 90%);
   border-radius: 16px;
   padding: 18px 20px;
   box-shadow: 0 3px 16px rgba(92, 32, 8, 0.07);
   text-decoration: none;
   transition: transform 0.2s, box-shadow 0.2s;
   border: 1.5px solid transparent;
-  cursor: pointer;
 }
 
-.method-card:hover {
-  transform: translateX(6px);
-  box-shadow: 0 8px 28px rgba(92, 32, 8, 0.13);
-  border-color: rgba(232, 114, 12, 0.2);
-}
-
-/* TEXT */
 .mc-body {
   flex: 1;
 }
 
-.mc-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.mc-val {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--brown);
-  margin-top: 2px;
-}
-
-.mc-sub {
-  font-size: 0.78rem;
-  color: var(--muted);
-  margin-top: 2px;
-}
-
-/* ARROW */
 .mc-arrow {
-  color: var(--brown);
+  color: var(--primary-teal-dark);
   font-size: 1.1rem;
   opacity: 0;
   transform: translateX(-4px);
   transition: opacity 0.2s, transform 0.2s;
+  font-weight: 600;
 }
 
 .method-card:hover .mc-arrow {
   opacity: 1;
   transform: translateX(0);
+}
+
+/* MOBILE RESPONSIVE */
+@media (max-width: 600px) {
+  .method-card {
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 14px;
+  }
+
+  .contact_icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .mc-body h6 {
+    font-size: 0.95rem;
+  }
+
+  .mc-body p {
+    font-size: 0.82rem;
+  }
 }

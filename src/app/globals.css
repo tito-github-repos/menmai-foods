@@ -16,19 +16,19 @@
   --brown: #5C2008;
   --dbr: #3A1204;
   --green: #2E6B28;
-  --text: #2A1506;
+  --text: #000000;
   --muted: #8A6040;
   --white: #FFFFFF;
   --gray: #ffffffb3;
   --shadow: 0 8px 32px rgba(92, 32, 8, .12);
-  --primary-maroon-dark : #472112;
-  --primary-maroon-mid : #61220f;
-  --primary-maroon-light : #743f21;
-  --primary-teal-dark : #0c3d47;
-  --primary-teal-mid : #096171;
-  --font-main: 'Playfair Display',serif;
+  --primary-maroon-dark: #472112;
+  --primary-maroon-mid: #61220f;
+  --primary-maroon-light: #743f21;
+  --primary-teal-dark: #0c3d47;
+  --primary-teal-mid: #096171;
+  --font-main: 'Playfair Display', serif;
   --font-heading: 'Georgia', serif;
-  
+
 }
 
 /* @media (prefers-color-scheme: dark) {
