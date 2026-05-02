@@ -21,12 +21,13 @@
   --white: #FFFFFF;
   --gray: #ffffffb3;
   --shadow: 0 8px 32px rgba(92, 32, 8, .12);
-  --font-heading: 'Playfair Display', serif;
-  --primary-maroon-dark : "#472112";
-  --primary-maroon-mid : "#61220f";
-  --primary-maroon-light : "#743f21";
-  --primary-teal-dark : "#0c3d47";
-  --primary-teal-mid : "#096171";
+  --primary-maroon-dark : #472112;
+  --primary-maroon-mid : #61220f;
+  --primary-maroon-light : #743f21;
+  --primary-teal-dark : #0c3d47;
+  --primary-teal-mid : #096171;
+  --font-main: 'Playfair Display',serif;
+  --font-heading: 'Georgia', serif;
   
 }
 
@@ -53,7 +54,6 @@ body {
   flex-direction: column;
   color: var(--foreground);
   background: var(--background);
-  --font-heading: 'Playfair Display', serif;
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

@@ -190,7 +190,7 @@ export default function ProductPage() {
     <Box
       sx={{
         minHeight: "100vh",
-        background: `linear-gradient(160deg, ${BRAND_LIGHT} 0%, #f5e6d8 60%, #eddac8 100%)`,
+        // background: `linear-gradient(160deg, ${BRAND_LIGHT} 0%, #f5e6d8 60%, #eddac8 100%)`,
         fontFamily: "'Playfair Display', serif",
       }}
     >
