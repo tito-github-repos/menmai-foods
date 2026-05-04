@@ -180,7 +180,7 @@ const products = [
     img: "/img/products/chapathi.png",
     price: 40,
     oldPrice: 50,
-    weight: "50g",
+    weight: "450g",
     desc: "Soft homemade chapathi prepared fresh daily with traditional taste.",
     desc1: " Ready in 2 seconds",
   },
@@ -190,9 +190,9 @@ const products = [
     bg: "#F8F0E3",
     border: "#ecd8c7",
     img: "/img/products/poori.png",
-    price: 45,
-    oldPrice: 55,
-    weight: "50g",
+    price: 55,
+    oldPrice: 45,
+    weight: "500g",
     desc: "Fluffy and delicious poori made with hygienic ingredients for perfect taste.",
     desc1: " Ready in 2 seconds",
   },
@@ -229,7 +229,7 @@ const bulkFeatures = [
       </svg>
     ),
     title: "Special Bulk Pricing",
-    desc: "Save up to 30% on orders above 100 pieces. Volume discounts apply automatically.",
+    desc: "Save up to 10% on orders above 100 pieces. Volume discounts apply automatically.",
   },
   {
     icon: (
@@ -344,7 +344,7 @@ const whyItems = [
   { icon: <Heart />,   title: "Soft, Fresh & Tasty",           desc: "Just like homemade" },
   { icon: <Sparkle />, title: "Hygienically Prepared",         desc: "Packed with care and cleanliness" },
   { icon: <Clock />,   title: "Ready in 2 Minutes",            desc: "Heat & serve in no time" },
-  { icon: <MapPin />,  title: "Loved in Madurai",              desc: "Bringing freshness to your homes" },
+  { icon: <MapPin />,  title: "Loved my many",              desc: "Bringing freshness to your homes" },
 ];
 
 /* ─────────────────────────────────────────
@@ -644,20 +644,34 @@ export default function HomePage() {
                     Ready in 2 minutes
                   </Typography>
                 </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                
+              </Box>
+            </Box>
+
+            <Box>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke={isTeal ? "var(--primary-teal-mid)" : "var(--primary-maroon-mid)"}
                     strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 2h12l2 6H4L6 2z" /><rect x="3" y="8" width="18" height="13" rx="2" />
                   </svg>
                   <Typography sx={{ fontSize: 11, color: isTeal ? "var(--primary-teal-dark)" : "var(--primary-maroon-dark)", fontFamily: "var(--font-main)" }}>
-                    Net Wt. {product.weight}
+                    Net Wt. {product.weight}{" "}
+                    <Box
+                      component="span"
+                      sx={{
+                        fontSize: 9,
+                        opacity: 0.7,
+                        fontStyle: "italic",
+                        ml: 0.3,
+                      }}
+                    >
+                      (approx)
+                    </Box>
                   </Typography>
                 </Box>
-              </Box>
-            </Box>
 
-            <Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                 <Typography sx={{ fontSize: 13, color: isTeal ? "var(--primary-teal-dark)" : "var(--primary-maroon-dark)", fontFamily: "var(--font-main)" }}>
                   MRP:
@@ -673,9 +687,7 @@ export default function HomePage() {
                 </Typography>
               </Box>
 
-              <Typography sx={{ fontSize: 12, color: isTeal ? "var(--primary-teal-mid)" : "var(--primary-maroon-mid)", fontFamily: "var(--font-main)", mt: 0.3 }}>
-                Net Wt: {product.weight}
-              </Typography>
+              
 
               <Box sx={{
                 borderTop: "1.5px dashed",
@@ -906,7 +918,7 @@ export default function HomePage() {
                     Perfect for office lunches, temple functions, weddings, and school
                     events. We handle orders of{" "}
                     <Box component="span" sx={{ fontWeight: 700, color: "#7a2e14" }}>
-                      50 pieces to 5,000+
+                      500 pieces to 5,000+
                     </Box>{" "}
                     with the same freshness guarantee.
                   </Typography>
@@ -1066,7 +1078,7 @@ export default function HomePage() {
                     Request Sent!
                   </Typography>
                   <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 14, color: "#9a6a50", lineHeight: 1.6, maxWidth: 260 }}>
-                    We'll contact you within 2 hours to confirm your bulk order details.
+                    We'll contact you to confirm your bulk order details as soon as possible.
                   </Typography>
                   <Button
                     onClick={() => setBulkSubmitted(false)}
@@ -1099,7 +1111,7 @@ export default function HomePage() {
                       Request a Bulk Quote
                     </Typography>
                     <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 13, color: "rgba(253,246,236,0.7)" }}>
-                      Fill in the details and we'll contact you within 2 hours.
+                      Fill in the details and we'll contact you as soons as possible.
                     </Typography>
                   </Box>
 
@@ -1525,4 +1537,3 @@ export default function HomePage() {
     </>
   );
 }
-
