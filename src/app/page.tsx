@@ -344,7 +344,7 @@ const whyItems = [
   { icon: <Heart />,   title: "Soft, Fresh & Tasty",           desc: "Just like homemade" },
   { icon: <Sparkle />, title: "Hygienically Prepared",         desc: "Packed with care and cleanliness" },
   { icon: <Clock />,   title: "Ready in 2 Minutes",            desc: "Heat & serve in no time" },
-  { icon: <MapPin />,  title: "Loved my many",              desc: "Bringing freshness to your homes" },
+  { icon: <MapPin />,  title: "Loved by many",              desc: "Bringing freshness to your homes" },
 ];
 
 /* ─────────────────────────────────────────
@@ -1532,7 +1532,8 @@ export default function HomePage() {
 <CertifiedQualitySection/>
 <DeliverySection/>
 <CustomerReviewsSection/>
-        
+
+      
       </Box>
     </>
   );
