@@ -3,6 +3,7 @@ import "./globals.css";
 import ThemeRegistry from "./ThemeRegistry";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import FloatingContact from "./components/FloatingContact";
 
 export const metadata: Metadata = {
   title: "Menmai",
@@ -31,6 +32,7 @@ export default function RootLayout({
         <ThemeRegistry>
           <Header />
           {children}
+          <FloatingContact />
           <Footer />
         </ThemeRegistry>
       </body>
