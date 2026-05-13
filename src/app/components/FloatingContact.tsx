@@ -95,7 +95,7 @@ const FloatingContact: React.FC = () => {
         onMouseLeave={() => setHovered(null)}
         sx={{
           ...commonBtn,
-          backgroundColor: "var(--primary-teal-mid)",
+          backgroundColor: "var(--primary-teal-dark)",
           width: hovered === "call" ? 150 : 50, 
           pl: 0.75,
         }}
