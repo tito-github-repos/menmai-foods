@@ -1,16 +1,8 @@
 "use client";
 
-import {
-  Box,
-  Container,
-  Grid,
-  Typography,
-  Button,
-  Divider,
-} from "@mui/material";
+import { Box, Container, Grid, Typography, Button } from "@mui/material";
 import { motion } from "framer-motion";
 import "./contact.css";
-import Link from "next/link";
 
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
@@ -171,102 +163,207 @@ export default function ContactPage() {
           position: "relative",
           overflow: "hidden",
           backgroundColor: "#f7f6f3",
+
+          // Background image for mobile & tablet
+          backgroundImage: {
+            xs: "linear-gradient(rgba(247,246,243,0.90), rgba(247,246,243,0.90)), url('/img/contact/bg.png')",
+            md: "none",
+          },
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
         }}
       >
-        <Container maxWidth="lg" disableGutters sx={{ mr: 0, pr: 0 }}>
+        <Box
+          sx={{
+            width: "100%",
+            maxWidth: "1600px",
+            mx: "auto",
+            px: {
+              xs: 2,
+              sm: 4,
+              md: 6,
+              xl: 10,
+            },
+            pl: { lg: 8 },
+            pr: { lg: 0 },
+            position: "relative",
+            zIndex: 2,
+          }}
+        >
           <Grid container spacing={6} alignItems="center">
             {/* LEFT CONTENT */}
             <Grid item xs={12} md={6}>
-              <Box sx={{ position: "relative", zIndex: 1 }}>
+              <motion.div {...zoomIn(0.1)}>
                 <Box
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    mb: 1,
+                    position: "relative",
+                    zIndex: 2,
+                    py: { xs: 8, sm: 10, md: 6 },
+                    pl: { md: 2 },
+                    pr: { md: 4 },
                   }}
                 >
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      fontSize: ".74rem",
-                      fontWeight: 500,
-                      letterSpacing: ".14em",
-                      textTransform: "uppercase",
-                      color: "var(--primary-teal-dark)",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    Get in Touch
-                  </Typography>
                   <Box
                     sx={{
-                      width: 35,
-                      height: 32,
-                      backgroundColor: "var(--green)",
-                      mask: "url('/plant.png') no-repeat center / contain",
-                      WebkitMask:
-                        "url('/plant.png') no-repeat center / contain",
-                      opacity: 0.7,
-                      zIndex: 100,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1,
                     }}
-                  />
+                  >
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontSize: ".74rem",
+                        fontWeight: 500,
+                        letterSpacing: ".14em",
+                        textTransform: "uppercase",
+                        color: "var(--primary-teal-dark)",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Get in Touch
+                    </Typography>
+                    <Box
+                      sx={{
+                        width: 35,
+                        height: 32,
+                        backgroundColor: "var(--green)",
+                        mask: "url('/plant.png') no-repeat center / contain",
+                        WebkitMask:
+                          "url('/plant.png') no-repeat center / contain",
+                        opacity: 0.7,
+                        zIndex: 100,
+                      }}
+                    />
+                  </Box>
+
+                  <Typography
+                    sx={{
+                      fontSize: { xs: "1.9rem", md: "2.5rem" },
+                      fontWeight: 700,
+                      fontFamily: "var(--font-heading)",
+                      color: "var(--primary-maroon-dark)",
+                      lineHeight: 1.25,
+                      mb: 2,
+                    }}
+                  >
+                    We would Love to Hear From You
+                  </Typography>
+
+                  <Typography
+                    sx={{
+                      fontSize: "1rem",
+                      color: "var(--text)",
+                      lineHeight: 1.7,
+                      mb: 3,
+                      maxWidth: 520,
+                    }}
+                  >
+                    Your opinion counts! Write to us with your feedback at{" "}
+                    <Box
+                      component="span"
+                      sx={{
+                        color: "var(--primary-maroon-dark)",
+                        fontWeight: 600,
+                      }}
+                    >
+                      menmaifoodsmdu@gmail.com
+                    </Box>
+                    . We will be happy to address all your queries and
+                    suggestions.
+                    <br />
+                    {/* <br /> */}
+                    Want to know more about us and didn’t know whom to ask? Call
+                    us on{" "}
+                    <Box
+                      component="span"
+                      sx={{
+                        color: "var(--primary-maroon-dark)",
+                        fontWeight: 600,
+                      }}
+                    >
+                      +91 9894777825
+                    </Box>{" "}
+                    to connect with Menmai Foods.
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 2,
+                      mt: 2,
+                    }}
+                  >
+                    {/* EMAIL BUTTON */}
+                    <Button
+                      component="a"
+                      href="mailto:menmaifoodsmdu@gmail.com"
+                      variant="contained"
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 500,
+                        px: 3,
+                        py: 1.2,
+                        borderRadius: "16px",
+                        background: "var(--primary-teal-dark)",
+                        boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+
+                        "& .arrow-icon": {
+                          ml: 1,
+                          transition: "transform 0.3s ease",
+                        },
+
+                        "&:hover": {
+                          background: "var(--primary-teal-mid)",
+                        },
+
+                        "&:hover .arrow-icon": {
+                          transform: "translateX(6px)",
+                        },
+                      }}
+                    >
+                      Send Us a Mail
+                      <ArrowRightAltOutlinedIcon className="arrow-icon" />
+                    </Button>
+
+                    {/* CALL BUTTON */}
+                    <Button
+                      component="a"
+                      href="tel:+919894777825"
+                      variant="outlined"
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 500,
+                        px: 3,
+                        py: 1.2,
+                        borderRadius: "16px",
+                        color: "var(--primary-teal-dark)",
+                        borderColor: "var(--primary-teal-dark)",
+
+                        "& .arrow-icon": {
+                          ml: 1,
+                          transition: "transform 0.3s ease",
+                        },
+
+                        "&:hover": {
+                          background: "var(--primary-teal-mid)",
+                          color: "var(--white)",
+                          borderColor: "var(--primary-teal-mid)",
+                        },
+
+                        "&:hover .arrow-icon": {
+                          transform: "translateX(6px)",
+                        },
+                      }}
+                    >
+                      Call Us Now
+                    </Button>
+                  </Box>
                 </Box>
-
-                <Typography
-                  sx={{
-                    fontSize: { xs: "1.9rem", md: "2.5rem" },
-                    fontWeight: 700,
-                    fontFamily: "var(--font-heading)",
-                    color: "var(--primary-maroon-dark)",
-                    lineHeight: 1.25,
-                    mb: 2,
-                  }}
-                >
-                  We would Love to Hear From You
-                </Typography>
-
-                <Typography
-                  sx={{
-                    fontSize: "1rem",
-                    color: "var(--text)",
-                    lineHeight: 1.7,
-                    mb: 3,
-                    maxWidth: 480,
-                  }}
-                >
-                  For enquiries about orders, bulk orders, or delivery, feel
-                  free to contact us anytime.
-                </Typography>
-
-                <Button
-                  component={Link}
-                  href="/"
-                  variant="contained"
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 500,
-                    px: 3,
-                    py: 1.2,
-                    borderRadius: "16px",
-                    background: "var(--primary-teal-dark)",
-                    boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-                    "& .arrow-icon": {
-                      ml: 1,
-                      transition: "transform 0.3s ease",
-                    },
-                    "&:hover": {
-                      background: "var(--primary-teal-mid)",
-                    },
-                    "&:hover .arrow-icon": {
-                      transform: "translateX(6px)",
-                    },
-                  }}
-                >
-                  Send Us a Message
-                  <ArrowRightAltOutlinedIcon className="arrow-icon" />
-                </Button>
-              </Box>
+              </motion.div>
             </Grid>
 
             {/* RIGHT IMAGE */}
@@ -275,44 +372,36 @@ export default function ContactPage() {
               xs={12}
               md={6}
               sx={{
-                display: "flex",
-                justifyContent: { xs: "center", md: "flex-end" },
-                alignItems: "stretch",
-                pr: 0,
-                mt: 0,
-                mb: 0,
-                maxHeight: "420px",
+                display: { xs: "none", md: "flex" },
+                justifyContent: "flex-end",
+                alignItems: "center",
               }}
             >
-              <Box
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  justifyContent: { xs: "center", md: "flex-end" },
-                  alignItems: "stretch",
-                  m: 0,
-                  p: 0,
-                }}
-              >
+              <motion.div {...zoomIn(0.3)}>
                 <Box
-                  component="img"
-                  src="/img/contact/bg2.png"
-                  alt="Fresh Food"
                   sx={{
-                    maxHeight: "355px",
-                    width: { xs: "90%", md: "100%" },
-                    height: { xs: "100%", md: "100%" },
-                    objectFit: "cover",
-                    display: "block",
-                    m: 0,
-                    p: 0,
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "flex-end",
                   }}
-                />
-              </Box>
+                >
+                  <Box
+                    component="img"
+                    src="/img/contact/bg2.png"
+                    alt="Fresh Food"
+                    sx={{
+                      width: "100%",
+                      maxWidth: "650px",
+                      height: "445px",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                  />
+                </Box>
+              </motion.div>
             </Grid>
           </Grid>
-        </Container>
+        </Box>
       </Box>
 
       <Container maxWidth="lg">
@@ -371,12 +460,27 @@ export default function ContactPage() {
                           Phone
                         </Typography>
 
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "var(--text)" }}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 0.5,
+                          }}
                         >
-                          +91 9894777825
-                        </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "var(--text)" }}
+                          >
+                            +91 9894777825
+                          </Typography>
+
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "var(--text)" }}
+                          >
+                            +91 9443214888
+                          </Typography>
+                        </Box>
                       </Box>
                     </div>
                   </div>
@@ -455,7 +559,7 @@ export default function ContactPage() {
                 <Box
                   sx={{
                     width: "100%",
-                    height: { xs: 300, sm: 300, md: 465 },
+                    height: { xs: 300, sm: 300, md: 490 },
                     borderRadius: "18px",
                     overflow: "hidden",
                     boxShadow: "var(--shadow)",
@@ -464,7 +568,7 @@ export default function ContactPage() {
                   }}
                 >
                   <iframe
-                    src="https://www.google.com/maps?q=Vadivel+Nagar,Nagamalai+Pudukottai,Madurai,625019&output=embed"
+                    src="https://www.google.com/maps?q=Menmai+Foods+4/417+Vadivel+Nagar+Nagamalai+Pudukottai+625019&z=17&output=embed"
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
@@ -480,7 +584,7 @@ export default function ContactPage() {
         </Box>
 
         {/* Bulk Order */}
-        <motion.div {...zoomIn(0.2)}>
+        <motion.div {...zoomIn(0.1)}>
           <Box
             sx={{
               ...patternOverlay,
@@ -490,9 +594,9 @@ export default function ContactPage() {
               background: "rgba(248, 241, 230)",
               color: "var(--primary-teal-dark)",
               display: "flex",
-              flexDirection: { xs: "column", sm: "column", md: "row" },
-              alignItems: { xs: "center", md: "center" },
-              textAlign: { xs: "center", md: "left" },
+              flexDirection: { xs: "column", sm: "row", md: "row" }, // updated
+              alignItems: "center",
+              textAlign: { xs: "center", sm: "left", md: "left" },
               gap: { xs: 3, md: 3 },
               position: "relative",
               overflow: "hidden",
@@ -507,11 +611,11 @@ export default function ContactPage() {
                 background: "var(--primary-teal-dark)",
                 outline:
                   "5px solid color-mix(in srgb, var(--primary-teal-dark), transparent 70%)",
-                display: { xs: "none", md: "flex" },
+                display: { xs: "none", sm: "flex" }, // updated
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
-                mx: { xs: "auto", md: 0 },
+                mx: { xs: "auto", sm: 0 },
               }}
             >
               <Box
@@ -533,7 +637,7 @@ export default function ContactPage() {
                 width: "100%",
                 display: "flex",
                 flexDirection: "column",
-                alignItems: { xs: "center", md: "flex-start" },
+                alignItems: { xs: "center", sm: "flex-start" }, // updated
               }}
             >
               <Typography
@@ -578,7 +682,7 @@ export default function ContactPage() {
                 whiteSpace: "nowrap",
                 width: { xs: "100%", sm: "auto" },
                 maxWidth: { xs: "260px", sm: "none" },
-                mx: { xs: "auto", md: 0 },
+                mx: { xs: "auto", sm: 0 },
                 "&:hover": {
                   backgroundColor: "var(--primary-teal-mid)",
                   color: "var(--white)",
@@ -638,25 +742,29 @@ export default function ContactPage() {
 
           <Grid container spacing={6}>
             <Grid item xs={12} md={6}>
-              <InfoCard
-                title="Quick Support"
-                description="We’re here to provide fast, helpful assistance for your orders, product enquiries, and delivery needs whenever you need us."
-                image="/img/contact/helpicon.png"
-                color={{
-                  main: "var(--primary-teal-dark)",
-                }}
-              />
+              <motion.div {...fadeRight(0.1)}>
+                <InfoCard
+                  title="Quick Support"
+                  description="We’re here to provide fast, helpful assistance for your orders, product enquiries, and delivery needs whenever you need us."
+                  image="/img/contact/helpicon.png"
+                  color={{
+                    main: "var(--primary-teal-dark)",
+                  }}
+                />
+              </motion.div>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <InfoCard
-                title="Reliable Service"
-                description="From fresh preparation to on-time delivery, we are committed to offering dependable service and trusted quality every time."
-                image="/img/contact/handsakeicon.png"
-                color={{
-                  main: "var(--primary-teal-dark)",
-                }}
-              />
+              <motion.div {...fadeLeft(0.3)}>
+                <InfoCard
+                  title="Reliable Service"
+                  description="From fresh preparation to on-time delivery, we are committed to offering dependable service and trusted quality every time."
+                  image="/img/contact/handsakeicon.png"
+                  color={{
+                    main: "var(--primary-teal-dark)",
+                  }}
+                />
+              </motion.div>
             </Grid>
           </Grid>
         </Box>

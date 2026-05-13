@@ -22,7 +22,7 @@ export default function Footer() {
     <Box sx={{ backgroundColor: "var(--primary-maroon-dark)" }}>
       <Container sx={{ py: 6 }}>
         <Grid container spacing={4}>
-          <Grid item xs={12} md={5}>
+          <Grid item xs={12} sm={7} md={5}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
               <Image src="/logo.jpeg" alt="Logo" width={100} height={70} />
             </Box>
@@ -50,7 +50,7 @@ export default function Footer() {
             </Box>
           </Grid>
 
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} sm={5} md={3}>
             <Typography variant="body1" sx={{ mb: 2, color: "var(--glt)" }}>
               Quick Links
             </Typography>
@@ -131,7 +131,7 @@ export default function Footer() {
             </Box>
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} sm={12} md={4}>
             <Typography variant="body1" sx={{ mb: 2, color: "var(--glt)" }}>
               Contact
             </Typography>
@@ -149,27 +149,26 @@ export default function Footer() {
                 </Typography>
               </Box>
 
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box
-                  component="a"
-                  href="tel:9894777825"
-                  className="icon-container"
-                >
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                <Box className="icon-container">
                   <LocalPhoneOutlinedIcon
                     sx={{ fontSize: 18, color: "var(--glt)" }}
                   />
                 </Box>
-                <Typography variant="body2" sx={{ color: "var(--ivory)" }}>
-                  +91 9894777825
-                </Typography>
+
+                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  <Typography variant="body2" sx={{ color: "var(--ivory)" }}>
+                    +91 9894777825
+                  </Typography>
+
+                  <Typography variant="body2" sx={{ color: "var(--ivory)" }}>
+                    +91 9443214888
+                  </Typography>
+                </Box>
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box
-                  component="a"
-                  href="mailto:menmaifoodsmdu@gmail.com"
-                  className="icon-container"
-                >
+                <Box className="icon-container">
                   <EmailOutlinedIcon
                     sx={{ fontSize: 18, color: "var(--glt)" }}
                   />
