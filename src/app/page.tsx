@@ -177,7 +177,7 @@ const products = [
     color: "var(--primary-teal-mid)",
     bg: "#F5F3EC",
     border: "#e4dfcf",
-    img: "/img/products/chapathi.png",
+    img: "/img/products/chapathi_main.png",
     price: 40,
     oldPrice: 50,
     weight: "450g",
@@ -189,7 +189,7 @@ const products = [
     color: "var(--primary-maroon-mid)",
     bg: "#F8F0E3",
     border: "#ecd8c7",
-    img: "/img/products/poori.png",
+    img: "/img/products/poori_main.png",
     price: 55,
     oldPrice: 45,
     weight: "500g",
@@ -1108,7 +1108,7 @@ export default function HomePage() {
                     }}
                   >
                     <Typography sx={{ fontFamily: "'Georgia', serif", fontWeight: 700, fontSize: 21, color: "#fdf6ec", mb: 0.5 }}>
-                      Request a Bulk Quote
+                      Send an Enquiry
                     </Typography>
                     <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 13, color: "rgba(253,246,236,0.7)" }}>
                       Fill in the details and we'll contact you as soons as possible.
@@ -1220,7 +1220,7 @@ export default function HomePage() {
                     </Box>
 
                     {/* Product */}
-                    <Box>
+                    {/* <Box>
                       <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.7 }}>
                         Product Required
                       </Typography>
@@ -1250,7 +1250,7 @@ export default function HomePage() {
                           </Box>
                         ))}
                       </Box>
-                    </Box>
+                    </Box> */}
                     <Box
                       sx={{
                         display: "grid",
@@ -1259,7 +1259,7 @@ export default function HomePage() {
                       }}
                     >
                     {/* Quantity */}
-                    <Box>
+                    {/* <Box>
                       <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.7 }}>
                         Quantity (pieces)
                       </Typography>
@@ -1271,10 +1271,10 @@ export default function HomePage() {
                         value={bulkForm.quantity}
                         onChange={setField("quantity")}
                       />
-                    </Box>
+                    </Box> */}
 
                     {/* Delivery Date */}
-                    <Box>
+                    {/* <Box>
                       <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.7 }}>
                         Delivery Date
                       </Typography>
@@ -1284,7 +1284,7 @@ export default function HomePage() {
                         value={bulkForm.deliveryDate}
                         onChange={setField("deliveryDate")}
                       />
-                    </Box>
+                    </Box> */}
                     </Box>
                     {/* Notes */}
                     <Box>

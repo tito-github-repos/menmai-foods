@@ -53,6 +53,7 @@ import AddIcon from "@mui/icons-material/Add";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 
 /* ════════════════════════════════════════
    ANIMATION HELPERS
@@ -88,8 +89,8 @@ const zoomIn = (delay = 0) => ({
 const UNIT_PRICE = 2.5; // ₹ per piece — adjust as needed
 
 const ALL_PRODUCTS = [
-  { name: "Chapathi", image: "/img/products/chapathi-thumb.png" },
-  { name: "Poori",    image: "/img/products/poori-thumb.png"    },
+  { name: "Chapathi", image: "/img/products/chapathi_main.png" },
+  { name: "Poori",    image: "/img/products/poori_main.png"    },
 ];
 
 // Bulk discount tiers
@@ -248,6 +249,18 @@ export default function BulkOrderPage() {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
+  /* State */
+  const [bulkOrderSubmitted, setBulkOrderSubmitted] = useState(false);
+
+  /* Handler */
+  const handleBulkOrderSubmit = () => {
+    // Integrate API / backend submission here
+    setBulkOrderSubmitted(true);
+
+    setTimeout(() => {
+      setBulkOrderSubmitted(false);
+    }, 2500);
+  };
 
   return (
     <Box sx={{ pb: 10 }}>
@@ -751,10 +764,17 @@ export default function BulkOrderPage() {
                       {/* Totals */}
                       <Box sx={{ px: 2, py: 1.5, borderTop: "1.5px solid rgba(0,0,0,0.07)", backgroundColor: "rgba(0,0,0,0.015)" }}>
                         {[
-                          { label: "Subtotal", value: pricing.subtotal > 0 ? `fmt(pricing.subtotal)` : "–" },
+                          {
+                            label: "Subtotal",
+                            value: pricing.subtotal > 0
+                              ? `₹ ${fmt(pricing.subtotal)}`
+                              : "–",
+                          },
                           {
                             label: `Bulk Discount (${Math.round(pricing.discountRate * 100)}%)`,
-                            value: pricing.discountAmt > 0 ? `– ${fmt(pricing.discountAmt)}` : "–",
+                            value: pricing.discountAmt > 0
+                              ? `– ₹ ${fmt(pricing.discountAmt)}`
+                              : "–",
                             accent: true,
                           },
                         ].map((r) => (
@@ -820,6 +840,47 @@ export default function BulkOrderPage() {
                   {/* Action buttons after submit */}
                   {submitted && (
                     <Box sx={{ display: "flex", gap: 1.5, mt: 1, flexWrap: "wrap" }}>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={
+                          bulkOrderSubmitted
+                            ? <TaskAltIcon />
+                            : <ShoppingCartOutlinedIcon />
+                        }
+                        onClick={handleBulkOrderSubmit}
+                        disabled={!pricing.allFilled}
+                        sx={{
+                          backgroundColor: bulkOrderSubmitted
+                            ? "var(--primary-teal-dark)"
+                            : "var(--primary-maroon-dark)",
+                          color: "#fff",
+                          fontWeight: 700,
+                          fontSize: ".9rem",
+                          py: 1.3,
+                          borderRadius: "10px",
+                          textTransform: "none",
+                          boxShadow: "0 4px 16px rgba(0,0,0,0.14)",
+                          transition: "all 0.25s ease",
+
+                          "&:hover": {
+                            backgroundColor: bulkOrderSubmitted
+                              ? "var(--primary-teal-dark)"
+                              : "color-mix(in srgb, var(--primary-maroon-dark), black 12%)",
+                            transform: "translateY(-1px)",
+                            boxShadow: "0 8px 22px rgba(0,0,0,0.18)",
+                          },
+
+                          "&.Mui-disabled": {
+                            backgroundColor: "rgba(0,0,0,0.1)",
+                            color: "rgba(0,0,0,0.35)",
+                          },
+                        }}
+                      >
+                        {bulkOrderSubmitted
+                          ? "Bulk Order Submitted!"
+                          : "Submit Bulk Order"}
+                      </Button>
                       <Button variant="outlined" startIcon={<FileDownloadOutlinedIcon />}
                         sx={{
                           flex: 1, textTransform: "none", fontWeight: 600, fontSize: ".82rem",
@@ -888,7 +949,7 @@ export default function BulkOrderPage() {
 
             <Grid container spacing={2} justifyContent="center">
               {WHY_CHOOSE.map((item, idx) => (
-                <Grid item xs={6} sm={4} md={2.4} key={idx}>
+                <Grid item xs={6} sm={4} md={2} key={idx}>
                   <motion.div {...fadeUp(idx * 0.08)}>
                     <Box sx={{
                       display: "flex", flexDirection: "column", alignItems: "center",
