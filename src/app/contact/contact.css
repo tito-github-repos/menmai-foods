@@ -1,9 +1,9 @@
 .contact_icon {
-  background-color: var(--primary-teal-dark);
-  color: var(--white);
+  background-color: color-mix(in srgb, var(--primary-teal-dark), transparent 90%);
+  color: var(--primary-teal-dark);
   width: 50px;
   height: 50px;
-  border-radius: 50%;
+  border-radius: 20%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -20,17 +20,31 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  background: color-mix(in srgb, var(--primary-teal-mid), transparent 90%);
   border-radius: 16px;
   padding: 18px 20px;
-  box-shadow: 0 3px 16px rgba(92, 32, 8, 0.07);
   text-decoration: none;
   transition: transform 0.2s, box-shadow 0.2s;
-  border: 1.5px solid transparent;
+  border: 1.5px solid rgba(0, 0, 0, 0.06);
+}
+
+.method-card:hover {
+  box-shadow: 0 8px 24px rgba(12, 61, 71, 0.1);
+  transform: translateY(-3px);
 }
 
 .mc-body {
   flex: 1;
+  /* Prevent text from overflowing on small screens */
+  min-width: 0;
+}
+
+.mc-body h6 {
+  /* Prevent long words from breaking layout */
+  word-break: break-word;
+}
+
+.mc-body p {
+  word-break: break-word;
 }
 
 .mc-arrow {
@@ -40,6 +54,8 @@
   transform: translateX(-4px);
   transition: opacity 0.2s, transform 0.2s;
   font-weight: 600;
+  /* Don't shrink the arrow on small screens */
+  flex-shrink: 0;
 }
 
 .method-card:hover .mc-arrow {
@@ -47,17 +63,34 @@
   transform: translateX(0);
 }
 
-/* MOBILE RESPONSIVE */
+/* ── TABLET (601px – 900px) ── */
+@media (max-width: 900px) and (min-width: 601px) {
+  .method-card {
+    padding: 16px 18px;
+    gap: 14px;
+  }
+}
+
+/* ── MOBILE (≤ 600px) ── */
 @media (max-width: 600px) {
+  .method-cards {
+    gap: 10px;
+  }
+
   .method-card {
     flex-direction: row;
     align-items: flex-start;
-    padding: 14px;
+    padding: 14px 12px;
+    gap: 12px;
+    border-radius: 14px;
   }
 
   .contact_icon {
     width: 42px;
     height: 42px;
+    border-radius: 12px;
+    /* Keep icon aligned to first line of text */
+    margin-top: 2px;
   }
 
   .mc-body h6 {
@@ -66,5 +99,33 @@
 
   .mc-body p {
     font-size: 0.82rem;
+  }
+
+  /* Hide the hover arrow on touch devices */
+  .mc-arrow {
+    display: none;
+  }
+}
+
+/* ── VERY SMALL MOBILE (≤ 400px) ── */
+@media (max-width: 400px) {
+  .method-card {
+    padding: 12px 10px;
+    gap: 10px;
+    border-radius: 12px;
+  }
+
+  .contact_icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .mc-body h6 {
+    font-size: 0.98rem;
+  }
+
+  .mc-body p {
+    font-size: 0.78rem;
   }
 }
