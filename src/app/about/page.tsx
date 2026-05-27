@@ -209,7 +209,7 @@ const InfoCard = ({
       sx={{
         display: "flex",
         alignItems: "center",
-        gap: { xs: 2.5, md: 3.5 },
+        gap: { xs: 2, sm: 2.5, md: 3.5 },
       }}
     >
       {/* Image */}
@@ -218,8 +218,8 @@ const InfoCard = ({
         src={image}
         alt={title}
         sx={{
-          width: { xs: 110, sm: 130, md: 150 },
-          height: { xs: 110, sm: 130, md: 150 },
+          width: { xs: 90, sm: 130, md: 150 },
+          height: { xs: 90, sm: 130, md: 150 },
           objectFit: "cover",
           flexShrink: 0,
         }}
@@ -233,7 +233,7 @@ const InfoCard = ({
           color={color.main}
           mb={1}
           sx={{
-            fontSize: { xs: "1.3rem", md: "1.55rem" },
+            fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.55rem" },
             fontFamily: "var(--font-heading)",
           }}
         >
@@ -244,7 +244,7 @@ const InfoCard = ({
           variant="body2"
           color="var(--text)"
           sx={{
-            fontSize: { xs: ".92rem", md: "1rem" },
+            fontSize: { xs: ".85rem", sm: ".92rem", md: "1rem" },
             lineHeight: 1.7,
           }}
         >
@@ -265,7 +265,7 @@ const InfoCard = ({
           sx={{
             fontStyle: "italic",
             color: color.quote,
-            fontSize: { xs: ".9rem", md: ".96rem" },
+            fontSize: { xs: ".85rem", sm: ".9rem", md: ".96rem" },
             fontWeight: 500,
             lineHeight: 1.6,
             fontFamily: "var(--font-heading)",
@@ -280,53 +280,40 @@ const InfoCard = ({
 
 export default function AboutPage() {
   return (
-    <Box sx={{ pb: 8 }}>
+    <Box
+    // sx={{ pb: 8 }}
+    >
       <Box
         sx={{
           position: "relative",
           overflow: "hidden",
-          backgroundColor: "#f9f7f5",
+          backgroundColor: "#f7f6f3",
 
-          // Background image for mobile & tablet
+          /* Background image for mobile & tablet */
           backgroundImage: {
-            xs: "linear-gradient(rgba(247,246,243,0.90), rgba(247,246,243,0.90)), url('/img/about/bg2.png')",
-            md: "none",
+            xs: "linear-gradient(rgba(247,246,243,0.90), rgba(247,246,243,0.90)), url('/img/about/bg.png')",
+            md: "url('/img/about/bg-desk.png')",
           },
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
         }}
       >
-        <Box
-          sx={{
-            width: "100%",
-            maxWidth: "1600px",
-            mx: "auto",
-            px: {
-              xs: 2,
-              sm: 4,
-              md: 6,
-              xl: 10,
-            },
-            pl: { lg: 8 },
-            pr: { lg: 0 },
-            position: "relative",
-            zIndex: 2,
-          }}
-        >
+        <Container>
           <Grid container spacing={6} alignItems="center">
             {/* LEFT CONTENT */}
             <Grid item xs={12} md={6}>
-              <motion.div {...zoomIn(0.1)}>
-                <Box
-                  sx={{
-                    position: "relative",
-                    zIndex: 2,
-                    py: { xs: 8, sm: 10, md: 6 },
-                    pl: { md: 2 },
-                    pr: { md: 4 },
-                  }}
-                >
+              <Box
+                sx={{
+                  position: "relative",
+                  zIndex: 2,
+                  py: { xs: 6, sm: 8, md: 6 },
+                  pl: { md: 2 },
+                  pr: { md: 4 },
+                }}
+              >
+                {/* TOP LABEL */}
+                <motion.div {...fadeUp(0.1)}>
                   <Box
                     sx={{
                       display: "flex",
@@ -348,6 +335,7 @@ export default function AboutPage() {
                     >
                       About Menmai Foods
                     </Typography>
+
                     <Box
                       sx={{
                         width: 35,
@@ -361,45 +349,101 @@ export default function AboutPage() {
                       }}
                     />
                   </Box>
+                </motion.div>
 
+                {/* HEADING */}
+                <motion.div {...fadeUp(0.2)}>
                   <Typography
                     sx={{
-                      fontSize: { xs: "1.9rem", md: "2.5rem" },
+                      fontSize: { xs: "1.55rem", sm: "1.9rem", md: "2.6rem" },
                       fontWeight: 700,
                       fontFamily: "var(--font-heading)",
                       color: "var(--primary-maroon-dark)",
                       lineHeight: 1.25,
-                      mb: 2,
+                      mb: 1.5,
                     }}
                   >
-                    Bringing Freshness to Every Home
+                    Bringing{" "}
+                    <Box component="span" sx={{ color: "var(--green)" }}>
+                      Freshness
+                    </Box>{" "}
+                    to Every{" "}
+                    <Box component="span" sx={{ color: "var(--or)" }}>
+                      Home
+                    </Box>{" "}
                   </Typography>
+                </motion.div>
 
+                <motion.div {...fadeUp(0.3)}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1.5,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 28,
+                        height: 2,
+                        backgroundColor: "var(--or)",
+                        borderRadius: 1,
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        backgroundColor: "var(--or)",
+                        mask: "url('/grain-wheat-icon.svg') no-repeat center / contain",
+                        WebkitMask:
+                          "url('/grain-wheat-icon.svg') no-repeat center / contain",
+                        opacity: 0.75,
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        width: 28,
+                        height: 2,
+                        backgroundColor: "var(--or)",
+                        borderRadius: 1,
+                      }}
+                    />
+                  </Box>
+                </motion.div>
+
+                {/* SUBTEXT */}
+                <motion.div {...fadeUp(0.4)}>
                   <Typography
                     sx={{
-                      fontSize: "1rem",
+                      fontSize: { xs: ".9rem", sm: "1rem" },
                       color: "var(--text)",
                       lineHeight: 1.7,
                       mb: 3,
-                      maxWidth: 480,
+                      maxWidth: 520,
                     }}
                   >
                     From our kitchen to yours — we make everyday meals easier,
-                    healthier, and more delicious.
+                    healthier, and more delicious with fresh, hygienic,
+                    ready-to-eat food crafted for your family.
                   </Typography>
+                </motion.div>
 
+                <motion.div {...fadeUp(0.5)}>
+                  {/* BUTTON */}
                   <Button
                     component={Link}
-                    href="/"
+                    href="/products"
                     variant="contained"
                     sx={{
                       textTransform: "none",
-                      fontWeight: 500,
-                      px: 3,
-                      py: 1.2,
+                      fontWeight: 600,
+                      px: 4,
+                      py: 1.4,
                       borderRadius: "16px",
                       background: "var(--primary-teal-dark)",
-                      boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
                       "& .arrow-icon": {
                         ml: 1,
                         transition: "transform 0.3s ease",
@@ -412,55 +456,19 @@ export default function AboutPage() {
                       },
                     }}
                   >
-                    Explore our Products
+                    Explore Our Products
                     <ArrowRightAltOutlinedIcon className="arrow-icon" />
                   </Button>
-                </Box>
-              </motion.div>
-            </Grid>
-
-            {/* RIGHT IMAGE */}
-            <Grid
-              item
-              xs={12}
-              md={6}
-              sx={{
-                display: { xs: "none", md: "flex" },
-                justifyContent: "flex-end",
-                alignItems: "center",
-              }}
-            >
-              <motion.div {...zoomIn(0.3)}>
-                <Box
-                  sx={{
-                    width: "100%",
-                    display: "flex",
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src="/img/about/bg.png"
-                    alt="Fresh Food"
-                    sx={{
-                      width: "100%",
-                      height: "80%",
-                      objectFit: "cover",
-                      display: "block",
-                      m: 0,
-                      p: 0,
-                    }}
-                  />
-                </Box>
-              </motion.div>
+                </motion.div>
+              </Box>
             </Grid>
           </Grid>
-        </Box>
+        </Container>
       </Box>
 
       <Container maxWidth="lg">
         {/* Our Story */}
-        <Box sx={{ py: 8 }}>
+        <Box sx={{ py: 6 }}>
           <Grid container spacing={6} alignItems="center">
             {/* IMAGE SIDE */}
 
@@ -635,11 +643,11 @@ export default function AboutPage() {
                           height: 38,
                           borderRadius: "50%",
                           background:
-                            "color-mix(in srgb, var(--glt), transparent 80%)",
+                            "color-mix(in srgb, var(--primary-teal-dark), transparent 90%)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: "var(--primary-maroon-dark)",
+                          color: "var(--primary-teal-dark)",
                         }}
                       >
                         {item.icon}
@@ -674,7 +682,7 @@ export default function AboutPage() {
             boxShadow: "0 4px 18px rgba(0,0,0,0.08)",
             position: "relative",
             overflow: "hidden",
-            mb: 8,
+            mb: 4,
             borderRadius: "16px",
           }}
         >
@@ -756,74 +764,106 @@ export default function AboutPage() {
         </Box>
 
         {/* Vision Mission Section */}
-        <Box sx={{ position: "relative", pt: { xs: 2, md: 2 } }}>
-          {/* Vertical Divider */}
+        <Box
+          sx={{
+            position: "relative",
+            py: { xs: 2, md: 4 },
+            overflow: "hidden",
+          }}
+        >
+          {/* DESKTOP CENTER IMAGE */}
           <Box
+            component="img"
+            src="/img/about/image.png"
+            alt="illustration"
             sx={{
-              display: { xs: "none", md: "flex" },
               position: "absolute",
-              top: 0,
-              bottom: 0,
               left: "50%",
-              transform: "translateX(-50%)",
-              flexDirection: "column",
-              alignItems: "center",
-              zIndex: 1,
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              width: { md: 480 },
+              zIndex: 0,
+              display: { xs: "none", md: "block" },
+              pointerEvents: "none",
             }}
+          />
+
+          <Grid
+            container
+            spacing={{ xs: 4, md: 6 }}
+            sx={{ position: "relative", zIndex: 2 }}
           >
-            <Box
-              sx={{
-                flex: 1,
-                borderLeft: "2px dotted var(--glt)",
-                opacity: 0.5,
-              }}
-            />
-
-            <Box
-              sx={{
-                width: 24,
-                height: 24,
-                mt: 1,
-                backgroundColor: "var(--glt)",
-                mask: "url('/grain-wheat-icon.svg') no-repeat center / contain",
-                WebkitMask:
-                  "url('/grain-wheat-icon.svg') no-repeat center / contain",
-              }}
-            />
-          </Box>
-
-          <Grid container spacing={6}>
+            {/* VISION */}
             <Grid item xs={12} md={6}>
               <motion.div {...fadeRight(0.1)}>
-                <InfoCard
-                  title="Our Vision"
-                  description="To become a trusted household name in ready-to-cook foods across Tamil Nadu and beyond."
-                  quote='"A name every Tamil home trusts"'
-                  image="/img/about/vission.png"
-                  color={{
-                    main: "var(--primary-teal-dark)",
-                    quote: "var(--primary-teal-dark)",
-                    divider:
-                      "color-mix(in srgb, var(--primary-teal-dark), transparent 50%)",
+                <Box
+                  sx={{
+                    pr: { md: 6 },
                   }}
-                />
+                >
+                  <InfoCard
+                    title="Our Vision"
+                    description="To become a trusted household name in ready-to-cook foods across Tamil Nadu and beyond."
+                    quote='"A name every Tamil home trusts"'
+                    image="/img/about/vision.png"
+                    color={{
+                      main: "var(--primary-teal-dark)",
+                      quote: "var(--primary-teal-dark)",
+                      divider:
+                        "color-mix(in srgb, var(--primary-teal-dark), transparent 50%)",
+                    }}
+                  />
+                </Box>
               </motion.div>
             </Grid>
 
+            {/* MOBILE/TABLET CENTER IMAGE */}
+            <Grid
+              item
+              xs={12}
+              sx={{
+                display: { xs: "flex", md: "none" },
+                justifyContent: "center",
+                alignItems: "center",
+                // py: 1,
+              }}
+            >
+              <Box
+                component="img"
+                src="/img/about/image1.png"
+                alt="illustration"
+                sx={{
+                  width: {
+                    xs: 280,
+                    sm: 240,
+                  },
+                  maxWidth: "100%",
+                  objectFit: "contain",
+                }}
+              />
+            </Grid>
+
+            {/* MISSION */}
             <Grid item xs={12} md={6}>
               <motion.div {...fadeLeft(0.1)}>
-                <InfoCard
-                  title="Our Mission"
-                  description="To provide fresh, hygienic, and time-saving food solutions that fit seamlessly into everyday life."
-                  quote='"Fresh food, everyday convenience"'
-                  image="/img/about/mission.png"
-                  color={{
-                    main: "var(--primary-maroon-mid)",
-                    quote: "var(--primary-maroon-mid)",
-                    divider:
-                      "color-mix(in srgb, var(--primary-maroon-dark), transparent 50%)",
+                <Box
+                  sx={{
+                    pl: { md: 6 },
                   }}
-                />
+                >
+                  <InfoCard
+                    title="Our Mission"
+                    description="To provide fresh, hygienic, and time-saving food solutions that fit seamlessly into everyday life."
+                    quote='"Fresh food, everyday convenience"'
+                    image="/img/about/mission.png"
+                    color={{
+                      main: "var(--primary-maroon-mid)",
+                      quote: "var(--primary-maroon-mid)",
+                      divider:
+                        "color-mix(in srgb, var(--primary-maroon-dark), transparent 50%)",
+                    }}
+                  />
+                </Box>
               </motion.div>
             </Grid>
           </Grid>
