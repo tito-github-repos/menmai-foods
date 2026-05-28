@@ -4,6 +4,7 @@ import ThemeRegistry from "./ThemeRegistry";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import FloatingContact from "./components/FloatingContact";
+import Providers from "./providers";
 
 export const metadata: Metadata = {
   title: "Menmai",
@@ -30,10 +31,12 @@ export default function RootLayout({
       </head>
       <body style={{ paddingTop: "66px" }}>
         <ThemeRegistry>
-          <Header />
-          {children}
-          <FloatingContact />
-          <Footer />
+          <Providers>
+            <Header />
+            {children}
+            <FloatingContact />
+            <Footer />
+          </Providers>
         </ThemeRegistry>
       </body>
     </html>

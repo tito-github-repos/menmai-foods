@@ -1,147 +1,3 @@
-// "use client";
-
-// import { useEffect, useState } from "react";
-// import styles from "./page.module.css";
-
-// const banners = [
-//   "/img/banners/banners1.jpg",
-//   "/img/banners/banners2.png",
-//   "/img/banners/banners3.png",
-// ];
-
-// export default function Home() {
-//   const [current, setCurrent] = useState(0);
-
-//   useEffect(() => {
-//     const interval = setInterval(() => {
-//       setCurrent((prev) => (prev + 1) % banners.length);
-//     }, 3000);
-
-//     return () => clearInterval(interval);
-//   }, []);
-
-//   return (
-//     <main className={styles.container}>
-
-//       {/* RUNNING TEXT */}
-//       <div className={styles.ticker}>
-//         <p className={styles.marquee}>
-//         Freshly made chapathi daily | Free delivery above ₹199 | No preservatives
-//         </p>
-//       </div>
-
-//       {/* HERO */}
-//       <section className={styles.hero}>
-//         <img src={banners[current]} className={styles.heroImage} />
-
-//         <div className={styles.overlay}>
-//           {/* <h1 className={styles.title}>
-//             Fresh Chapathi, Ready in Seconds
-//           </h1> */}
-//           <p className={styles.subtitle}>
-//             Soft • Healthy • Homemade Taste
-//           </p>
-//           <button className={styles.primaryBtn}>
-//             Order Now
-//           </button>
-//         </div>
-//       </section>
-
-//       <section className={styles.products}>
-//         <h2 className={styles.sectionTitle}>Our Products</h2>
-
-//         <div className={styles.productGrid}>
-
-//           {/* CARD 1 */}
-//           <div className={styles.card}>
-//             <img src="/img/products/chapthi1.jpeg" className={styles.productImg} />
-
-//             <div className={styles.cardContent}>
-//               <h3>Chapathi</h3>
-
-//               <div className={styles.priceBox}>
-//                 <span className={styles.oldPrice}>₹50</span>
-//                 <span className={styles.newPrice}>₹40</span>
-//               </div>
-
-//               <button className={styles.primaryBtn}>Add to Cart</button>
-//             </div>
-//           </div>
-
-//           {/* CARD 2 */}
-//           <div className={styles.card}>
-//             <img src="/img/products/poori1.jpeg" className={styles.productImg} />
-
-//             <div className={styles.cardContent}>
-//               <h3>Poori</h3>
-
-//               <div className={styles.priceBox}>
-//                 <span className={styles.oldPrice}>₹55</span>
-//                 <span className={styles.newPrice}>₹45</span>
-//               </div>
-
-//               <button className={styles.primaryBtn}>Add to Cart</button>
-//             </div>
-//           </div>
-
-//         </div>
-//       </section>
-
-//       {/* ABOUT */}
-//       <section className={styles.about}>
-//         <h2 className={styles.sectionTitle}>About Us</h2>
-//         <p className={styles.aboutText}>
-//           Menmai Foods provides fresh, hygienic, ready-to-eat chapathi and poori.
-//           Our mission is to deliver convenient and healthy food solutions while
-//           maintaining traditional taste and quality.
-//         </p>
-//       </section>
-
-//       {/* DELIVERY */}
-//       <section className={styles.delivery}>
-//         <h2 className={styles.sectionTitle}>Delivery Area</h2>
-//         <div className={styles.deliveryBox}>
-//           We currently deliver within <strong>Madurai (10km radius)</strong>
-//         </div>
-//       </section>
-
-//       {/* CTA */}
-//       <section className={styles.cta}>
-//         <h2 className={styles.sectionTitle}>Order Now</h2>
-//         <p>Contact us on WhatsApp</p>
-//         <button className={styles.whatsappBtn}>
-//           Chat on WhatsApp
-//         </button>
-//       </section>
-
-//       {/* FLOAT WHATSAPP */}
-//       <a href="https://wa.me/91XXXXXXXXXX" className={styles.whatsappFloat}>
-//         💬
-//       </a>
-
-//       {/* WHY US */}
-//       <section className={styles.why}>
-//         <h2 className={styles.sectionTitle}>Why Choose Us</h2>
-
-//         <div className={styles.whyGrid}>
-//           <p>✅ No Preservatives</p>
-//           <p>✅ Homemade Taste</p>
-//           <p>✅ Ready in 30 Seconds</p>
-//         </div>
-//       </section>
-
-//       {/* CTA */}
-//       {/* <section className={styles.cta}>
-//         <h2 className={styles.sectionTitle}>Order Now</h2>
-//         <p>Contact us on WhatsApp</p>
-//         <button className={styles.whatsappBtn}>
-//           Chat on WhatsApp
-//         </button>
-//       </section> */}
-
-//     </main>
-//   );
-// }
 "use client";
 
 import {
@@ -158,6 +14,8 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import CertifiedQualitySection from './components/CertifiedQuality';
 import { CustomerReviewsSection, DeliverySection } from "./components/DeliveryandReviews";
+import { useAppDispatch } from "@/store/hooks";
+import { addToCart } from "@/store/cartSlice";
 
 /* ─────────────────────────────────────────
    HERO BANNERS
@@ -173,6 +31,8 @@ const banners: string[] = [
 ───────────────────────────────────────── */
 const products = [
   {
+    id: "chapathi",
+    pieces: 10,
     name: "Chapathi",
     color: "var(--primary-teal-mid)",
     bg: "#F5F3EC",
@@ -185,13 +45,15 @@ const products = [
     desc1: " Ready in 2 seconds",
   },
   {
+    id: "poori",
+    pieces: 15,
     name: "Poori",
     color: "var(--primary-maroon-mid)",
     bg: "#F8F0E3",
     border: "#ecd8c7",
     img: "/img/products/poori_main.png",
-    price: 55,
-    oldPrice: 45,
+    price: 45,
+    oldPrice: 55,
     weight: "500g",
     desc: "Fluffy and delicious poori made with hygienic ingredients for perfect taste.",
     desc1: " Ready in 2 seconds",
@@ -407,6 +269,8 @@ const inputSx = {
 export default function HomePage() {
   const [current, setCurrent] = useState(0);
   const router = useRouter();
+
+  const dispatch = useAppDispatch();
 
   /* Bulk form state */
   const [bulkForm, setBulkForm] = useState<BulkForm>({
@@ -696,7 +560,23 @@ export default function HomePage() {
               }} />
 
               <Box sx={{ display: "flex", gap: 1 }}>
-                <Button variant="contained" sx={{
+                <Button 
+                  variant="contained"
+                  onClick={() =>
+                    dispatch(
+                      addToCart({
+                        id: product.id,
+                        name: product.name,
+                        packLabel: product.weight,
+                        pieces: product.pieces,
+                        mrp: product.oldPrice,
+                        price: product.price,
+                        quantity: 1,
+                        img: product.img,
+                      })
+                    )
+                  }
+                sx={{
                   flex: 1, borderRadius: "999px", fontSize: 12, fontWeight: 700,
                   height: 36, fontFamily: "var(--font-main)", boxShadow: "none",
                   whiteSpace: "nowrap",
@@ -723,7 +603,7 @@ export default function HomePage() {
                   View Product
                 </Button>
               </Box>
-            </Box>
+              </Box>
           </CardContent>
         </Card>
       </Grid>
@@ -1529,11 +1409,9 @@ export default function HomePage() {
   </Box>
 </Box>
  */}
-<CertifiedQualitySection/>
-<DeliverySection/>
-<CustomerReviewsSection/>
-
-      
+  <CertifiedQualitySection/>
+  <DeliverySection/>
+  <CustomerReviewsSection/>
       </Box>
     </>
   );

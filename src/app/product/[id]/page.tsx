@@ -20,6 +20,8 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { CustomerReviewsSection } from "@/app/components/DeliveryandReviews";
+import { useAppDispatch } from "@/store/hooks";
+import { addToCart } from "@/store/cartSlice";
 
 const MotionBox = motion(Box);
 const MotionPaper = motion(Paper);
@@ -325,6 +327,7 @@ export default function ProductPage() {
   const id      = params.id as string;
   const product = products[id];
   if (!id || !product) return notFound();
+  const dispatch = useAppDispatch();
 
   const [qty, setQty]               = useState(1);
   const [img, setImg]               = useState(product.images[0]);
@@ -686,7 +689,22 @@ export default function ProductPage() {
                   <MotionBox whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.985 }}>
                     <Button variant="contained"
                       startIcon={<ShoppingCartOutlinedIcon />}
-                      onClick={() => setCartSnack(true)}
+                      onClick={() => {
+                        dispatch(
+                          addToCart({
+                            id,
+                            name: product.name,
+                            packLabel: selectedPack.label,
+                            pieces: id === "chapathi" ? 10 : 15,
+                            mrp: product.mrp,
+                            price: selectedPack.price,
+                            quantity: qty,
+                            img: product.images[0],
+                          })
+                        );
+
+                        setCartSnack(true);
+                      }}
                       sx={{
                         borderRadius: "12px", py: 1.7,
                         fontFamily: "var(--primary-heading)", fontWeight: 800, fontSize: 15,

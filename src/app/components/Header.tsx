@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAppSelector } from "@/store/hooks";
 import {
   Box,
   Container,
@@ -44,7 +45,6 @@ const NAV_LINKS = [
 ] as const;
 
 export default function Header() {
-  const cartCount = 2;
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -57,6 +57,9 @@ export default function Header() {
     setDrawerOpen(true);
   };
 
+  const cartCount = useAppSelector((state) =>
+    state.cart.items.reduce((total, item) => total + item.quantity, 0)
+  );
   const handleDrawerClose = () => {
     setDrawerOpen(false);
   };
