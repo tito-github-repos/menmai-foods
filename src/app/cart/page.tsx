@@ -27,6 +27,9 @@ import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
 import StarOutlinedIcon from "@mui/icons-material/StarOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import EggOutlinedIcon from "@mui/icons-material/EggOutlined";
+import Link from "next/link";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { removeFromCart, setQuantity } from "@/store/cartSlice";
 
 const theme = createTheme({
   palette: {
@@ -50,26 +53,26 @@ const theme = createTheme({
   },
 });
 
-const initialCartItems = [
-  {
-    id: 1,
-    name: "Soft Chapathi",
-    pieces: 10,
-    mrp: 50,
-    price: 40,
-    qty: 1,
-    img: "/img/products/chapathi1.jpeg",
-  },
-  {
-    id: 2,
-    name: "Soft Poori",
-    pieces: 15,
-    mrp: 55,
-    price: 45,
-    qty: 1,
-    img: "/img/products/poori1.jpeg",
-  },
-];
+// const initialCartItems = [
+//   {
+//     id: 1,
+//     name: "Soft Chapathi",
+//     pieces: 10,
+//     mrp: 50,
+//     price: 40,
+//     qty: 1,
+//     img: "/img/products/chapathi1.jpeg",
+//   },
+//   {
+//     id: 2,
+//     name: "Soft Poori",
+//     pieces: 15,
+//     mrp: 55,
+//     price: 45,
+//     qty: 1,
+//     img: "/img/products/poori1.jpeg",
+//   },
+// ];
 
 const trustBadges = [
   {
@@ -99,7 +102,9 @@ const trustBadges = [
 ];
 
 export default function CartCheckout() {
-  const [cartItems, setCartItems] = useState(initialCartItems);
+  // const [cartItems, setCartItems] = useState(initialCartItems);
+  const dispatch = useAppDispatch();
+  const cartItems = useAppSelector((state) => state.cart.items);
   const [form, setForm] = useState({
     fullName: "",
     phone: "",
@@ -109,25 +114,19 @@ export default function CartCheckout() {
     saveAddress: false,
   });
 
-  const updateQty = (id: number, delta: number) => {
-    setCartItems((prev) =>
-      prev
-        .map((item) =>
-          item.id === id
-            ? { ...item, qty: Math.max(0, item.qty + delta) }
-            : item,
-        )
-        .filter((item) => item.qty > 0),
-    );
+  const updateQty = (productId: number, delta: number) => {
+    const item = cartItems.find((item) => item.productId === productId);
+    if (!item) return;
+
+    dispatch(setQuantity({ productId, quantity: item.quantity + delta }));
   };
 
-  const removeItem = (id: number) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+  const removeItem = (productId: number) => {
+    dispatch(removeFromCart(productId));
   };
-
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.qty,
-    0,
+    (sum, item) => sum + item.price * item.quantity,
+    0
   );
 
   return (
@@ -246,7 +245,7 @@ export default function CartCheckout() {
                           fontSize={14}
                           fontWeight={400}
                         >
-                          ({cartItems.length} Items)
+                          ({cartItems.reduce((total, item) => total + item.quantity, 0)} Items)
                         </Typography>
                       </Typography>
                     </Box>
@@ -271,9 +270,19 @@ export default function CartCheckout() {
                   <Divider sx={{ mb: 2 }} />
 
                   {/* Cart Items */}
-                  <Stack spacing={2.5}>
-                    {cartItems.map((item) => (
-                      <Box key={item.id}>
+                  {cartItems.length === 0 ? (
+                    <Box sx={{ py: 4, textAlign: "center" }}>
+                      <Typography fontWeight={700} mb={1}>
+                        Your cart is empty
+                      </Typography>
+                      <Button component={Link} href="/" variant="contained">
+                        Add Items
+                      </Button>
+                    </Box>
+                  ) : (
+                    <Stack spacing={2.5}>
+                      {cartItems.map((item) => (
+                      <Box key={item.productId}>
                         <Box
                           sx={{ display: "flex", alignItems: "center", gap: 2 }}
                         >
@@ -315,14 +324,14 @@ export default function CartCheckout() {
                               </Box>
                               <Box>
                                 <Typography fontWeight={700} fontSize={15}>
-                                  ₹{item.price * item.qty}.00
+                                  ₹{item.price * item.quantity}.00
                                 </Typography>
                                 <Typography
                                   fontSize={11}
                                   color="text.secondary"
                                   sx={{ textDecoration: "line-through" }}
                                 >
-                                  ₹ {item.mrp * item.qty}.00
+                                  ₹ {item.mrp * item.quantity}.00
                                 </Typography>
                               </Box>
                             </Box>
@@ -348,7 +357,7 @@ export default function CartCheckout() {
                               >
                                 <IconButton
                                   size="small"
-                                  onClick={() => updateQty(item.id, -1)}
+                                  onClick={() => updateQty(item.productId, -1)}
                                   sx={{
                                     p: 0.3,
                                     color: "var(--brown)",
@@ -361,11 +370,11 @@ export default function CartCheckout() {
                                   fontSize={14}
                                   sx={{ minWidth: 20, textAlign: "center" }}
                                 >
-                                  {item.qty}
+                                  {item.quantity}
                                 </Typography>
                                 <IconButton
                                   size="small"
-                                  onClick={() => updateQty(item.id, 1)}
+                                  onClick={() => updateQty(item.productId, 1)}
                                   sx={{ p: 0.3, color: "var(--brown)" }}
                                 >
                                   <AddIcon sx={{ fontSize: 16 }} />
@@ -374,7 +383,7 @@ export default function CartCheckout() {
 
                               <IconButton
                                 size="small"
-                                onClick={() => removeItem(item.id)}
+                                onClick={() => removeItem(item.productId)}
                                 sx={{
                                   color: "error.main",
                                   p: 0.5,
@@ -389,7 +398,7 @@ export default function CartCheckout() {
                       </Box>
                     ))}
                   </Stack>
-
+                  )}
                   {/* Free Delivery Banner */}
                   <Box
                     sx={{
