@@ -273,21 +273,63 @@ export default function HomePage() {
       .then(setProducts);
   }, []);
 
-  /* Bulk form state */
+
+  const fieldLabels: Partial<Record<keyof BulkForm, string>> = {
+    name: "Full name",
+    phone: "Phone number",
+    email: "Email address",
+    address: "Address",
+    notes: "Occasion / Notes",
+  };
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^[6-9]\d{9}$/;
+
+  const validate = (): boolean => {
+    const newErrors: Partial<Record<keyof BulkForm, string>> = {};
+    if (!bulkForm.name.trim()) newErrors.name = "Full name is required.";
+    if (!bulkForm.phone.trim()) newErrors.phone = "Phone number is required.";
+    else if (!phoneRegex.test(bulkForm.phone.trim())) newErrors.phone = "Enter a valid 10-digit Indian mobile number.";
+    if (!bulkForm.email.trim()) newErrors.email = "Email address is required.";
+    else if (!emailRegex.test(bulkForm.email.trim())) newErrors.email = "Enter a valid email address.";
+    if (!bulkForm.address.trim()) newErrors.address = "Delivery address is required.";
+    if (!bulkForm.notes.trim()) newErrors.notes = "Please mention the occasion or any notes.";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const [bulkForm, setBulkForm] = useState<BulkForm>({
-    name: "", phone: "",email: "",   
-  address: "", product: "", quantity: "", deliveryDate: "", notes: "",
+    name: "", phone: "", email: "", address: "", product: "", quantity: "", deliveryDate: "", notes: "",
   });
-  const [bulkSubmitted, setBulkSubmitted] = useState(false);
+
+  const [errors, setErrors] = useState<Partial<Record<keyof BulkForm, string>>>({});
 
   const setField = (key: keyof BulkForm) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setBulkForm((f) => ({ ...f, [key]: e.target.value }));
+      setErrors((prev) => ({ ...prev, [key]: "" })); // clear error on type
+    };
 
-  const handleBulkSubmit = () => {
-    if (!bulkForm.name || !bulkForm.phone || !bulkForm.product || !bulkForm.quantity) return;
-    setBulkSubmitted(true);
+  const blurField = (key: keyof BulkForm) => () => {
+    if (!bulkForm[key]) {
+      setErrors((prev) => ({ ...prev, [key]: fieldLabels[key] + " is required." }));
+    }
   };
+  const handleBulkSubmit = () => {
+  if (!validate()) return;
+  setBulkSubmitted(true);
+  setSnackOpen(true);
+};
+
+  const [bulkSubmitted, setBulkSubmitted] = useState(false);
+  const [snackOpen, setSnackOpen] = useState(false); // ← ADD
+
+  useEffect(() => {
+    if (snackOpen) {
+      const timer = setTimeout(() => setSnackOpen(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [snackOpen]);
 
   /* Banner rotation */
   useEffect(() => {
@@ -710,515 +752,605 @@ export default function HomePage() {
         </Box>
 
         {/* ══════════════════════════════════════════
-            ══ 2. BULK ORDERS ══
-            Placed after "Why Choose Menmai"
-            and before "Certified Quality + Delivery"
-        ══════════════════════════════════════════ */}
+    ══ 2. BULK ORDERS ══
+══════════════════════════════════════════ */}
+<Box
+  sx={{
+    width: "100%",
+    py: { xs: 5, md: 8 },
+    px: { xs: 2, md: 4 },
+    position: "relative",
+    overflow: "hidden",
+  }}
+>
+  <Box
+    sx={{
+      maxWidth: "1150px",
+      mx: "auto",
+      display: "grid",
+      gridTemplateColumns: { xs: "1fr", lg: "1fr 440px" },
+      gap: { xs: 4, lg: 6 },
+      alignItems: "flex-start",
+      position: "relative",
+      zIndex: 1,
+    }}
+  >
+    {/* ── LEFT — HERO + FEATURES ── */}
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+
+      {/* Badge */}
+      <Box
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 0.8,
+          background: "#3d1a0e",
+          color: "#fdf6ec",
+          fontSize: 11,
+          fontFamily: "var(--font-main)",
+          fontWeight: 700,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          px: 2,
+          py: 0.7,
+          borderRadius: "999px",
+          width: "fit-content",
+        }}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+        Bulk &amp; Catering
+      </Box>
+
+      {/* Two-column split: text + image */}
+      <Box sx={{ display: "flex", gap: 3, alignItems: "center" }}>
+
+        {/* TEXT SIDE */}
+        <Box sx={{ flex: 1 }}>
+          <Typography
+            sx={{
+              fontFamily: "var(--font-heading)",
+              fontSize: { xs: 28, md: 36 },
+              fontWeight: 700,
+              color: "var(--primary-teal-dark)",
+              lineHeight: 1.08,
+              letterSpacing: "-0.02em",
+              mb: 1,
+            }}
+          >
+            Need Large<br />
+            <Box component="span" sx={{ fontStyle: "italic", color: "var(--primary-teal-dark)" }}>
+              Quantities?
+            </Box>
+          </Typography>
+
+          <Typography
+            sx={{
+              fontFamily: "var(--font-main)",
+              fontSize: 15,
+              color: "#9a6a50",
+              lineHeight: 1.7,
+              maxWidth: 380,
+            }}
+          >
+            Perfect for office lunches, temple functions, weddings, and school
+            events. We handle orders of{" "}
+            <Box component="span" sx={{ fontWeight: 700, color: "#7a2e14" }}>
+              500 pieces to 5,000+
+            </Box>{" "}
+            with the same freshness guarantee.
+          </Typography>
+
+          <Button
+            variant="contained"
+            onClick={() => router.push("/bulkorder")}
+            startIcon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.2"
+                strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+            }
+            endIcon={
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5"
+                strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+            }
+            sx={{
+              mt: 1.5,
+              px: 3.5,
+              py: 1.4,
+              borderRadius: "999px",
+              background: "linear-gradient(135deg, #3d1a0e 0%, #7a2e14 100%)",
+              color: "#fdf6ec",
+              fontFamily: "var(--font-main)",
+              fontSize: 14,
+              fontWeight: 700,
+              textTransform: "none",
+              boxShadow: "0 6px 20px rgba(61,26,14,0.25)",
+              width: "fit-content",
+              "&:hover": {
+                background: "linear-gradient(135deg, #2c1009 0%, #5e2410 100%)",
+                boxShadow: "0 10px 28px rgba(61,26,14,0.35)",
+                transform: "translateY(-2px)",
+              },
+              transition: "all 0.25s ease",
+            }}
+          >
+            Place Bulk Order
+          </Button>
+        </Box>
+
+        {/* ── BULK IMAGE ── */}
         <Box
           sx={{
-            width: "100%",
-            py: { xs: 5, md: 8 },
-            px: { xs: 2, md: 4 },
-            // background: "linear-gradient(135deg, #f5ede0 0%, #fdf6ec 55%, #fff8f0 100%)",
+            flex: "0 0 auto",
+            display: { xs: "none", md: "block" },
+            width: 200,
             position: "relative",
-            overflow: "hidden",
           }}
         >
-
-
           <Box
             sx={{
-              maxWidth: "1150px",
-              mx: "auto",
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", lg: "1fr 440px" },
-              gap: { xs: 4, lg: 6 },
-              alignItems: "stretch",
+              position: "absolute",
+              inset: -16,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(194,90,48,0.12) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }}
+          />
+          <Box
+            component="img"
+            src="/img/bulk1.png"
+            alt="Menmai bulk boxes"
+            sx={{
+              width: "100%",
+              height: "auto",
+              objectFit: "contain",
+              filter: "drop-shadow(0 16px 32px rgba(61,26,14,0.18))",
               position: "relative",
               zIndex: 1,
             }}
+          />
+        </Box>
+      </Box>
+
+      {/* FEATURE CARDS 2x2 */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+          gap: 1.5,
+        }}
+      >
+        {bulkFeatures.map(({ icon, title, desc }) => (
+          <Box
+            key={title}
+            sx={{
+              display: "flex",
+              gap: 1.8,
+              alignItems: "flex-start",
+              background: "rgba(255,255,255,0.65)",
+              border: "1.5px solid rgba(90,56,37,0.12)",
+              borderRadius: "14px",
+              p: "10px 14px",
+              backdropFilter: "blur(6px)",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              "&:hover": {
+                transform: "translateY(-3px)",
+                boxShadow: "0 8px 24px rgba(61,26,14,0.08)",
+              },
+            }}
           >
-            {/* ── LEFT — HERO + FEATURES ── */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 ,height: "100%",}}>
-
-              {/* Badge */}
-              <Box
-                sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 0.8,
-                  background: "#3d1a0e",
-                  color: "#fdf6ec",
-                  fontSize: 11,
-                  fontFamily: "var(--font-main)",
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  px: 2,
-                  py: 0.7,
-                  borderRadius: "999px",
-                  width: "fit-content",
-                }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-                Bulk &amp; Catering
-              </Box>
-
-              {/* Two-column split: text + image */}
-              <Box sx={{ display: "flex", gap: 3, alignItems: "flex-start" }}>
-
-                {/* TEXT SIDE */}
-                <Box sx={{ flex: 1 }}>
-                  <Typography
-                    sx={{
-                      fontFamily: "var(--font-heading)",
-                      fontSize: { xs: 34, md: 50 },
-                      fontWeight: 700,
-                      color: "var(--primary-teal-dark)",
-                      lineHeight: 1.08,
-                      letterSpacing: "-0.02em",
-                      mb: 1.5,
-                    }}
-                  >
-                    Need Large<br />
-                    <Box component="span" sx={{ fontStyle: "italic", color: "var(--primary-teal-dark)" }}>
-                      Quantities?
-                    </Box>
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      fontFamily: "var(--font-main)",
-                      fontSize: 18,
-                      color: "#9a6a50",
-                      lineHeight: 1.7,
-                      maxWidth: 380,
-                    }}
-                  >
-                    Perfect for office lunches, temple functions, weddings, and school
-                    events. We handle orders of{" "}
-                    <Box component="span" sx={{ fontWeight: 700, color: "#7a2e14" }}>
-                      500 pieces to 5,000+
-                    </Box>{" "}
-                    with the same freshness guarantee.
-                  </Typography>
-                </Box>
-
-                {/* ── BULK IMAGE ──
-                    This is /img/bulk1.png from your original code.
-                    It sits on the RIGHT of the headline text,
-                    hidden on mobile, visible md+ */}
-                <Box
-                  sx={{
-                    flex: "0 0 auto",
-                    display: { xs: "none", md: "block" },
-                    width: 220,
-                    position: "relative",
-                  }}
-                >
-                  {/* Warm glow behind image */}
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      inset: -16,
-                      borderRadius: "50%",
-                      background: "radial-gradient(circle, rgba(194,90,48,0.12) 0%, transparent 70%)",
-                      pointerEvents: "none",
-                    }}
-                  />
-                  <Box
-                    component="img"
-                    src="/img/bulk1.png"
-                    alt="Menmai bulk boxes"
-                    sx={{
-                      width: "100%",
-                      height: "300%",
-                      objectFit: "contain",
-                      filter: "drop-shadow(0 16px 32px rgba(61,26,14,0.18))",
-                      position: "relative",
-                      zIndex: 1,
-                    }}
-                  />
-                </Box>
-              </Box>
-
-              {/* FEATURE CARDS 2x2 */}
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                  gap: 2,
-                }}
-              >
-                {bulkFeatures.map(({ icon, title, desc }) => (
-                  <Box
-                    key={title}
-                    sx={{
-                      display: "flex",
-                      gap: 1.8,
-                      alignItems: "flex-start",
-                      background: "rgba(255,255,255,0.65)",
-                      border: "1.5px solid rgba(90,56,37,0.12)",
-                      borderRadius: "14px",
-                      p: "14px 16px",
-                      backdropFilter: "blur(6px)",
-                      transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                      "&:hover": {
-                        transform: "translateY(-3px)",
-                        boxShadow: "0 8px 24px rgba(61,26,14,0.08)",
-                      },
-                    }}
-                  >
-                    {/* Icon tile */}
-                    <Box
-                      sx={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: "12px",
-                        background: "linear-gradient(135deg, #472112 0%,  #743f21 100% )",
-                        // background: "linear-gradient(135deg, #3d1a0e 0%, #7a2e14 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "#fdf6ec",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {icon}
-                    </Box>
-                    <Box>
-                      <Typography
-                        sx={{
-                          fontFamily: "var(--font-main)",
-                          fontWeight: 700,
-                          fontSize: 16,
-                          color: "#3d1a0e",
-                          mb: 0.4,
-                        }}
-                      >
-                        {title}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontFamily: "var(--font-main)",
-                          fontSize: 12.5,
-                          color: "#9a6a50",
-                          lineHeight: 1.5,
-                        }}
-                      >
-                        {desc}
-                      </Typography>
-                    </Box>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-
-            {/* ── RIGHT — QUOTE FORM ── */}
             <Box
               sx={{
-                background: "#fff",
-                border: "1.5px solid rgba(90,40,20,0.12)",
-                borderRadius: "24px",
-                boxShadow: "0 20px 60px rgba(61,26,14,0.10), 0 4px 16px rgba(61,26,14,0.06)",
-                overflow: "auto",
-                          
+                width: 40,
+                height: 40,
+                borderRadius: "12px",
+                background: "linear-gradient(135deg, #472112 0%, #743f21 100%)",
                 display: "flex",
-                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fdf6ec",
+                flexShrink: 0,
               }}
             >
-              {bulkSubmitted ? (
-                /* SUCCESS STATE */
-                <Box
-                  sx={{
-                    p: "48px 28px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    textAlign: "center",
-                    gap: 2,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 72,
-                      height: 72,
-                      borderRadius: "50%",
-                      background: "linear-gradient(135deg, #3d1a0e, #c25a30)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 6L9 17l-5-5" />
-                    </svg>
-                  </Box>
-                  <Typography sx={{ fontFamily: "'Georgia', serif", fontSize: 22, fontWeight: 700, color: "#3d1a0e" }}>
-                    Request Sent!
-                  </Typography>
-                  <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 14, color: "#9a6a50", lineHeight: 1.6, maxWidth: 260 }}>
-                    We'll contact you to confirm your bulk order details as soon as possible.
-                  </Typography>
-                  <Button
-                    onClick={() => setBulkSubmitted(false)}
-                    sx={{
-                      mt: 1,
-                      borderRadius: "999px",
-                      border: "1.5px solid #3d1a0e",
-                      color: "#3d1a0e",
-                      fontFamily: "var(--font-main)",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      px: 3,
-                      textTransform: "none",
-                    }}
-                  >
-                    Submit Another Request
-                  </Button>
-                </Box>
-              ) : (
-                <>
-                  {/* FORM HEADER */}
-                  <Box
-                    sx={{
-                      background: "linear-gradient(135deg, #472112 0%,  #743f21 100% )",
-                      px: "20px",
-                      py: "20px",
-                    }}
-                  >
-                    <Typography sx={{ fontFamily: "'Georgia', serif", fontWeight: 700, fontSize: 21, color: "#fdf6ec", mb: 0.5 }}>
-                      Send an Enquiry
-                    </Typography>
-                    <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 13, color: "rgba(253,246,236,0.7)" }}>
-                      Fill in the details and we'll contact you as soons as possible.
-                    </Typography>
-                  </Box>
+              {icon}
+            </Box>
+            <Box>
+              <Typography
+                sx={{
+                  fontFamily: "var(--font-main)",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  color: "#3d1a0e",
+                  mb: 0.3,
+                }}
+              >
+                {title}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "var(--font-main)",
+                  fontSize: 12,
+                  color: "#9a6a50",
+                  lineHeight: 1.5,
+                }}
+              >
+                {desc}
+              </Typography>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+    </Box>
 
-                  {/* FORM BODY */}
-                  <Box sx={{ 
-                    p: "24px 24px 24px", 
-                    display: "flex", 
-                    flexDirection: "column", 
-                    gap: 2 ,
-                    flex: 1,                 
-                    
-                    }}>
+    {/* ── RIGHT — QUOTE FORM ── */}
+    <Box
+      sx={{
+        background: "#fff",
+        border: "1.5px solid rgba(90,40,20,0.12)",
+        borderRadius: "24px",
+        boxShadow: "0 20px 60px rgba(61,26,14,0.10), 0 4px 16px rgba(61,26,14,0.06)",
+        overflow: "hidden",
+        position: "sticky",
+        top: 20,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {bulkSubmitted ? (
+        /* SUCCESS STATE */
+        <Box
+          sx={{
+            p: "48px 28px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            gap: 2,
+          }}
+        >
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #3d1a0e, #c25a30)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          </Box>
+          <Typography sx={{ fontFamily: "'Georgia', serif", fontSize: 22, fontWeight: 700, color: "#3d1a0e" }}>
+            Request Sent!
+          </Typography>
+          <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 14, color: "#9a6a50", lineHeight: 1.6, maxWidth: 260 }}>
+            We'll contact you to confirm your bulk order details as soon as possible.
+          </Typography>
+          <Button
+            onClick={() => setBulkSubmitted(false)}
+            sx={{
+              mt: 1,
+              borderRadius: "999px",
+              border: "1.5px solid #3d1a0e",
+              color: "#3d1a0e",
+              fontFamily: "var(--font-main)",
+              fontSize: 13,
+              fontWeight: 700,
+              px: 3,
+              textTransform: "none",
+            }}
+          >
+            Submit Another Request
+          </Button>
+        </Box>
+      ) : (
+        <>
+          {/* FORM HEADER */}
+          <Box
+            sx={{
+              background: "linear-gradient(135deg, #472112 0%, #743f21 100%)",
+              px: "20px",
+              py: "18px",
+            }}
+          >
+            <Typography sx={{ fontFamily: "'Georgia', serif", fontWeight: 700, fontSize: 20, color: "#fdf6ec", mb: 0.5 }}>
+              Send an Enquiry
+            </Typography>
+            <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 13, color: "rgba(253,246,236,0.7)" }}>
+              Fill in the details and we'll contact you as soon as possible.
+            </Typography>
+          </Box>
 
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                        gap: 2,
-                      }}
-                    >
-                    {/* Your Name */}
-                    <Box>
-                      <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.7 }}>
-                        Your Name
-                      </Typography>
-                      <input
-                        style={inputSx}
-                        placeholder="Enter your full name"
-                        value={bulkForm.name}
-                        onChange={setField("name")}
-                      />
-                    </Box>
+          {/* FORM BODY */}
+          <Box
+            sx={{
+              p: "20px 20px 20px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 1.5,
+              flex: 1,
+            }}
+          >
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                gap: 1.5,
+              }}
+            >
 
-                    {/* Phone */}
-                    <Box>
-                      <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.7 }}>
-                        Phone Number
-                      </Typography>
-                      <input
-                        style={inputSx}
-                        placeholder="Enter your phone number"
-                        type="tel"
-                        value={bulkForm.phone}
-                        onChange={setField("phone")}
-                      />
-                    </Box>
-                    </Box>
+              {/* Your Name */}
+            <Box>
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.6 }}>
+                Your Name <Box component="span" sx={{ color: "#c0392b" }}>*</Box>
+              </Typography>
+              <input
+                style={{ ...inputSx, borderColor: errors.name ? "#c0392b" : "rgba(90,40,20,0.15)" }}
+                placeholder="Enter your full name"
+                value={bulkForm.name}
+                onChange={setField("name")}
+                onBlur={blurField("name")}
+              />
+              {errors.name && (
+                <Typography sx={{ fontSize: 11, color: "#c0392b", fontFamily: "var(--font-main)", mt: 0.4, ml: 0.5 }}>
+                  {errors.name}
+                </Typography>
+              )}
+            </Box>
 
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                        gap: 2,
-                      }}
-                    >
-                      {/* Email */}
-                      <Box>
-                        <Typography
-                          sx={{
-                            fontSize: 11.5,
-                            fontWeight: 700,
-                            color: "#3d1a0e",
-                            fontFamily: "var(--font-main)",
-                            letterSpacing: "0.05em",
-                            textTransform: "uppercase",
-                            mb: 0.7,
-                          }}
-                        >
-                          Email Address
-                        </Typography>
-                        <input
-                          style={inputSx}
-                          placeholder="Enter your email"
-                          type="email"
-                          value={bulkForm.email || ""}
-                          onChange={(e) =>
-                            setBulkForm((f) => ({ ...f, email: e.target.value }))
-                          }
-                        />
-                      </Box>
+            {/* Phone */}
+            <Box>
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.6 }}>
+                Phone Number <Box component="span" sx={{ color: "#c0392b" }}>*</Box>
+              </Typography>
+              <input
+                style={{ ...inputSx, borderColor: errors.phone ? "#c0392b" : "rgba(90,40,20,0.15)" }}
+                placeholder="Enter your phone number"
+                type="tel"
+                value={bulkForm.phone}
+                onChange={setField("phone")}
+                onBlur={blurField("phone")}
+              />
+              {errors.phone && (
+                <Typography sx={{ fontSize: 11, color: "#c0392b", fontFamily: "var(--font-main)", mt: 0.4, ml: 0.5 }}>
+                  {errors.phone}
+                </Typography>
+              )}
+            </Box>
 
-                      {/* Address */}
-                      <Box>
-                        <Typography
-                          sx={{
-                            fontSize: 11.5,
-                            fontWeight: 700,
-                            color: "#3d1a0e",
-                            fontFamily: "var(--font-main)",
-                            letterSpacing: "0.05em",
-                            textTransform: "uppercase",
-                            mb: 0.7,
-                          }}
-                        >
-                          Address
-                        </Typography>
-                        <input
-                          style={inputSx}
-                          placeholder="Enter delivery address"
-                          value={bulkForm.address || ""}
-                          onChange={(e) =>
-                            setBulkForm((f) => ({ ...f, address: e.target.value }))
-                          }
-                        />
-                      </Box>
-                    </Box>
+            {/* Email */}
+            <Box>
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.6 }}>
+                Email Address <Box component="span" sx={{ color: "#c0392b" }}>*</Box>
+              </Typography>
+              <input
+                style={{ ...inputSx, borderColor: errors.email ? "#c0392b" : "rgba(90,40,20,0.15)" }}
+                placeholder="Enter your email"
+                type="email"
+                value={bulkForm.email}
+                onChange={setField("email")}
+                onBlur={blurField("email")}
+              />
+              {errors.email && (
+                <Typography sx={{ fontSize: 11, color: "#c0392b", fontFamily: "var(--font-main)", mt: 0.4, ml: 0.5 }}>
+                  {errors.email}
+                </Typography>
+              )}
+            </Box>
 
-                    {/* Product */}
-                    {/* <Box>
-                      <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.7 }}>
-                        Product Required
-                      </Typography>
-                      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                        {bulkProducts.map((p) => (
-                          <Box
-                            key={p}
-                            onClick={() => setBulkForm((f) => ({ ...f, product: p }))}
-                            sx={{
-                              px: 2,
-                              py: 0.8,
-                              borderRadius: "999px",
-                              border: "1.5px solid",
-                              borderColor: bulkForm.product === p ? "#3d1a0e" : "rgba(90,40,20,0.18)",
-                              background: bulkForm.product === p ? "#3d1a0e" : "#fafaf8",
-                              color: bulkForm.product === p ? "#fdf6ec" : "#7a2e14",
-                              fontFamily: "var(--font-main)",
-                              fontSize: 12.5,
-                              fontWeight: 600,
-                              cursor: "pointer",
-                              whiteSpace: "nowrap",
-                              transition: "all 0.15s",
-                              userSelect: "none",
-                            }}
-                          >
-                            {p}
-                          </Box>
-                        ))}
-                      </Box>
-                    </Box> */}
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                        gap: 2,
-                      }}
-                    >
-                    {/* Quantity */}
-                    {/* <Box>
-                      <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.7 }}>
-                        Quantity (pieces)
-                      </Typography>
-                      <input
-                        style={inputSx}
-                        placeholder="Enter quantity (e.g. 100, 500, 1000)"
-                        type="number"
-                        min="50"
-                        value={bulkForm.quantity}
-                        onChange={setField("quantity")}
-                      />
-                    </Box> */}
-
-                    {/* Delivery Date */}
-                    {/* <Box>
-                      <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.7 }}>
-                        Delivery Date
-                      </Typography>
-                      <input
-                        style={inputSx}
-                        type="date"
-                        value={bulkForm.deliveryDate}
-                        onChange={setField("deliveryDate")}
-                      />
-                    </Box> */}
-                    </Box>
-                    {/* Notes */}
-                    <Box>
-                      <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.7 }}>
-                        Occasion / Notes
-                      </Typography>
-                      <textarea
-                        style={{ ...inputSx, height: 72, resize: "none", display: "block" }}
-                        placeholder="e.g. Office lunch, Wedding, Temple function..."
-                        value={bulkForm.notes}
-                        onChange={setField("notes")}
-                      />
-                    </Box>
-
-                    {/* Submit */}
-                    <Button
-                      onClick={handleBulkSubmit}
-                      variant="contained"
-                      fullWidth
-                      sx={{
-                        mt: 0.5,
-                        py: 1.6,
-                        borderRadius: "12px",
-                        background: "linear-gradient(135deg, #3d1a0e 0%, #7a2e14 100%)",
-                        color: "#fdf6ec",
-                        fontFamily: "var(--font-main)",
-                        fontSize: 14.5,
-                        fontWeight: 700,
-                        textTransform: "none",
-                        letterSpacing: "0.02em",
-                        boxShadow: "none",
-                        "&:hover": {
-                          background: "linear-gradient(135deg, #2c1009 0%, #5e2410 100%)",
-                          boxShadow: "0 8px 24px rgba(61,26,14,0.25)",
-                        },
-                      }}
-                      startIcon={
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="22" y1="2" x2="11" y2="13" />
-                          <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                        </svg>
-                      }
-                    >
-                      Send Bulk Request
-                    </Button>
-                  </Box>
-                </>
+            {/* Address */}
+            <Box>
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.6 }}>
+                Address <Box component="span" sx={{ color: "#c0392b" }}>*</Box>
+              </Typography>
+              <input
+                style={{ ...inputSx, borderColor: errors.address ? "#c0392b" : "rgba(90,40,20,0.15)" }}
+                placeholder="Enter delivery address"
+                value={bulkForm.address}
+                onChange={setField("address")}
+                onBlur={blurField("address")}
+              />
+              {errors.address && (
+                <Typography sx={{ fontSize: 11, color: "#c0392b", fontFamily: "var(--font-main)", mt: 0.4, ml: 0.5 }}>
+                  {errors.address}
+                </Typography>
               )}
             </Box>
           </Box>
-        </Box>
+            {/* Notes */}
+            <Box>
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#3d1a0e", fontFamily: "var(--font-main)", letterSpacing: "0.05em", textTransform: "uppercase", mb: 0.6 }}>
+                Occasion / Notes <Box component="span" sx={{ color: "#c0392b" }}>*</Box>
+              </Typography>
+              <textarea
+                style={{ ...inputSx, height: 80, resize: "none", display: "block", borderColor: errors.notes ? "#c0392b" : "rgba(90,40,20,0.15)" }}
+                placeholder="e.g. Office lunch, Wedding, Temple function..."
+                value={bulkForm.notes}
+                onChange={setField("notes")}
+                onBlur={blurField("notes")}
+              />
+              {errors.notes && (
+                <Typography sx={{ fontSize: 11, color: "#c0392b", fontFamily: "var(--font-main)", mt: 0.4, ml: 0.5 }}>
+                  {errors.notes}
+                </Typography>
+              )}
+            </Box>
+
+            {/* Submit */}
+            <Button
+              onClick={handleBulkSubmit}
+              variant="contained"
+              fullWidth
+              sx={{
+                mt: 0.5,
+                py: 1.5,
+                borderRadius: "12px",
+                background: "linear-gradient(135deg, #3d1a0e 0%, #7a2e14 100%)",
+                color: "#fdf6ec",
+                fontFamily: "var(--font-main)",
+                fontSize: 14,
+                fontWeight: 700,
+                textTransform: "none",
+                letterSpacing: "0.02em",
+                boxShadow: "none",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #2c1009 0%, #5e2410 100%)",
+                  boxShadow: "0 8px 24px rgba(61,26,14,0.25)",
+                },
+              }}
+              startIcon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              }
+            >
+              Submit Enquiry
+            </Button>
+          </Box>
+        </>
+      )}
+    </Box>
+  </Box>
+</Box>
+  {/* ══ SNACKBAR TOAST ══ */}
+  <Box
+    sx={{
+      position: "fixed",
+      bottom: 24,
+      left: "50%",
+      transform: snackOpen
+        ? "translateX(-50%) translateY(0)"
+        : "translateX(-50%) translateY(100px)",
+      transition: "transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)",
+      zIndex: 9999,
+      pointerEvents: snackOpen ? "auto" : "none",
+    }}
+  >
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.5,
+        background: "linear-gradient(135deg, var(--primary-teal-dark) 0%, var(--primary-teal-mid) 100%)",
+        boxShadow: "0 8px 28px rgba(12,61,71,0.35), inset 0 1px 0 rgba(255,255,255,0.08)",
+        px: 2.5,
+        py: 1.5,
+        borderRadius: "14px",
+        minWidth: { xs: 260, sm: 340 },
+        position: "relative",
+        overflow: "hidden",
+        border: "1px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      {/* ── Check icon with maroon dark bg ── */}
+      <Box
+        sx={{
+          width: 32,                               // ← smaller icon circle
+          height: 32,
+          borderRadius: "50%",
+          background: "var(--primary-maroon-dark)", // ← maroon dark
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          animation: snackOpen
+            ? "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)"
+            : "none",
+          "@keyframes popIn": {
+            "0%": { transform: "scale(0)", opacity: 0 },
+            "100%": { transform: "scale(1)", opacity: 1 },
+          },
+        }}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="#fdf6ec" strokeWidth="2.8"
+          strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6L9 17l-5-5" />
+        </svg>
+      </Box>
+
+      {/* ── Text ── */}
+      <Box sx={{ flex: 1 }}>
+        <Typography sx={{
+          fontFamily: "var(--font-main)",
+          fontWeight: 700,
+          fontSize: 13.5,
+          color: "#fdf6ec",
+          lineHeight: 1.3,
+          mb: 0.2,
+        }}>
+          Enquiry Submitted!
+        </Typography>
+        <Typography sx={{
+          fontFamily: "var(--font-main)",
+          fontSize: 11.5,
+          color: "rgba(253,246,236,0.75)",
+          lineHeight: 1.3,
+        }}>
+          We'll reach out on{" "}
+          <Box component="span" sx={{ fontWeight: 700, color: "#fdf6ec" }}>
+            {bulkForm.phone || "your number"}
+          </Box>.
+        </Typography>
+      </Box>
+
+      {/* ── Close button ── */}
+      <Box
+        onClick={() => setSnackOpen(false)}
+        sx={{
+          width: 24,
+          height: 24,
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          flexShrink: 0,
+          "&:hover": { background: "rgba(255,255,255,0.12)" },
+          transition: "background 0.2s",
+        }}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+          stroke="rgba(253,246,236,0.7)" strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </Box>
+
+      {/* ── Progress bar — maroon dark, shrinks in 4s ── */}
+      <Box
+        sx={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          height: "3px",
+          borderRadius: "0 0 14px 14px",
+          background: "var(--primary-maroon-dark)",  // ← maroon dark
+          animation: snackOpen
+            ? "shrinkBar 4s linear forwards"
+            : "none",
+          "@keyframes shrinkBar": {
+            "0%": { width: "100%" },
+            "100%": { width: "0%" },
+          },
+        }}
+      />
+    </Box>
+  </Box>
   <CertifiedQualitySection/>
   <DeliverySection/>
   <CustomerReviewsSection/>

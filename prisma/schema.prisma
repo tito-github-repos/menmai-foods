@@ -210,6 +210,7 @@ model Product {
   BulkOrderItem BulkOrderItem[]
   CartItem      CartItem[]
   OrderItem     OrderItem[]
+  bulkPricePerPiece Float?
 }
 
 model ProductImage {
