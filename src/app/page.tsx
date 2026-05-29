@@ -29,36 +29,29 @@ const banners: string[] = [
 /* ─────────────────────────────────────────
    PRODUCTS
 ───────────────────────────────────────── */
-const products = [
-  {
-    id: "chapathi",
-    pieces: 10,
-    name: "Chapathi",
-    color: "var(--primary-teal-mid)",
+type Product = {
+  id: number;
+  name: string;
+  slug: string;
+  price: number;
+  mrp: number | null;
+  netWeight: string | null;
+  pieces: number | null;
+  imageUrl: string | null;
+};
+
+const productDisplay = {
+  chapathi: {
     bg: "#F5F3EC",
     border: "#e4dfcf",
-    img: "/img/products/chapathi_main.png",
-    price: 40,
-    oldPrice: 50,
-    weight: "450g",
     desc: "Soft homemade chapathi prepared fresh daily with traditional taste.",
-    desc1: " Ready in 2 seconds",
   },
-  {
-    id: "poori",
-    pieces: 15,
-    name: "Poori",
-    color: "var(--primary-maroon-mid)",
+  poori: {
     bg: "#F8F0E3",
     border: "#ecd8c7",
-    img: "/img/products/poori_main.png",
-    price: 45,
-    oldPrice: 55,
-    weight: "500g",
     desc: "Fluffy and delicious poori made with hygienic ingredients for perfect taste.",
-    desc1: " Ready in 2 seconds",
   },
-];
+} as const;
 
 /* ─────────────────────────────────────────
    BULK ORDER FORM TYPES
@@ -68,7 +61,7 @@ type BulkProduct = "Chapathi" | "Poori" | "Both – Chapathi & Poori";
 interface BulkForm {
   name: string;
   phone: string;
-  email: string;     // ✅ add this
+  email: string;    
   address: string;
   product: BulkProduct | "";
   quantity: string;
@@ -272,6 +265,14 @@ export default function HomePage() {
 
   const dispatch = useAppDispatch();
 
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then(setProducts);
+  }, []);
+
   /* Bulk form state */
   const [bulkForm, setBulkForm] = useState<BulkForm>({
     name: "", phone: "",email: "",   
@@ -454,6 +455,7 @@ export default function HomePage() {
   </Box>
   <Grid container spacing={{ xs: 2, md: 3 }}>
   {products.map((product) => {
+    const display = productDisplay[product.slug as keyof typeof productDisplay];
     const isTeal = product.name === "Chapathi";
     return (
       <Grid item xs={12} md={6} key={product.name}>
@@ -461,15 +463,15 @@ export default function HomePage() {
           sx={{
             display: "flex",
             borderRadius: "20px",
-            backgroundColor: product.bg,
-            border: `1.5px solid ${product.border}`,
+            backgroundColor: display.bg,
+            border: `1.5px solid ${display.border}`,
             boxShadow: "var(--shadow)",
             overflow: "hidden",
             minHeight: 220,
           }}
         >
           <Box sx={{ width: "42%", flexShrink: 0, display: "flex", alignItems: "center", p: "10px 0 10px 10px" }}>
-            <Box component="img" src={product.img} alt={product.name}
+            <Box component="img" src={product.imageUrl ?? ""} alt={product.name}
               sx={{ width: "100%", height: "100%", objectFit: "contain", maxHeight: 200 }}
             />
           </Box>
@@ -494,7 +496,7 @@ export default function HomePage() {
               </Typography>
 
               <Typography sx={{ fontSize: 14, color: "var(--primary-maroon-light)", lineHeight: 1.45, fontFamily: "var(--font-main)", mb: 0.5 }}>
-                {product.desc}
+                {display.desc}
               </Typography>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2, my: 0.75 }}>
@@ -521,7 +523,7 @@ export default function HomePage() {
                     <path d="M6 2h12l2 6H4L6 2z" /><rect x="3" y="8" width="18" height="13" rx="2" />
                   </svg>
                   <Typography sx={{ fontSize: 11, color: isTeal ? "var(--primary-teal-dark)" : "var(--primary-maroon-dark)", fontFamily: "var(--font-main)" }}>
-                    Net Wt. {product.weight}{" "}
+                    Net Wt. {product.netWeight}{" "}
                     <Box
                       component="span"
                       sx={{
@@ -547,7 +549,7 @@ export default function HomePage() {
                   fontSize: 13, textDecoration: "line-through", fontFamily: "var(--font-main)",
                   color: isTeal ? "var(--primary-teal-dark)" : "var(--primary-maroon-light)",
                 }}>
-                  ₹{product.oldPrice}
+                  ₹{product.mrp}
                 </Typography>
               </Box>
 
@@ -565,15 +567,16 @@ export default function HomePage() {
                   onClick={() =>
                     dispatch(
                       addToCart({
-                        id: product.id,
-                        name: product.name,
-                        packLabel: product.weight,
-                        pieces: product.pieces,
-                        mrp: product.oldPrice,
-                        price: product.price,
-                        quantity: 1,
-                        img: product.img,
-                      })
+                      productId: product.id,
+                      slug: product.slug,
+                      name: product.name,
+                      packLabel: product.netWeight ?? "",
+                      pieces: product.pieces ?? 0,
+                      mrp: product.mrp ?? product.price,
+                      price: product.price,
+                      quantity: 1,
+                      img: product.imageUrl ?? "",
+                    })
                     )
                   }
                 sx={{
@@ -589,7 +592,7 @@ export default function HomePage() {
                   Add to Cart
                 </Button>
                 <Button variant="outlined"
-                  onClick={() => router.push(`/product/${product.name.toLowerCase()}`)}
+                  onClick={() => router.push(`/product/${product.slug}`)}
                   sx={{
                     flex: 1, borderRadius: "999px", fontSize: 12, fontWeight: 700,
                     height: 36, fontFamily: "var(--font-main)", whiteSpace: "nowrap",
@@ -1216,199 +1219,6 @@ export default function HomePage() {
             </Box>
           </Box>
         </Box>
-
-        {/* ══ CERTIFIED QUALITY BANNER ══ */}
-{/* ══ CERTIFIED QUALITY BANNER ══ */}
-{/* <Box
-  sx={{
-    width: "100%",
-    py: { xs: 3, md: 4 },
-    px: { xs: 2, md: 4 },
-    background: "#fdf6ec",
-    position: "relative",
-    overflow: "hidden",
-  }}
-> */}
-  {/* Wheat image pinned bottom-left */}
-  {/* <Box
-    component="img"
-    src="/img/certificates/wheat.png"
-    alt=""
-    sx={{
-      position: "absolute",
-      left: 0,
-      bottom: 0,
-      width: { xs: 100, md: 200 },
-      opacity: 0.9,
-      pointerEvents: "none",
-      zIndex: 0,
-    }}
-  />
-
-  <Box
-    sx={{
-      maxWidth: "1000px",
-      mx: "auto",
-      position: "relative",
-      zIndex: 1,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: 2.5,
-    }}
-  > */}
-    {/* ── Top ornament + heading ── */}
-    {/* <Box sx={{ textAlign: "center" }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1.5, mb: 1 }}>
-        <Box sx={{ height: "1px", width: 48, bgcolor: "rgba(90,56,37,0.2)" }} />
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b07050" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 22C6.5 11 2 8 2 5a5 5 0 0 1 10 0 5 5 0 0 1 10 0c0 3-4.5 6-10 17z" />
-        </svg>
-        <Box sx={{ height: "1px", width: 48, bgcolor: "rgba(90,56,37,0.2)" }} />
-      </Box>
-
-      <Typography
-        sx={{
-          fontFamily: "var(--font-heading)",
-          fontSize: { xs: 22, md: 28 },
-          fontWeight: 700,
-          color: "var(--primary-maroon-dark)",
-          lineHeight: 1.2,
-          mb: 0.5,
-        }}
-      >
-        Certified Quality. Trusted by You.
-      </Typography>
-      <Typography
-        sx={{
-          fontFamily: "var(--font-main)",
-          fontSize: 13,
-          color: "#9a6a50",
-          lineHeight: 1.6,
-        }}
-      >
-        We follow strict food safety and government standards to ensure the best for you and your family.
-      </Typography>
-    </Box> */}
-
-    {/* ── Logo row — horizontal pill card ── */}
-    {/* <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 0,
-        background: "#fff",
-        border: "1px solid rgba(90,56,37,0.12)",
-        borderRadius: "20px",
-        overflow: "hidden",
-        width: "fit-content",
-        boxShadow: "0 2px 12px rgba(61,26,14,0.06)",
-      }}
-    > */}
-      {/* FSSAI */}
-      {/* <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          px: { xs: 3, md: 5 },
-          py: 2,
-          gap: 0.8,
-        }}
-      >
-        <Box
-          component="img"
-          src="/img/certificates/fssai.png"
-          alt="FSSAI"
-          sx={{ height: { xs: 38, md: 48 }, objectFit: "contain" }}
-        />
-        <Box sx={{ height: "1px", width: "80%", background: "repeating-linear-gradient(90deg, rgba(90,56,37,0.25) 0, rgba(90,56,37,0.25) 4px, transparent 4px, transparent 8px)" }} />
-        <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 11, fontWeight: 700, color: "var(--primary-maroon-dark)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-          FSSAI Certified
-        </Typography>
-        <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 10.5, color: "#b07050" }}>
-          Food Safety Approved
-        </Typography>
-      </Box> */}
-
-      {/* Divider */}
-      {/* <Box sx={{ width: "1px", height: 70, bgcolor: "rgba(90,56,37,0.12)" }} />
-
-      {/* MSME */}
-      {/* <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          px: { xs: 3, md: 5 },
-          py: 2,
-          gap: 0.8,
-        }}
-      >
-        <Box
-          component="img"
-          src="/img/certificates/msme.png"
-          alt="MSME"
-          sx={{ height: { xs: 38, md: 48 }, objectFit: "contain" }}
-        />
-        <Box sx={{ height: "1px", width: "80%", background: "repeating-linear-gradient(90deg, rgba(90,56,37,0.25) 0, rgba(90,56,37,0.25) 4px, transparent 4px, transparent 8px)" }} />
-        <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 11, fontWeight: 700, color: "var(--primary-maroon-dark)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-          MSME Registered
-        </Typography>
-        <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 10.5, color: "#b07050" }}>
-          Govt. Recognized Business
-        </Typography>
-      </Box>
-    </Box> */} 
-
-    {/* ── Badge bar ── */}
-    {/* <Box
-      sx={{
-        width: "100%",
-        background: "var(--primary-teal-dark)",
-        borderRadius: "14px",
-        py: 1.5,
-        px: { xs: 2, md: 4 },
-        display: "grid",
-        gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" },
-        gap: { xs: 1.5, md: 0 },
-      }}
-    >
-      {[
-        { icon: <Shield />, label: "Safe & Compliant",    sub: "Strict food safety norms" },
-        { icon: <Star />,   label: "Trusted Standards",   sub: "Leading government bodies" },
-        { icon: <Heart />,  label: "Quality You Deserve", sub: "Pure & hygienic ingredients" },
-        { icon: <Veg />,    label: "Committed to You",    sub: "Your health is our priority" },
-      ].map((b, i) => (
-        <Box
-          key={i}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.2,
-            px: { xs: 0, md: 2 },
-            borderRight: { md: i < 3 ? "1px solid rgba(245,223,192,0.15)" : "none" },
-          }}
-        >
-          <Box sx={{ "& svg": { width: 18, height: 18, fill: "none", stroke: "#f5dfc0", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", flexShrink: 0 } }}>
-            {b.icon}
-          </Box>
-          <Box>
-            <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 12, fontWeight: 700, color: "#f5dfc0", lineHeight: 1.2 }}>
-              {b.label}
-            </Typography>
-            <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 10.5, color: "rgba(245,223,192,0.65)", lineHeight: 1.3 }}>
-              {b.sub}
-            </Typography>
-          </Box>
-        </Box>
-      ))}
-    </Box>
-
-  </Box>
-</Box>
- */}
   <CertifiedQualitySection/>
   <DeliverySection/>
   <CustomerReviewsSection/>

@@ -23,6 +23,7 @@ import { CustomerReviewsSection } from "@/app/components/DeliveryandReviews";
 import { useAppDispatch } from "@/store/hooks";
 import { addToCart } from "@/store/cartSlice";
 
+
 const MotionBox = motion(Box);
 const MotionPaper = motion(Paper);
 
@@ -246,13 +247,27 @@ const IcoBulkAgent = () => (
 /* ═══════════════════════════════════════════════════════════
    PRODUCT DATA
 ═══════════════════════════════════════════════════════════ */
-const products: Record<string, any> = {
+type DbProduct = {
+  id: number;
+  name: string;
+  slug: string;
+  price: number;
+  mrp: number | null;
+  netWeight: string | null;
+  pieces: number | null;
+  imageUrl: string | null;
+  images: {
+    id: number;
+    imageUrl: string;
+    altText: string | null;
+    sortOrder: number;
+  }[];
+};
+
+const productDetails: Record<string, any> = {
   chapathi: {
-    name: "Chapathi",
     badge: "FRESH & SOFT",
     desc: "Soft homemade chapathi prepared fresh daily with traditional taste and no preservatives. Made with pure ingredients to bring you the comfort of home.",
-    mrp: 50,
-    images: ["/img/products/chapathi1.jpeg", "/img/products/chapathi2.jpeg", "/img/products/chapathi3.jpeg"],
     packs: [{ label: "Pack of 10 PCS", sublabel: "Perfect for a family meal", price: 40 }],
     nutrition: [
       { label: "Energy",        value: "297 kcal" },
@@ -283,11 +298,8 @@ const products: Record<string, any> = {
     ],
   },
   poori: {
-    name: "Poori",
     badge: "CRISPY & GOLDEN",
     desc: "Crispy golden poori, puffed to perfection and made fresh with traditional recipes.",
-    mrp: 55,
-    images: ["/img/products/poori1.jpeg", "/img/products/poori2.jpeg"],
     packs: [{ label: "Pack of 15 PCS", sublabel: "Perfect for a family meal", price: 45 }],
     nutrition: [
       { label: "Energy",        value: "320 kcal" },
@@ -324,17 +336,22 @@ const products: Record<string, any> = {
 ═══════════════════════════════════════════════════════════ */
 export default function ProductPage() {
   const params  = useParams();
-  const id      = params.id as string;
-  const product = products[id];
-  if (!id || !product) return notFound();
+  // const id      = params.id as string;
+  // const product = products[id];
+  const slug = params.id as string;
+  const details = productDetails[slug];
   const dispatch = useAppDispatch();
 
-  const [qty, setQty]               = useState(1);
-  const [img, setImg]               = useState(product.images[0]);
-  const [imgIdx, setImgIdx]         = useState(0);
+  const [product, setProduct] = useState<DbProduct | null>(null);
+  const [qty, setQty] = useState(1);
+  const [img, setImg] = useState("");
+  const [imgIdx, setImgIdx] = useState(0);
+  // const [qty, setQty]               = useState(1);
+  // const [img, setImg]               = useState(product.images[0]);
+  // const [imgIdx, setImgIdx]         = useState(0);
   const [pincode, setPincode]       = useState("");
   const [pincodeMsg, setPinMsg]     = useState<"valid"|"invalid"|"">("");
-  const [selectedPack]              = useState(product.packs[0]);
+  // const [selectedPack]              = useState(product.packs[0]);
   const [bulkOpen, setBulkOpen]     = useState(false);
   const [bulkQty, setBulkQty]       = useState(50);
   const [bulkName, setBulkName]     = useState("");
@@ -345,15 +362,89 @@ export default function ProductPage() {
   const [activeStep, setActiveStep] = useState(0);
   const [revIdx, setRevIdx]         = useState(0);
 
-  const discount = Math.round(((product.mrp - selectedPack.price) / product.mrp) * 100);
+  // const discount = Math.round(((product.mrp - selectedPack.price) / product.mrp) * 100);
+
+  // useEffect(() => {
+  //   const t = setInterval(() => setActiveStep(p => (p + 1) % product.cookSteps.length), 2200);
+  //   return () => clearInterval(t);
+  // }, [product.cookSteps.length]);
+
+  // const prevImg = () => { const i = imgIdx === 0 ? product.images.length - 1 : imgIdx - 1; setImgIdx(i); setImg(product.images[i]); };
+  // const nextImg = () => { const i = imgIdx === product.images.length - 1 ? 0 : imgIdx + 1; setImgIdx(i); setImg(product.images[i]); };
+
+    useEffect(() => {
+    fetch(`/api/products/${slug}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Product not found");
+        return res.json();
+      })
+      .then((data: DbProduct) => {
+        setProduct(data);
+
+        const firstImage = data.images?.[0]?.imageUrl || data.imageUrl || "";
+        setImg(firstImage);
+        setImgIdx(0);
+      })
+      .catch(() => {
+        setProduct(null);
+      });
+  }, [slug]);
 
   useEffect(() => {
-    const t = setInterval(() => setActiveStep(p => (p + 1) % product.cookSteps.length), 2200);
-    return () => clearInterval(t);
-  }, [product.cookSteps.length]);
+    if (!details) return;
 
-  const prevImg = () => { const i = imgIdx === 0 ? product.images.length - 1 : imgIdx - 1; setImgIdx(i); setImg(product.images[i]); };
-  const nextImg = () => { const i = imgIdx === product.images.length - 1 ? 0 : imgIdx + 1; setImgIdx(i); setImg(product.images[i]); };
+    const t = setInterval(() => {
+      setActiveStep((p) => (p + 1) % details.cookSteps.length);
+    }, 2200);
+
+    return () => clearInterval(t);
+  }, [details]);
+
+  if (!details) return notFound();
+
+  if (!product) {
+    return (
+      <Box sx={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Typography>Loading product...</Typography>
+      </Box>
+    );
+  }
+
+  const galleryImages =
+    product.images.length > 0
+      ? product.images.map((image) => image.imageUrl)
+      : product.imageUrl
+        ? [product.imageUrl]
+        : [];
+
+  const selectedPack = {
+    label: product.pieces ? `Pack of ${product.pieces} PCS` : "Pack",
+    sublabel: product.netWeight ? product.netWeight : "Perfect for a family meal",
+    price: product.price,
+  };
+
+  const mrp = product.mrp ?? product.price;
+
+  const discount =
+    mrp > product.price
+      ? Math.round(((mrp - product.price) / mrp) * 100)
+      : 0;
+
+  const prevImg = () => {
+    if (galleryImages.length === 0) return;
+
+    const i = imgIdx === 0 ? galleryImages.length - 1 : imgIdx - 1;
+    setImgIdx(i);
+    setImg(galleryImages[i]);
+  };
+
+  const nextImg = () => {
+    if (galleryImages.length === 0) return;
+
+    const i = imgIdx === galleryImages.length - 1 ? 0 : imgIdx + 1;
+    setImgIdx(i);
+    setImg(galleryImages[i]);
+  };
 
   /* highlight icon map */
   const hiIcons: Record<string, React.ReactNode> = {
@@ -457,7 +548,7 @@ export default function ProductPage() {
 
             {/* Thumbnails */}
             <Box display="flex" gap={1.5} mt={2}>
-              {product.images.map((src: string, i: number) => (
+              {galleryImages.map((src: string, i: number)  => (
                 <Box key={i} component="img" src={src}
                   onClick={() => { setImg(src); setImgIdx(i); }}
                   sx={{
@@ -482,7 +573,7 @@ export default function ProductPage() {
                 fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
                 px: 1.5, py: 0.45, borderRadius: 2, mb: 1.5,
                 fontFamily: "var(--primary-heading",
-              }}>{product.badge}</Box>
+              }}>{details.badge}</Box>
 
               {/* Product name */}
               {/* <Typography sx={{
@@ -571,7 +662,7 @@ export default function ProductPage() {
 
               {/* Description */}
               <Typography fontSize={14} color="#7a5140" lineHeight={1.75} mb={2.5}>
-                {product.desc}
+                {details.desc}
               </Typography>
 
               {/* Pack selector */}
@@ -598,7 +689,7 @@ export default function ProductPage() {
                     ₹{selectedPack.price}
                   </Typography>
                   <Typography fontSize={14} sx={{ textDecoration: "line-through", color: "#bbb" }}>
-                    ₹{product.mrp}
+                    ₹{mrp}
                   </Typography>
                   <Box sx={{
                     bgcolor: "var(--primary-maroon-mid)", color: "#fff", fontSize: 11, fontWeight: 800,
@@ -692,14 +783,15 @@ export default function ProductPage() {
                       onClick={() => {
                         dispatch(
                           addToCart({
-                            id,
+                            productId: product.id,
+                            slug: product.slug,
                             name: product.name,
                             packLabel: selectedPack.label,
-                            pieces: id === "chapathi" ? 10 : 15,
-                            mrp: product.mrp,
+                            pieces: product.pieces ?? 0,
+                            mrp,
                             price: selectedPack.price,
                             quantity: qty,
-                            img: product.images[0],
+                            img: galleryImages[0] ?? product.imageUrl ?? "",
                           })
                         );
 
@@ -751,7 +843,7 @@ export default function ProductPage() {
                 "& td": { px: 0, py: 0.65, borderColor: "#f0dfd0", fontFamily: "var(--primary-main)", fontSize: 12 },
               }}>
                 <TableBody>
-                  {product.nutrition.map((n: any, i: number) => (
+                  {details.nutrition.map((n: any, i: number) => (
                     <TableRow key={i}>
                       <TableCell sx={{ color: "#7a5140" }}>{n.label}</TableCell>
                       <TableCell align="right" sx={{ color: "#3A1204", fontWeight: 700 }}>{n.value}</TableCell>
@@ -814,7 +906,7 @@ export default function ProductPage() {
             flexWrap: { xs: "wrap", md: "nowrap" },
           }}
         >
-          {product.highlights.map(
+          {details.highlights.map(
             (
               h: {
                 ico: keyof typeof hiIcons;
@@ -902,7 +994,7 @@ export default function ProductPage() {
                 </Box>
 
                 {/* LIGHT DIVIDER */}
-                {i !== product.highlights.length - 1 && (
+                {i !== details.highlights.length - 1 && (
                   <Box
                     sx={{
                       width: "1px",
@@ -947,7 +1039,7 @@ export default function ProductPage() {
               />
             </svg>
 
-            {product.cookSteps.map((step: any, i: number) => {
+            {details.cookSteps.map((step: any, i: number) => {
               const isActive = activeStep === i;
               return (
                 <MotionBox key={i}
@@ -1011,10 +1103,10 @@ export default function ProductPage() {
                 <Typography fontSize={11} fontWeight={700} color="#E8720C" letterSpacing={1.5}
                   fontFamily="var(--primay-heading)">TIP</Typography>
               </Box>
-              <Box component="img" src={product.cookSteps[3].img} alt="tip"
+              <Box component="img" src={details.cookSteps[3].img} alt="tip"
                 sx={{ width: 55, height: 55, objectFit: "contain", opacity: 0.55, mb: 1 }} />
               <Typography fontSize={12} color="#7a5140" lineHeight={1.6}
-                fontFamily="var(--primay-main)">{product.cookTip}</Typography>
+                fontFamily="var(--primay-main)">{details.cookTip}</Typography>
             </MotionBox>
           </Box>
         </Box>
