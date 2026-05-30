@@ -28,9 +28,10 @@ const banners: string[] = [
 ];
 
 const mobileBanners: string[] = [
-  "/img/herosection/mobilehero1.png",
-  "/img/herosection/mobilehero2.png",
-  "/img/herosection/mobilehero3.png",
+  "/img/herosection/mobilehero4.png",
+  "/img/herosection/mobilehero6.png",
+  "/img/herosection/mobilehero4.png",
+
 ];
 
 /* ─────────────────────────────────────────
