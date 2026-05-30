@@ -22,7 +22,11 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { CustomerReviewsSection } from "@/app/components/DeliveryandReviews";
 import { useAppDispatch } from "@/store/hooks";
 import { addToCart } from "@/store/cartSlice";
-
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useRouter } from "next/navigation";
 
 const MotionBox = motion(Box);
 const MotionPaper = motion(Paper);
@@ -37,6 +41,8 @@ const IVORY  = "var(--ivory)";     // #FFF9F0
 const MUTED  = "var(--muted)";     // #8A6040
 const TEAL   = "var(--primary-teal-dark)";   // #0c3d47
 const MAROON = "var(--primary-maroon-dark)"; // #472112
+
+
 
 /* ═══════════════════════════════════════════════════════════
    SECTION-HEADING WHEAT (flanks) — matches screenshots exactly
@@ -341,6 +347,11 @@ export default function ProductPage() {
   const slug = params.id as string;
   const details = productDetails[slug];
   const dispatch = useAppDispatch();
+  const router = useRouter();
+
+  const IMG_BORDER = slug === "chapathi"
+  ? "var(--primary-teal-mid)"
+  : "var(--primary-maroon-mid)";
 
   const [product, setProduct] = useState<DbProduct | null>(null);
   const [qty, setQty] = useState(1);
@@ -361,17 +372,6 @@ export default function ProductPage() {
   const [cartSnack, setCartSnack]   = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [revIdx, setRevIdx]         = useState(0);
-
-  // const discount = Math.round(((product.mrp - selectedPack.price) / product.mrp) * 100);
-
-  // useEffect(() => {
-  //   const t = setInterval(() => setActiveStep(p => (p + 1) % product.cookSteps.length), 2200);
-  //   return () => clearInterval(t);
-  // }, [product.cookSteps.length]);
-
-  // const prevImg = () => { const i = imgIdx === 0 ? product.images.length - 1 : imgIdx - 1; setImgIdx(i); setImg(product.images[i]); };
-  // const nextImg = () => { const i = imgIdx === product.images.length - 1 ? 0 : imgIdx + 1; setImgIdx(i); setImg(product.images[i]); };
-
     useEffect(() => {
     fetch(`/api/products/${slug}`)
       .then((res) => {
@@ -486,63 +486,74 @@ export default function ProductPage() {
     <Box sx={{ minHeight: "100vh", bgcolor: "#fff", color: "var(--text)", fontFamily: "var(--font-heading)" }}>
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
 
-        {/* BREADCRUMB */}
-        <Box display="flex" alignItems="center" gap={0.5} mb={3}>
-          {["Home", "Products", product.name].map((crumb, i, arr) => (
-            <Box key={crumb} display="flex" alignItems="center" gap={0.5}>
-              <Typography fontSize={13}
-                color={i === arr.length - 1 ? "#3A1204" : "#9e7060"}
-                fontWeight={i === arr.length - 1 ? 700 : 400}
-                sx={{ cursor: i < arr.length - 1 ? "pointer" : "default" }}>
-                {crumb}
-              </Typography>
-              {i < arr.length - 1 && <Typography fontSize={12} color="#ccc">›</Typography>}
-            </Box>
-          ))}
-        </Box>
 
         {/* MAIN GRID */}
         <Grid container spacing={4} alignItems="flex-start">
 
           {/* LEFT — Images */}
           <Grid item xs={12} md={5}>
+            {/* Mobile only — badge, name, rating, chips above image */}
+            <Box sx={{ display: { xs: "block", md: "none" }, mb: 2 }}>
+              <Box sx={{
+                display: { xs: "none", md: "inline-block" }, bgcolor: "#0c3d47", color: "#fff",
+                fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
+                px: 1.5, py: 0.45, borderRadius: 2, mb: 1.5,
+                fontFamily: "var(--primary-heading",
+              }}>{details.badge}</Box>
+
+              <Typography sx={{
+                fontFamily: "var(--font-heading)", fontSize: 38,
+                fontWeight: 900, color: "var(--primary-maroon-mid)",
+                lineHeight: 1, letterSpacing: "-0.5px", mb: 1,
+              }}>{product.name}</Typography>
+
+              <Box display="flex" alignItems="center" gap={1} mb={1.5}>
+                <Rating value={4.8} precision={0.1} readOnly size="small" sx={{ color: "#daa56b" }} />
+                <Typography fontSize={13} fontWeight={700} color="#daa56b">4.8</Typography>
+                <Typography fontSize={13} color="#bbb">(120 reviews)</Typography>
+              </Box>
+
+              <Box display="flex" gap={1} flexWrap="wrap">
+                {[
+                  { ico: <IcoChipFresh  />, label: "Fresh Today"      },
+                  { ico: <IcoChipNoPres />, label: "No Preservatives" },
+                  { ico: <IcoChipHome   />, label: "Homemade"         },
+                ].map((b) => (
+                  <Box key={b.label} sx={{
+                    display: "inline-flex", alignItems: "center", gap: 0.7,
+                    px: 1.5, py: 0.55,
+                    border: "1.5px solid var(--primary-maroon-light)",
+                    borderRadius: "20px", bgcolor: "#f7f3f1",
+                  }}>
+                    {b.ico}
+                    <Typography fontSize={12} fontWeight={600} color="var(--primary-maroon-light)"
+                      fontFamily="var(--font-heading)">{b.label}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
             <Box sx={{
               position: "relative", borderRadius: 3, overflow: "hidden",
               aspectRatio: "1/1", bgcolor: CREAM,
               boxShadow: "0 4px 24px rgba(59,31,14,0.08)",
+              border: { xs: `0.8px solid ${IMG_BORDER}`, md: "none" },
               "&:hover .navArrow": { opacity: 1 },
             }}>
               <Box component="img" src={img} alt={product.name}
                 sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
-
-              {/* 100% Whole Wheat circular badge — top-left, teal bg */}
-              <Box sx={{
-                position: "absolute", top: 14, left: 14,
-                bgcolor: "#0c3d47", color: "#fff",
-                borderRadius: "50%", width: 70, height: 70,
-                display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center",
-                fontSize: 8, fontWeight: 800, textAlign: "center",
-                lineHeight: 1.3, letterSpacing: 0.3,
-                fontFamily: "'Sora', sans-serif",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.24)",
-                gap: 0.3,
-              }}>
-                <IcoWheat size={13} color="#fff" />
-                <span>100%<br/>WHOLE<br/>WHEAT</span>
-              </Box>
-
-              <IconButton onClick={prevImg} className="navArrow" sx={{
+                <IconButton onClick={prevImg} className="navArrow" sx={{
                 position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
                 bgcolor: "rgba(255,255,255,0.9)", color: "#3A1204", width: 36, height: 36,
                 opacity: 0, transition: "0.25s", boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
                 "&:hover": { bgcolor: "#fff" },
+                "& svg": { fontSize: { xs: 16, md: 20 } },
               }}><ChevronLeftIcon /></IconButton>
               <IconButton onClick={nextImg} className="navArrow" sx={{
                 position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
                 bgcolor: "rgba(255,255,255,0.9)", color: "#3A1204", width: 36, height: 36,
                 opacity: 0, transition: "0.25s", boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
                 "&:hover": { bgcolor: "#fff" },
+                "& svg": { fontSize: { xs: 16, md: 20 } },
               }}><ChevronRightIcon /></IconButton>
             </Box>
 
@@ -554,7 +565,10 @@ export default function ProductPage() {
                   sx={{
                     width: 80, height: 80, borderRadius: 2, objectFit: "cover",
                     cursor: "pointer",
-                    border: img === src ? `2.5px solid #3A1204` : "2px solid #e0cfc4",
+                    border: {
+                      xs: img === src ? `1px solid ${IMG_BORDER}` : `0.5px solid ${IMG_BORDER}`,
+                      md: img === src ? `2.5px solid #3A1204` : "2px solid #e0cfc4",
+                    },
                     opacity: img === src ? 1 : 0.65, transition: "0.2s",
                     "&:hover": { opacity: 1 },
                   }}
@@ -569,7 +583,7 @@ export default function ProductPage() {
 
               {/* Teal badge */}
               <Box sx={{
-                display: "inline-block", bgcolor: "#0c3d47", color: "#fff",
+                display: { xs: "none", md: "inline-block" }, bgcolor: "#0c3d47", color: "#fff",
                 fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
                 px: 1.5, py: 0.45, borderRadius: 2, mb: 1.5,
                 fontFamily: "var(--primary-heading",
@@ -582,7 +596,7 @@ export default function ProductPage() {
               }}>{product.name}</Typography> */}
 
               <Box
-                display="flex"
+                display={{ xs: "none", md: "flex" }}
                 alignItems="center"
                 gap={1}
                 mb={1}
@@ -615,33 +629,15 @@ export default function ProductPage() {
                 /> */}
               </Box>
 
-              {/* Orange divider */}
-              {/* <Box display="flex" alignItems="center" gap={0.5} mb={0} sx={{ width: "100%", maxWidth: "fit-content" }}>
-                <Box sx={{ height: "1.5px", flex: 1, minWidth: 60, bgcolor: "#e4bf95", borderRadius: 1 }} />
-                <Box
-                  component="img"
-                  src="/img/wheat-1.svg"
-                  alt="Wheat Icon"
-                  sx={{
-                    width: 45,
-                    height: 45,
-                    transform: "rotate(46deg)",
-                    objectFit: "contain",
-                   filter:"brightness(0) saturate(100%) invert(72%) sepia(38%) saturate(707%) hue-rotate(343deg) brightness(92%) contrast(88%)"
-                  }}
-                />
-                <Box sx={{ height: "1.5px",flex: 1, minWidth: 60, bgcolor: "#e4bf95", borderRadius: 1 }} />
-              </Box> */}
-
               {/* Rating row */}
-              <Box display="flex" alignItems="center" gap={1} mb={2}>
+              <Box display={{ xs: "none", md: "flex" }} alignItems="center" gap={1} mb={2}>
                 <Rating value={4.8} precision={0.1} readOnly size="small" sx={{ color: "#daa56b" }} />
                 <Typography fontSize={13} fontWeight={700} color="#daa56b">4.8</Typography>
                 <Typography fontSize={13} color="#bbb">(120 reviews)</Typography>
               </Box>
 
               {/* ── Trust chips: white bg, brown outline, custom SVG ── */}
-              <Box display="flex" gap={1} flexWrap="wrap" mb={2.5}>
+              <Box display={{ xs: "none", md: "flex" }} gap={1} flexWrap="wrap" mb={2.5}>
                 {[
                   { ico: <IcoChipFresh  />, label: "Fresh Today"       },
                   { ico: <IcoChipNoPres />, label: "No Preservatives"  },
@@ -746,7 +742,8 @@ export default function ProductPage() {
                   sx={{
                     borderRadius: "10px", bgcolor: "var(--primary-maroon-mid)",
                     fontFamily: "'Sora', sans-serif", fontWeight: 700,
-                    fontSize: 13, px: 2.5, "&:hover": { bgcolor: "#5C2008" },
+                    fontSize: 13, px: 2.5, flexShrink: 0,
+                    "&:hover": { bgcolor: "#5C2008" },
                   }}>CHECK</Button>
               </Box>
               {pincodeMsg === "valid" && (
@@ -764,23 +761,26 @@ export default function ProductPage() {
               )}
 
                 {/* CTA buttons */}
-                <Box mt={2.5} display="flex" flexDirection="row" gap={1.5}>
+                <Box mt={2.5} sx={{ display: "flex", flexDirection: { xs: "column-reverse", md: "row" }, gap: 1.5 }}>
                   {/* Bulk Order — outlined, maroon border */}
-                  <Button  variant="outlined"
+                  {/* <Button variant="outlined"
                     onClick={() => setBulkOpen(true)}
                     startIcon={<LocalShippingOutlinedIcon />}
                     sx={{
                       borderRadius: "12px", borderColor: "var(--primary-marron-d)", borderWidth: 2,
                       color: "#3A1204", fontFamily: "var(--primary-heading)", fontWeight: 700,
                       fontSize: 13.5, py: 1.3,
+                      width: { xs: "100%", md: "auto" },
                       "&:hover": { bgcolor: CREAM, borderWidth: 2 },
-                    }}>BULK ORDER</Button>
+                    }}>BULK ORDER</Button> */}
 
                   {/* Add to Cart — gradient maroon */}
-                  <MotionBox whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.985 }}>
-                    <Button variant="contained"
-                      startIcon={<ShoppingCartOutlinedIcon />}
-                      onClick={() => {
+                  <MotionBox whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.985 }}
+                    sx={{ width: { xs: "100%", md: "auto" } }}>
+                      <Button variant="contained"
+                        fullWidth
+                        startIcon={<ShoppingCartOutlinedIcon />}
+                        onClick={() => {
                         dispatch(
                           addToCart({
                             productId: product.id,
@@ -823,15 +823,46 @@ export default function ProductPage() {
               </Box>
             </MotionBox>
           </Grid>
-
+          
           {/* RIGHT — Nutritional Facts */}
           <Grid item xs={12} md={2.5}>
+
+            {/* Mobile: accordion */}
+            <Box sx={{ display: { xs: "block", md: "none" }, mb: 1 }}>
+              <Accordion elevation={0} sx={{
+                border: "1.5px solid #e8d4c0", borderRadius: "12px !important",
+                bgcolor: "#fbf8f6", "&:before": { display: "none" },
+              }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "#3A1204" }} />}>
+                  <Typography sx={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 13, color: "#3A1204" }}>
+                    NUTRITIONAL FACTS &nbsp;
+                    <Typography component="span" fontSize={11} color="#9e7060">(Per 100g)</Typography>
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0 }}>
+                  <Table size="small" sx={{ "& td": { px: 0, py: 0.65, borderColor: "#f0dfd0", fontFamily: "var(--primary-main)", fontSize: 12 } }}>
+                    <TableBody>
+                      {details.nutrition.map((n: any, i: number) => (
+                        <TableRow key={i}>
+                          <TableCell sx={{ color: "#7a5140" }}>{n.label}</TableCell>
+                          <TableCell align="right" sx={{ color: "#3A1204", fontWeight: 700 }}>{n.value}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </AccordionDetails>
+              </Accordion>
+            </Box>
+
+            {/* Desktop: sticky sidebar */}
+            <Box sx={{ display: { xs: "none", md: "block" } }}>
             <MotionPaper
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               elevation={0}
               sx={{ border: "1.5px solid #e8d4c0", borderRadius: 3, p: 2.5, bgcolor: "#fbf8f6", position: "sticky", top: 90 }}
             >
+          
               <Typography sx={{
                 fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 14, color: "#3A1204",
                 borderBottom: `2px solid #3A1204`, pb: 1, mb: 0.5,
@@ -870,6 +901,7 @@ export default function ProductPage() {
                 </Typography>
               </Box>
             </MotionPaper>
+            </Box>
           </Grid>
         </Grid>
 
@@ -892,7 +924,7 @@ export default function ProductPage() {
 
         {/* ── HIGHLIGHTS STRIP ── */}
         <Box
-          mt={5}
+          mt={{ xs: 3, md: 5 }}
           sx={{
             display: "flex",
             alignItems: "stretch",
@@ -901,8 +933,8 @@ export default function ProductPage() {
             border: "1.5px solid #e8d4c0",
             borderRadius: "22px",
             overflow: "hidden",
-            px: { xs: 1, md: 2 },
-            py: { xs: 2, md: 2.5 },
+            px: { xs: 0.5, md: 2 },
+            py: { xs: 1.5, md: 2.5 },
             flexWrap: { xs: "wrap", md: "nowrap" },
           }}
         >
@@ -922,13 +954,13 @@ export default function ProductPage() {
                 <Box
                   sx={{
                     flex: 1,
-                    minWidth: { xs: "50%", md: 0 },
+                    minWidth: { xs: "calc(33% - 8px)", md: 0 },
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    gap: 1.8,
-                    px: { xs: 1.5, md: 3 },
-                    py: 1.5,
+                    justifyContent: { xs: "flex-start", md: "center" },
+                    gap: 1.2,
+                    px: { xs: 1, md: 3 },
+                    py: { xs: 1, md: 1.5 },
                   }}
                 >
                   {/* ICON */}
@@ -939,7 +971,7 @@ export default function ProductPage() {
                       justifyContent: "center",
 
                       "& svg": {
-                        fontSize: { xs: 38, md: 46 },
+                        fontSize: { xs: 26, md: 46 },
                         color: "#5A2410",
                         strokeWidth: 1.6,
                       },
@@ -951,8 +983,8 @@ export default function ProductPage() {
                         src="/img/wheat-2.svg"
                         alt="Wheat"
                         sx={{
-                          width: { xs: 38, md: 46 },
-                          height: { xs: 38, md: 46 },
+                          width: { xs: 26, md: 46 },
+                          height: { xs: 26, md: 46 },
                           objectFit: "contain",
 
                           filter:
@@ -1011,24 +1043,108 @@ export default function ProductPage() {
         </Box>
 
         {/* ── HOW TO COOK ── */}
-        <Box mt={8}>
+        <Box mt={{ xs: 4, md: 8 }}>
           <SectionHead text="HOW TO COOK" />
           <Typography fontSize={14} color="#9e7060" fontFamily="var(--primary-heading)"
-            textAlign="center" mb={5}>
+            textAlign="center" mb={{ xs: 3, md: 5 }}>
             From dough to delight in minutes
           </Typography>
 
+          {/* Mobile timeline layout */}
+          <Box sx={{ display: { xs: "block", md: "none" }, px: 1 }}>
+            <Box sx={{ position: "relative", pl: 5 }}>
+              
+              {/* vertical dashed line */}
+              <Box sx={{
+                position: "absolute", left: 11, top: 26, bottom: 26,
+                width: "2px",
+                backgroundImage: "repeating-linear-gradient(to bottom, #E8720C 0px, #E8720C 6px, transparent 6px, transparent 16px)",
+              }} />
+              {details.cookSteps.map((step: any, i: number) => (
+                <Box key={i} sx={{ position: "relative", mb: 3, "&:last-of-type": { mb: 0 } }}>
+                  {/* number badge on the line */}
+                  <Box sx={{
+                    position: "absolute", left: -33, top: 14,
+                    width: 26, height: 26, borderRadius: "50%",
+                    background: "linear-gradient(135deg, #E8720C, #5C2008)",
+                    color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontWeight: 700, fontSize: 12, zIndex: 2,
+                  }}>{i + 1}</Box>
+                  {/* arrow between steps */}
+                  {i < details.cookSteps.length - 1 && (
+                    <Box sx={{
+                      position: "absolute", left: -27, bottom: -18,
+                      zIndex: 2, lineHeight: 1,
+                    }}>
+                      <svg width={14} height={14} viewBox="0 0 14 14" fill="none">
+                        <path d="M7 2L7 11M7 11L3.5 7.5M7 11L10.5 7.5"
+                          stroke="#E8720C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </Box>
+                  )}
+                  {/* card */}
+                  <Box sx={{
+                    display: "flex", alignItems: "center", gap: 2,
+                    bgcolor: "#fff", border: "1px solid #f0e4d8",
+                    borderRadius: "14px", p: 1.5,
+                    boxShadow: "0 2px 12px rgba(59,31,14,0.06)",
+                  }}>
+                    <Box sx={{
+                      width: 80, height: 80, borderRadius: "50%", flexShrink: 0,
+                      bgcolor: "#fdf4ec", border: "1.5px solid #e8d4c0",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <Box component="img" src={step.img} alt={step.title}
+                        sx={{ width: 54, height: 54, objectFit: "contain" }} />
+                    </Box>
+                    <Box>
+                      <Typography fontWeight={800} fontSize={15} color="#3A1204"
+                        fontFamily="var(--primay-heading)" mb={0.3}>{step.title}</Typography>
+                      <Typography fontSize={12.5} color="#8A6040" lineHeight={1.55}
+                        fontFamily="var(--primay-main)">{step.desc}</Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              ))}
+              {/* TIP card mobile */}
+              <Box sx={{
+                mt: 3, bgcolor: "#FFF9F0", border: "1.5px dashed #E8720C",
+                borderRadius: "14px", p: 2, display: "flex", alignItems: "center", gap: 2,
+              }}>
+                <Box component="img" src={details.cookSteps[3].img} alt="tip"
+                  sx={{ width: 55, height: 55, objectFit: "contain", opacity: 0.7, flexShrink: 0 }} />
+                <Box>
+                  <Box display="flex" alignItems="center" gap={0.5} mb={0.5}>
+                    <svg width={11} height={11} viewBox="0 0 11 11" fill="none">
+                      <path d="M5.5 0.5L6.7 4H10.5L7.4 6.2L8.6 9.8L5.5 7.6L2.4 9.8L3.6 6.2L0.5 4H4.3L5.5 0.5Z"
+                        fill="#E8720C" opacity="0.85"/>
+                    </svg>
+                    <Typography fontSize={11} fontWeight={700} color="#E8720C" letterSpacing={1.5}
+                      fontFamily="var(--primay-heading)">TIP</Typography>
+                  </Box>
+                  <Typography fontSize={12} color="#7a5140" lineHeight={1.6}
+                    fontFamily="var(--primay-main)">{details.cookTip}</Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Desktop layout — unchanged */}
           <Box sx={{
-            position: "relative", display: "flex",
-            flexDirection: { xs: "column", md: "row" },
+            display: { xs: "none", md: "flex" },
+            position: "relative",
             justifyContent: "space-between", alignItems: "flex-start",
-            gap: { xs: 5, md: 2 }, px: { xs: 2, md: 4 },
+            gap: 2, px: 4,
           }}>
+
             {/* Animated dashed connector */}
-            <svg viewBox="0 0 1000 160" preserveAspectRatio="none" style={{
+            {/* <svg viewBox="0 0 1000 160" preserveAspectRatio="none" style={{
               position: "absolute", top: 55, left: "4%",
               width: "74%", height: 120, zIndex: 1, pointerEvents: "none", overflow: "visible",
-            }}>
+            }}> */}
+            {/* Animated dashed connector — desktop only */}
+            <Box sx={{ display: { xs: "none", md: "block" }, position: "absolute", top: 55, left: "4%", width: "74%", height: 120, zIndex: 1, pointerEvents: "none" }}>
+            <svg viewBox="0 0 1000 160" preserveAspectRatio="none" style={{ width: "100%", height: "100%", overflow: "visible" }}>
               <motion.path
                 d="M20 70 C180 20, 320 20, 460 70 S700 120, 860 70"
                 stroke="#E8720C" strokeWidth="2" fill="transparent"
@@ -1038,20 +1154,32 @@ export default function ProductPage() {
                 transition={{ duration: 2, ease: "easeOut" }}
               />
             </svg>
-
+            </Box>
             {details.cookSteps.map((step: any, i: number) => {
               const isActive = activeStep === i;
               return (
                 <MotionBox key={i}
                   initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }} transition={{ delay: i * 0.15 }}
-                  sx={{ textAlign: "center", flex: "1 1 140px", maxWidth: 170, position: "relative", zIndex: 2 }}
+                  sx={{
+                    display: "flex", flexDirection: { xs: "row", md: "column" },
+                    alignItems: "center", textAlign: { xs: "left", md: "center" },
+                    gap: { xs: 1.5, md: 0 },
+                    flex: "1 1 140px", maxWidth: { xs: "100%", md: 170 },
+                    position: "relative", zIndex: 2,
+                    py: { xs: 1, md: 0 },
+                    borderBottom: { xs: "1px solid #f0e4d8", md: "none" },
+                    "&:last-of-type": { borderBottom: "none" },
+                  }}
                 >
                   <MotionBox
                     animate={{ scale: isActive ? 1.05 : 0.88, opacity: isActive ? 1 : 0.38 }}
                     transition={{ duration: 0.45 }}
                     sx={{
-                      width: 118, height: 118, mx: "auto", mb: 1.2,
+                      width: { xs: 72, md: 118 },
+                      height: { xs: 72, md: 118 },
+                      flexShrink: 0,
+                      mx: { xs: 0, md: "auto" }, mb: { xs: 0, md: 1.2 },
                       borderRadius: "50%", display: "flex",
                       alignItems: "center", justifyContent: "center",
                       bgcolor: "#fff",
@@ -1064,7 +1192,8 @@ export default function ProductPage() {
                   >
                     <Box component="img" src={step.img} alt={step.title}
                       sx={{
-                        width: 74, height: 74, objectFit: "contain",
+                        width: { xs: 46, md: 74 }, height: { xs: 46, md: 74 },
+                        objectFit: "contain",
                         filter: isActive ? "drop-shadow(0 4px 10px rgba(232,114,12,0.25))" : "none",
                       }}
                     />
@@ -1074,7 +1203,9 @@ export default function ProductPage() {
                     width: 24, height: 24, borderRadius: "50%",
                     background: "linear-gradient(135deg, #E8720C, #5C2008)",
                     color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-                    mx: "auto", mb: 0.8, fontWeight: 700, fontSize: 12, fontFamily: "var(--primay-heading)",
+                    mx: { xs: 0, md: "auto" }, mb: { xs: 0, md: 0.8 },
+                    fontWeight: 700, fontSize: 12, fontFamily: "var(--primay-heading)",
+                    flexShrink: 0,
                   }}>{i + 1}</Box>
                   <Typography fontWeight={800} fontSize={14}
                     color={isActive ? "#3A1204" : "#9e7060"}
@@ -1108,13 +1239,14 @@ export default function ProductPage() {
               <Typography fontSize={12} color="#7a5140" lineHeight={1.6}
                 fontFamily="var(--primay-main)">{details.cookTip}</Typography>
             </MotionBox>
+            
           </Box>
         </Box>
 
         {/* ── BULK ORDER BANNER ── */}
         <MotionBox
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }} mt={8}
+          viewport={{ once: true }} mt={{ xs: 4, md: 8 }}
           sx={{
             background: `
               linear-gradient(
@@ -1174,53 +1306,78 @@ export default function ProductPage() {
               ].map(item => (
                 <Box key={item.label} display="flex" alignItems="center" gap={0.6}>
                   {item.ico}
-                  <Typography fontSize={12.5} color="rgba(255,255,255,0.78)"
-                    fontFamily="var(--primary-main">{item.label}</Typography>
+                  <Typography
+                    fontSize={12.5}
+                    color="rgba(255,255,255,0.78)"
+                    fontFamily="var(--primary-main)"
+                  >
+                    {item.label}
+                  </Typography>
                 </Box>
               ))}
             </Box>
           </Box>
 
           {/* CTA */}
-          <Box sx={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: { xs: "stretch", md: "flex-end" }, gap: 1 }}>
-            <Button onClick={() => setBulkOpen(true)} startIcon={<WhatsAppIcon />}
+          <Box 
+          sx={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: { xs: "stretch", md: "flex-end" }, gap: 1 }}>
+            <Button
+              onClick={() => router.push("/bulkorder")}
               sx={{
-                bgcolor: "#fff", color: "#0c3d47",
-                fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 14,
-                px: 3.5, py: 1.5, borderRadius: "12px", whiteSpace: "nowrap",
-                "&:hover": { bgcolor: "#e8f5f3" },
-              }}>PLACE BULK ORDER</Button>
+                bgcolor: "#fff",
+                color: "#0c3d47",
+                fontFamily: "'Sora', sans-serif",
+                fontWeight: 800,
+                fontSize: 14,
+                px: 3.5,
+                py: 1.5,
+                borderRadius: "12px",
+                whiteSpace: "nowrap",
+                "&:hover": {
+                  bgcolor: "#e8f5f3",
+                },
+              }}
+            >
+              PLACE BULK ORDER
+            </Button>
           </Box>
         </MotionBox>
-        <CustomerReviewsSection />
+        <CustomerReviewsSection/>
         </Container>
 
     {/* ── FOOTER TRUST STRIP ── full width */}
-      <Box  sx={{
-        display: "flex", justifyContent: "space-around", alignItems: "center",
+      <Box sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "repeat(3, 1fr)", md: "repeat(6, 1fr)" },
+        gap: { xs: 2, md: 3 },
+        justifyItems: "center",
         bgcolor: "#fcfaf8",
         borderBottom: "1.5px solid #e8d4c0",
-        py: 3.5, px: { xs: 4, md: 8 },
-        flexWrap: "wrap", gap: 3,
+        py: { xs: 2, md: 2 }, px: { xs: 2, md: 8 },
       }}>
         {[
-          { src: "/img/freshly.svg",  label: "Freshly Made",     sub: "Every Day"  },
-          { src: "/img/hygiene.svg",  label: "Hygienically",     sub: "Prepared"   },
-          { src: "/img/pack.svg",     label: "Secure & Safe",    sub: "Packaging"  },
-          { src: "/img/delivery.svg", label: "On-time",          sub: "Delivery"   },
-          { src: "/img/address.svg",  label: "10 KM Delivery",   sub: "in Madurai" },
-          { src: "/img/trust.svg",    label: "Trusted by 1000+", sub: "Families"   },
+          { src: "/img/freshly.svg",  label: "Freshly Made",     sub: "Every Day",  mobileHide: false },
+          { src: "/img/hygiene.svg",  label: "Hygienically",     sub: "Prepared",   mobileHide: false },
+          { src: "/img/pack.svg",     label: "Secure & Safe",    sub: "Packaging",  mobileHide: false },
+          { src: "/img/delivery.svg", label: "On-time",          sub: "Delivery",   mobileHide: true  },
+          { src: "/img/address.svg",  label: "10 KM Delivery",   sub: "in Madurai", mobileHide: true  },
+          { src: "/img/trust.svg",    label: "Trusted by 1000+", sub: "Families",   mobileHide: true  },
         ].map(item => (
           <Box
             key={item.label}
-            display="flex"
             alignItems="center"
             gap={1.5}
+            sx={{
+              display: { xs: item.mobileHide ? "none" : "flex", md: "flex" },
+              alignItems: "center",
+              gap: 1.5,
+              flexDirection: "column",
+              textAlign: "center",
+            }}
           >
             {/* Dark maroon circle with gold SVG icon */}
             <Box sx={{
-              width: 40,
-              height: 40,
+              width: { xs: 36, md: 34 }, height: { xs: 36, md: 34 },
               borderRadius: "50%",
               bgcolor: "var(--primary-teal-dark)",          /* #3A1204 deep maroon */
               flexShrink: 0,
@@ -1229,13 +1386,8 @@ export default function ProductPage() {
               justifyContent: "center",
               boxShadow: "0 3px 12px rgba(58,18,4,0.22)",
             }}>
-              <Box
-                component="img"
-                src={item.src}
-                alt={item.label}
-                sx={{
-                  width: 26,
-                  height: 26,
+              <Box component="img" src={item.src} alt={item.label} sx={{
+                width: { xs: 20, md: 20 }, height: { xs: 20, md: 20 },
                   objectFit: "contain",
                   filter:
                     "brightness(0) saturate(100%) invert(84%) sepia(28%) saturate(450%) hue-rotate(345deg) brightness(105%) contrast(92%)",
@@ -1245,29 +1397,16 @@ export default function ProductPage() {
 
             {/* Text */}
             <Box>
-              <Typography
-                fontSize={12.5}
-                fontWeight={700}
-                color="var(--dbr)"
-                fontFamily="'Sora', sans-serif"
-                lineHeight={1.25}
-              >
-                {item.label}
-              </Typography>
-              <Typography
-                fontSize={11.5}
-                color="var(--muted)"
-                fontFamily="'Sora', sans-serif"
-                lineHeight={1.25}
-              >
-                {item.sub}
-              </Typography>
+              <Typography fontSize={11} fontWeight={700} color="var(--dbr)"
+                fontFamily="'Sora', sans-serif" lineHeight={1.25}>{item.label}</Typography>
+              <Typography fontSize={10} color="var(--muted)"
+                fontFamily="'Sora', sans-serif" lineHeight={1.25}>{item.sub}</Typography>
             </Box>
           </Box>
         ))}
       </Box>
 
-      {/* ── BULK ORDER DIALOG ── */}
+      {/* ── BULK ORDER DIALOG ──
       <Dialog open={bulkOpen} onClose={() => setBulkOpen(false)} maxWidth="sm" fullWidth
         PaperProps={{ sx: { borderRadius: 4, p: 1 } }}>
         <DialogTitle sx={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 24, color: "#3A1204", pb: 0 }}>
@@ -1313,7 +1452,7 @@ export default function ProductPage() {
             Submit Request
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
 
       <Snackbar open={snackOpen} autoHideDuration={4000} onClose={() => setSnackOpen(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
