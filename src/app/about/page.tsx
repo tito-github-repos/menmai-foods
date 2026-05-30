@@ -434,7 +434,7 @@ export default function AboutPage() {
                   {/* BUTTON */}
                   <Button
                     component={Link}
-                    href="/products"
+                    href="/"
                     variant="contained"
                     sx={{
                       textTransform: "none",
