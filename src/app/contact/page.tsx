@@ -817,8 +817,7 @@ export default function ContactPage() {
 
               {/* Button */}
               <Button
-                href="https://wa.me/919894777825"
-                target="_blank"
+                href="/bulkorder"
                 sx={{
                   backgroundColor: "var(--primary-teal-dark)",
                   color: "var(--white)",
