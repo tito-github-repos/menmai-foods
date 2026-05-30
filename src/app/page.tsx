@@ -9,13 +9,14 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useState , useRef} from "react";
 import { useRouter } from "next/navigation";
 import React from "react";
 import CertifiedQualitySection from './components/CertifiedQuality';
 import { CustomerReviewsSection, DeliverySection } from "./components/DeliveryandReviews";
 import { useAppDispatch } from "@/store/hooks";
 import { addToCart } from "@/store/cartSlice";
+import { useMediaQuery, useTheme } from "@mui/material";
 
 /* ─────────────────────────────────────────
    HERO BANNERS
@@ -24,6 +25,12 @@ const banners: string[] = [
   "/img/herosection/hero1.png",
   "/img/herosection/hero2.png",
   "/img/herosection/hero3.png",
+];
+
+const mobileBanners: string[] = [
+  "/img/herosection/mobilehero1.png",
+  "/img/herosection/mobilehero2.png",
+  "/img/herosection/mobilehero3.png",
 ];
 
 /* ─────────────────────────────────────────
@@ -324,6 +331,32 @@ export default function HomePage() {
   const [bulkSubmitted, setBulkSubmitted] = useState(false);
   const [snackOpen, setSnackOpen] = useState(false); // ← ADD
 
+  const [activeWhy, setActiveWhy] = useState(0);
+  const touchStartX = useRef(0);
+
+useEffect(() => {
+  const timer = setInterval(() => {
+    setActiveWhy((prev) => (prev + 1) % whyItems.length);
+  }, 2500);
+  return () => clearInterval(timer);
+}, []);
+
+const handleTouchStart = (e: React.TouchEvent) => {
+  touchStartX.current = e.touches[0].clientX;
+};
+
+const handleTouchEnd = (e: React.TouchEvent) => {
+  const dx = e.changedTouches[0].clientX - touchStartX.current;
+  if (Math.abs(dx) > 30) {
+    setActiveWhy((prev) =>
+      (prev + (dx < 0 ? 1 : -1) + whyItems.length) % whyItems.length
+    );
+  }
+};
+
+const theme = useTheme();
+const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   useEffect(() => {
     if (snackOpen) {
       const timer = setTimeout(() => setSnackOpen(false), 4000);
@@ -345,9 +378,13 @@ export default function HomePage() {
       <Box sx={{ width: "100%", background: "#fff" }}>
         <Box
           component="img"
-          src={banners[current]}
+          src={isMobile ? mobileBanners[current] : banners[current]}
           alt="banner"
-          sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+          sx={{
+            width: "100%",
+            height: { xs: "auto", md: "100%" },
+            objectFit: { xs: "contain", md: "cover" },
+          }}
         />
         {/* ══ TRUST TICKER (Hero Bottom) ══ */}
 <Box
@@ -355,7 +392,7 @@ export default function HomePage() {
     width: "100%",
     overflow: "hidden",
     background: "var(--primary-teal-dark)",
-    py: 1.2,
+    py: { xs: 0.8, md: 1.2 },
     position: "relative",
 
     // /* Premium fade edges */
@@ -387,9 +424,9 @@ export default function HomePage() {
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 1.2,
-          px: { xs: 2, md: 4 },
-          minWidth: { xs: "180px", md: "240px" },
+          gap: { xs: 0.8, md: 1.2 }, 
+          px: { xs: 1.5, md: 4 },
+          minWidth: { xs: "20px", md: "240px" },
         }}
       >
         {/* ICON */}
@@ -504,6 +541,7 @@ export default function HomePage() {
         <Card
           sx={{
             display: "flex",
+            flexDirection: { xs: "column", md: "row" },
             borderRadius: "20px",
             backgroundColor: display.bg,
             border: `1.5px solid ${display.border}`,
@@ -512,13 +550,13 @@ export default function HomePage() {
             minHeight: 220,
           }}
         >
-          <Box sx={{ width: "42%", flexShrink: 0, display: "flex", alignItems: "center", p: "10px 0 10px 10px" }}>
+          <Box sx={{  width: { xs: "100%", md: "42%" }, height: { xs: 200, md: "auto" }, flexShrink: 0, display: "flex", alignItems: "center",justifyContent: { xs: "center", md: "flex-start" }, p: "10px 0 10px 10px" }}>
             <Box component="img" src={product.imageUrl ?? ""} alt={product.name}
               sx={{ width: "100%", height: "100%", objectFit: "contain", maxHeight: 200 }}
             />
           </Box>
 
-          <CardContent sx={{ flex: 1, p: "14px 14px 14px 8px !important", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <CardContent sx={{ flex: 1, p: { xs: "12px 14px !important", md: "14px 14px 14px 8px !important" }, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <Box>
               <Typography sx={{
                 display: "inline-block", fontSize: 10, fontWeight: 700,
@@ -658,102 +696,190 @@ export default function HomePage() {
   
 </Box>
 
-        {/* ══ WHY CHOOSE MENMAI ══ */}
-        <Box
-          sx={{
-            width: "100%",
-            position: "relative",
-            overflow: "visible",
-            borderRadius: "60px 0 0px 60px",
-             ml: { xs: 2, md: "40px" },
-            mt: { xs: 3, md: 4 },
-            py: { xs: 3, md: 4 },
-            background: "linear-gradient(120deg, var(--primary-teal-dark) 0%, var(--primary-teal-mid) 70%, #0a5060 100%)",
-          }}
-        >
-          <Box sx={{ maxWidth: "1200px", mx: "auto", px: 5, pr: { md: "200px" }, position: "relative", zIndex: 1 }}>
-            <Typography sx={{ fontFamily: "var(--font-heading)", textAlign: "left", color: "#f5dfc0", fontSize: 22, fontWeight: 700, mb: 1.5 }}>
-              Why Choose Menmai?
-            </Typography>
+       {/* ══ WHY CHOOSE MENMAI ══ */}
+<Box
+  sx={{
+    width: { xs: "calc(100% - 12px)", md: "100%" },
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: { xs: "24px 0 0 24px", md: "60px 0 0px 60px" },
+    ml: { xs: 1.5, md: "40px" },
+    mt: { xs: 2, md: 4 },
+    mb: { xs: 2, md: 0 },
+    py: { xs: 2.5, md: 4 },
+    background:
+      "linear-gradient(120deg, var(--primary-teal-dark) 0%, var(--primary-teal-mid) 70%, #0a5060 100%)",
+  }}
+>
+  <Box
+    sx={{
+      maxWidth: "1200px",
+      mx: "auto",
+      px: { xs: 3, md: 5 },
+      pr: { xs: 3, md: "200px" },
+      position: "relative",
+      zIndex: 1,
+    }}
+  >
+    <Typography
+      sx={{
+        fontFamily: "var(--font-heading)",
+        textAlign: { xs: "center", md: "left" },
+        color: "#f5dfc0",
+        fontSize: { xs: 20, md: 22 },
+        fontWeight: 700,
+        mb: 1.5,
+        whiteSpace: "nowrap",
+      }}
+    >
+      Why Choose Menmai?
+    </Typography>
 
-            <Grid container spacing={0} justifyContent="center">
-              {whyItems.map((item, i) => (
-                <Grid item xs={6} sm={4} md={2.4} key={i}>
-                  <Box
-                    sx={{
-                      textAlign: "center",
-                      px: 2,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      
-                      position: "relative",
-                    }}
-                  >
-                    <Box sx={{ mb: 1, color: "#f5dfc0" }}>{item.icon}</Box>
-                    <Typography
-                      sx={{
-                        color: "#f5dfc0",
-                        fontSize: 14,
-                        fontWeight: 600,
-                        lineHeight: 1.2,
-                        textAlign: "center",
-                        minHeight: 36,
-                      }}
-                    >
-                      {item.title}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        color: "rgba(245,223,192,0.7)",
-                        fontSize: 12,
-                        fontStyle: "italic",
-                        mt: 0.5,
-                        maxWidth: 150,
-                        minHeight: 34,
-                        textAlign: "center",
-                      }}
-                    >
-                      {item.desc}
-                    </Typography>
-                    {i !== whyItems.length - 1 && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          right: 0,
-                          transform: "translate(60%, 50%)",
-                          height: "60%",
-                          width: "1px",
-                          background: "linear-gradient(to bottom, transparent, rgba(245,223,192,0.5), transparent)",
-                        }}
-                      />
-                    )}
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
+    {/* ── Mobile: carousel ── */}
+    <Box
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      sx={{
+        display: { xs: "flex", md: "none" },
+        flexDirection: "column",
+        alignItems: "center",
+        textAlign: "center",
+        pb: 1,
+      }}
+    >
+      <Box sx={{ mb: 1, color: "#f5dfc0", "& svg": { width: 28, height: 28 } }}>
+        {whyItems[activeWhy].icon}
+      </Box>
 
+      <Typography
+        sx={{
+          color: "#f5dfc0",
+          fontSize: 15,
+          fontWeight: 700,
+          lineHeight: 1.25,
+          maxWidth: "55%",
+        }}
+      >
+        {whyItems[activeWhy].title}
+      </Typography>
+
+      <Typography
+        sx={{
+          color: "rgba(245,223,192,0.75)",
+          fontSize: 12,
+          fontStyle: "italic",
+          mt: 0.8,
+          lineHeight: 1.4,
+          maxWidth: "55%",
+        }}
+      >
+        {whyItems[activeWhy].desc}
+      </Typography>
+
+      <Box sx={{ display: "flex", gap: 0.7, mt: 1.5 }}>
+        {whyItems.map((_, i) => (
           <Box
-            component="img"
-            src="/img/dec_img.png"
-            alt="chapathi"
+            key={i}
+            onClick={() => setActiveWhy(i)}
             sx={{
-              position: "absolute",
-              right: 0,
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: { xs: 100, md: 220 },
-              filter: "drop-shadow(0 12px 32px rgba(0,0,0,0.4))",
-              zIndex: 2,
-              display: { xs: "none", md: "block" },
+              width: i === activeWhy ? 16 : 6,
+              height: 6,
+              borderRadius: 99,
+              cursor: "pointer",
+              background: i === activeWhy ? "#f5dfc0" : "rgba(245,223,192,0.35)",
+              transition: "all 0.25s ease",
             }}
           />
-        </Box>
+        ))}
+      </Box>
+    </Box>
 
-        {/* ══════════════════════════════════════════
-    ══ 2. BULK ORDERS ══
-══════════════════════════════════════════ */}
+    {/* ── Desktop: horizontal row ── */}
+    <Grid
+      container
+      spacing={0}
+      justifyContent="center"
+      sx={{ display: { xs: "none", md: "flex" } }}
+    >
+      {whyItems.map((item, i) => (
+        <Grid item md={2.4} key={i}>
+          <Box
+            sx={{
+              textAlign: "center",
+              px: 2,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              position: "relative",
+            }}
+          >
+            <Box sx={{ mb: 1, color: "#f5dfc0" }}>{item.icon}</Box>
+
+            <Typography
+              sx={{
+                color: "#f5dfc0",
+                fontSize: 14,
+                fontWeight: 600,
+                lineHeight: 1.2,
+                textAlign: "center",
+                minHeight: 36,
+              }}
+            >
+              {item.title}
+            </Typography>
+
+            <Typography
+              sx={{
+                color: "rgba(245,223,192,0.7)",
+                fontSize: 12,
+                fontStyle: "italic",
+                mt: 0.5,
+                maxWidth: 150,
+                minHeight: 34,
+                textAlign: "center",
+              }}
+            >
+              {item.desc}
+            </Typography>
+
+            {i !== whyItems.length - 1 && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  right: 0,
+                  transform: "translate(60%, 50%)",
+                  height: "60%",
+                  width: "1px",
+                  background:
+                    "linear-gradient(to bottom, transparent, rgba(245,223,192,0.5), transparent)",
+                }}
+              />
+            )}
+          </Box>
+        </Grid>
+      ))}
+    </Grid>
+  </Box>
+
+  {/* ── Chapati image ── */}
+  <Box
+    component="img"
+    src="/img/dec_img.png"
+    alt=""
+    aria-hidden="true"
+    sx={{
+      position: "absolute",
+      right: { xs: "-10%", md: 0 },
+      top: "50%",
+      transform: "translateY(-50%)",
+      width: { xs: 130, sm: 150, md: 220 },
+      filter: "drop-shadow(0 12px 32px rgba(0,0,0,0.4))",
+      zIndex: 2,
+      pointerEvents: "none",
+    }}
+  />
+</Box>
+
 <Box
   sx={{
     width: "100%",

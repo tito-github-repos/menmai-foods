@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography, Button } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* ─────────────────────────────────────────
    TESTIMONIALS DATA
@@ -213,6 +213,7 @@ export function DeliverySection() {
 ═══════════════════════════════════════════ */
 export function CustomerReviewsSection() {
   const [active, setActive] = useState(0);
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -221,126 +222,165 @@ export function CustomerReviewsSection() {
     return () => clearInterval(t);
   }, []);
 
+  const prev = () => setActive((p) => (p - 1 + reviews.length) % reviews.length);
+  const next = () => setActive((p) => (p + 1) % reviews.length);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) diff > 0 ? next() : prev();
+    touchStartX.current = null;
+  };
+
   return (
-    <Box
-      sx={{
-        width: "100%",
-        py: { xs: 5, md: 7 },
-        px: { xs: 2, md: 4 },
-        background: "#fff",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
+    <Box sx={{ width: "100%", py: { xs: 4, md: 7 }, px: { xs: 1, md: 4 }, background: "#fff" }}>
+
       {/* ── Section heading ── */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 2,
-          mb: 5,
-        }}
-      >
-        {/* Left line + heart */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Box sx={{ width: { xs: 32, md: 60 }, height: "1.5px", bgcolor: "rgba(90,56,37,0.2)", borderRadius: 1 }} />
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: { xs: 1, md: 2 }, mb: 4, px: { xs: 1, md: 0 } }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, flexShrink: 0 }}>
+          <Box sx={{ width: { xs: 20, md: 60 }, height: "1.5px", bgcolor: "rgba(90,56,37,0.2)", borderRadius: 1 }} />
           <svg width="14" height="14" viewBox="0 0 24 24" fill="#c25a30" stroke="none">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         </Box>
-
-        <Typography
-          sx={{
-            fontFamily: "var(--font-heading)",
-            fontSize: { xs: 22, md: 28 },
-            fontWeight: 700,
-            color: "var(--primary-maroon-dark)",
-            letterSpacing: "-0.01em",
-            whiteSpace: "nowrap",
-          }}
-        >
+        <Typography sx={{
+          fontFamily: "var(--font-heading)",
+          fontSize: { xs: 20, md: 28 },
+          fontWeight: 700, color: "var(--primary-maroon-dark)",
+          letterSpacing: "-0.01em",
+          whiteSpace: { xs: "normal", md: "nowrap" },
+          textAlign: "center",
+          lineHeight: 1.2,
+        }}>
           Customer Reviews
         </Typography>
-
-        {/* Right heart + line */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, flexShrink: 0 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="#c25a30" stroke="none">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
-          <Box sx={{ width: { xs: 32, md: 60 }, height: "1.5px", bgcolor: "rgba(90,56,37,0.2)", borderRadius: 1 }} />
+          <Box sx={{ width: { xs: 20, md: 60 }, height: "1.5px", bgcolor: "rgba(90,56,37,0.2)", borderRadius: 1 }} />
         </Box>
       </Box>
 
-      {/* ── Cards grid ── */}
-      <Box
-        sx={{
-          maxWidth: "1150px",
-          mx: "auto",
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "repeat(4, 1fr)" },
-          gap: { xs: 2.5, md: 3 },
-          mb: 4,
-        }}
+      {/* ── MOBILE: card with arrows on left and right ── */}
+      <Box sx={{ display: { xs: "block", sm: "none" } }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
-        {reviews.map((r, i) => (
-          <Box
-            key={i}
-            sx={{
-              background: i === active ? "#fdf8f0" : "#fff",
-              border: `1.5px solid ${i === active ? "rgba(194,90,48,0.3)" : "rgba(90,56,37,0.1)"}`,
-              borderRadius: "18px",
-              p: "20px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 1.5,
-              transition: "all 0.35s ease",
-              boxShadow: i === active
-                ? "0 8px 28px rgba(122,46,20,0.1)"
-                : "0 2px 8px rgba(0,0,0,0.03)",
-              transform: i === active ? "translateY(-4px)" : "none",
-              cursor: "pointer",
-            }}
-            onClick={() => setActive(i)}
-          >
-            {/* Stars */}
-            <StarRating />
+        {/* Row: left arrow + card + right arrow */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 0.5 }}>
 
-            {/* Quote */}
-            <Typography
-              sx={{
-                fontFamily: "var(--font-main)",
-                fontSize: 13,
-                color: "#5a3825",
-                lineHeight: 1.65,
-                flex: 1,
-              }}
-            >
+          {/* Left arrow */}
+          <Box onClick={prev} sx={{
+            width: 24, height: 24, borderRadius: "50%", flexShrink: 0,
+            border: "1px solid rgba(90,56,37,0.2)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", bgcolor: "#fff",
+          }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5a3825" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </Box>
+
+          {/* Card */}
+          <Box sx={{
+            flex: 1,
+            background: "#fdf8f0",
+            border: "1.5px solid rgba(194,90,48,0.3)",
+            borderRadius: "16px", p: "16px",
+            display: "flex", flexDirection: "column", gap: 1.2,
+            boxShadow: "0 4px 20px rgba(122,46,20,0.08)",
+            transition: "all 0.35s ease",
+          }}>
+            <StarRating />
+            <Typography sx={{
+              fontFamily: "var(--font-main)", fontSize: 13,
+              color: "#5a3825", lineHeight: 1.65, flex: 1,
+            }}>
+              {reviews[active].quote}
+            </Typography>
+            <Box sx={{ height: "1px", bgcolor: "rgba(90,56,37,0.08)" }} />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{
+                width: 34, height: 34, borderRadius: "50%",
+                background: reviews[active].color,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 12, fontWeight: 700, fontFamily: "var(--font-main)",
+                color: reviews[active].textColor, flexShrink: 0,
+                border: "1.5px solid rgba(90,56,37,0.1)",
+              }}>
+                {reviews[active].initials}
+              </Box>
+              <Box>
+                <Typography sx={{ fontFamily: "var(--font-main)", fontWeight: 700, fontSize: 13, color: "var(--primary-maroon-dark)" }}>
+                  {reviews[active].name}
+                </Typography>
+                <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 11, color: "#9a6a50" }}>
+                  {reviews[active].location}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Right arrow */}
+          <Box onClick={next} sx={{
+            width: 24, height: 24, borderRadius: "50%", flexShrink: 0,
+            border: "1px solid rgba(90,56,37,0.2)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", bgcolor: "#fff",
+          }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5a3825" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </Box>
+        </Box>
+
+        {/* Dots below */}
+        <Box sx={{ display: "flex", justifyContent: "center", gap: 0.8, mt: 1.5 }}>
+          {reviews.map((_, i) => (
+            <Box key={i} onClick={() => setActive(i)} sx={{
+              width: i === active ? 20 : 7, height: 7,
+              borderRadius: "999px",
+              background: i === active ? "#c25a30" : "rgba(90,56,37,0.18)",
+              cursor: "pointer", transition: "all 0.3s ease",
+            }} />
+          ))}
+        </Box>
+      </Box>
+
+      {/* ── DESKTOP: 4-col grid ── */}
+      <Box sx={{
+        display: { xs: "none", sm: "grid" },
+        maxWidth: "1150px", mx: "auto",
+        gridTemplateColumns: { sm: "1fr 1fr", lg: "repeat(4, 1fr)" },
+        gap: { sm: 2.5, md: 3 }, mb: 4,
+      }}>
+        {reviews.map((r, i) => (
+          <Box key={i} onClick={() => setActive(i)} sx={{
+            background: i === active ? "#fdf8f0" : "#fff",
+            border: `1.5px solid ${i === active ? "rgba(194,90,48,0.3)" : "rgba(90,56,37,0.1)"}`,
+            borderRadius: "18px", p: "20px",
+            display: "flex", flexDirection: "column", gap: 1.5,
+            transition: "all 0.35s ease",
+            boxShadow: i === active ? "0 8px 28px rgba(122,46,20,0.1)" : "0 2px 8px rgba(0,0,0,0.03)",
+            transform: i === active ? "translateY(-4px)" : "none",
+            cursor: "pointer",
+          }}>
+            <StarRating />
+            <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 13, color: "#5a3825", lineHeight: 1.65, flex: 1 }}>
               {r.quote}
             </Typography>
-
-            {/* Divider */}
             <Box sx={{ height: "1px", bgcolor: "rgba(90,56,37,0.08)" }} />
-
-            {/* Avatar + name */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
-              <Box
-                sx={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: "50%",
-                  background: r.color,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  fontFamily: "var(--font-main)",
-                  color: r.textColor,
-                  flexShrink: 0,
-                  border: "1.5px solid rgba(90,56,37,0.1)",
-                }}
-              >
+              <Box sx={{
+                width: 38, height: 38, borderRadius: "50%", background: r.color,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 13, fontWeight: 700, fontFamily: "var(--font-main)",
+                color: r.textColor, flexShrink: 0, border: "1.5px solid rgba(90,56,37,0.1)",
+              }}>
                 {r.initials}
               </Box>
               <Box>
@@ -356,23 +396,18 @@ export function CustomerReviewsSection() {
         ))}
       </Box>
 
-      {/* ── Dot indicators ── */}
-      <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
+      {/* Desktop dots */}
+      <Box sx={{ display: { xs: "none", sm: "flex" }, justifyContent: "center", gap: 1 }}>
         {reviews.map((_, i) => (
-          <Box
-            key={i}
-            onClick={() => setActive(i)}
-            sx={{
-              width: i === active ? 22 : 8,
-              height: 8,
-              borderRadius: "999px",
-              background: i === active ? "#1a7a90" : "rgba(90,56,37,0.18)",
-              cursor: "pointer",
-              transition: "all 0.3s ease",
-            }}
-          />
+          <Box key={i} onClick={() => setActive(i)} sx={{
+            width: i === active ? 22 : 8, height: 8,
+            borderRadius: "999px",
+            background: i === active ? "#c25a30" : "rgba(90,56,37,0.18)",
+            cursor: "pointer", transition: "all 0.3s ease",
+          }} />
         ))}
       </Box>
+
     </Box>
   );
 }
