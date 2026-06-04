@@ -23,7 +23,7 @@ import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 
 import Image from "next/image";
 
-export const drawerWidth = 280; // ← CHANGED FROM 250 TO 280
+export const drawerWidth = 210; // ← CHANGED FROM 250 TO 280
 
 const menus = [
   { title: "Dashboard", path: "/admin/dashboard", icon: <DashboardOutlinedIcon /> },
