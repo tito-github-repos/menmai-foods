@@ -34,21 +34,21 @@ export default function AdminLoginPage() {
         elevation={0}
         sx={{
           width: "100%",
-          maxWidth: 500,
+          maxWidth: 400,
 
           p: {
-            xs: 4,
-            md: 5,
+            xs: 3,
+            md: 4,
           },
 
-          borderRadius: "24px",
+          borderRadius: "20px",
 
           background: "#fff",
 
           border: "1px solid #ececec",
 
           boxShadow:
-            "0 20px 60px rgba(0,0,0,0.08)",
+            "0 15px 40px rgba(0,0,0,0.08)",
         }}
       >
         {/* Logo */}
@@ -56,26 +56,27 @@ export default function AdminLoginPage() {
           sx={{
             display: "flex",
             justifyContent: "center",
-            mb: 3,
+            mb: 2,
           }}
         >
           <Image
             src="/logo.jpeg"
             alt="Menmai Foods"
-            width={160}
-            height={160}
+            width={130}
+            height={130}
             style={{
               borderRadius: "50%",
             }}
           />
         </Box>
 
+        {/* Title */}
         <Typography
           align="center"
           sx={{
             fontSize: {
-              xs: "2rem",
-              md: "2.4rem",
+              xs: "1.6rem",
+              md: "1.9rem",
             },
             fontWeight: 700,
             color: "#5A1F00",
@@ -85,18 +86,22 @@ export default function AdminLoginPage() {
           Admin Login
         </Typography>
 
+        {/* Subtitle */}
         <Typography
           align="center"
           sx={{
             color: "#6b7280",
-            mb: 4,
+            fontSize: "0.95rem",
+            mb: 3,
           }}
         >
           Sign in to access Menmai Foods Admin Panel
         </Typography>
 
+        {/* Username */}
         <TextField
           fullWidth
+          size="small"
           label="Username"
           margin="normal"
           InputProps={{
@@ -108,8 +113,10 @@ export default function AdminLoginPage() {
           }}
         />
 
+        {/* Password */}
         <TextField
           fullWidth
+          size="small"
           type="password"
           label="Password"
           margin="normal"
@@ -122,18 +129,24 @@ export default function AdminLoginPage() {
           }}
         />
 
+        {/* Remember Me */}
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            mt: 2,
-            mb: 3,
+
+            mt: 1,
+            mb: 2,
           }}
         >
           <FormControlLabel
-            control={<Checkbox />}
-            label="Remember Me"
+            control={<Checkbox size="small" />}
+            label={
+              <Typography fontSize="0.9rem">
+                Remember Me
+              </Typography>
+            }
           />
 
           <Typography
@@ -141,23 +154,27 @@ export default function AdminLoginPage() {
               color: "#00695c",
               fontWeight: 600,
               cursor: "pointer",
+              fontSize: "0.9rem",
             }}
           >
             Forgot Password?
           </Typography>
         </Box>
 
+        {/* Login Button */}
         <Button
           fullWidth
           variant="contained"
           sx={{
-            height: 56,
-            borderRadius: "14px",
+            height: 48,
+
+            borderRadius: "12px",
 
             backgroundColor: "#5A1F00",
 
-            fontSize: "1rem",
+            fontSize: "0.95rem",
             fontWeight: 700,
+
             textTransform: "none",
 
             "&:hover": {
