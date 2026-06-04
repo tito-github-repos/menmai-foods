@@ -113,11 +113,11 @@ export default function AdminHeader({ handleDrawerToggle }: Props) {
           gap: 2,
         }}
       >
-        <IconButton>
+        {/* <IconButton>
           <Badge badgeContent={3} color="error">
             <NotificationsNoneOutlinedIcon />
           </Badge>
-        </IconButton>
+        </IconButton> */}
 
         <Avatar
           sx={{

@@ -160,7 +160,7 @@ export default function OrdersPage() {
       </Typography> */}
 
       {/* STATS */}
-<Grid container spacing={3} mt={1} >
+<Grid container spacing={3}  >
   <Grid item xs={12} sm={6} lg={3}mb={4}>
     <Card sx={{ borderRadius: 4 }}>
       <CardContent>
@@ -171,9 +171,9 @@ export default function OrdersPage() {
         <Typography variant="h5" fontWeight={700}>
           1,248
         </Typography>
-        <Typography color="success.main" fontSize={14}>
+        {/* <Typography color="success.main" fontSize={14}>
           ↑ 12.5% this week
-        </Typography>
+        </Typography> */}
       </CardContent>
     </Card>
   </Grid>
@@ -188,9 +188,9 @@ export default function OrdersPage() {
         <Typography variant="h5" fontWeight={700}>
           980
         </Typography>
-        <Typography color="success.main" fontSize={14}>
+        {/* <Typography color="success.main" fontSize={14}>
           ↑ 15.2% this week
-        </Typography>
+        </Typography> */}
       </CardContent>
     </Card>
   </Grid>
@@ -205,9 +205,9 @@ export default function OrdersPage() {
         <Typography variant="h5" fontWeight={700}>
           43
         </Typography>
-        <Typography color="warning.main" fontSize={14}>
+        {/* <Typography color="warning.main" fontSize={14}>
           ↑ 5.1% this week
-        </Typography>
+        </Typography> */}
       </CardContent>
     </Card>
   </Grid>
@@ -222,9 +222,9 @@ export default function OrdersPage() {
         <Typography variant="h5" fontWeight={700}>
           67
         </Typography>
-        <Typography color="info.main" fontSize={14}>
+        {/* <Typography color="info.main" fontSize={14}>
           ↑ 9.4% this week
-        </Typography>
+        </Typography> */}
       </CardContent>
     </Card>
   </Grid>
