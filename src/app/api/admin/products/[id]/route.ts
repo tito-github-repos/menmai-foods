@@ -3,12 +3,13 @@ import { NextResponse } from "next/server";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }  // ← Promise added
 ) {
+  const { id } = await params;  // ← await params
   const body = await req.json();
 
   const updated = await db.product.update({
-    where: { id: Number(params.id) },
+    where: { id: Number(id) },  // ← use id directly
     data: {
       price:             body.price,
       mrp:               body.mrp,
