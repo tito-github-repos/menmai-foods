@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ThemeRegistry from "./ThemeRegistry";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
 import FloatingContact from "./components/FloatingContact";
 import Providers from "./providers";
+import LayoutWrapper from "./components/LayoutWrapper";
 
 export const metadata: Metadata = {
   title: "Menmai",
@@ -29,13 +28,13 @@ export default function RootLayout({
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
       </head>
-      <body style={{ paddingTop: "66px" }}>
+      <body>
         <ThemeRegistry>
           <Providers>
-            <Header />
+           <LayoutWrapper>
             {children}
-            <FloatingContact />
-            <Footer />
+            {/* <FloatingContact /> */}
+            </LayoutWrapper>
           </Providers>
         </ThemeRegistry>
       </body>

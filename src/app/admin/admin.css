@@ -1,0 +1,42 @@
+.admin-wrapper {
+  display: block;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.admin-content {
+  margin-left: 280px; /* matches drawerWidth exactly */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.admin-main {
+  flex-grow: 1;
+  padding: 32px;
+  overflow-x: auto;
+}
+
+/* Tablet landscape and below — sidebar becomes mobile drawer */
+@media (max-width: 1199px) {
+  .admin-content {
+    margin-left: 0;
+  }
+  .admin-main {
+    padding: 20px;
+  }
+}
+
+/* Mobile landscape */
+@media (max-width: 767px) {
+  .admin-main {
+    padding: 16px;
+  }
+}
+
+/* Mobile portrait */
+@media (max-width: 479px) {
+  .admin-main {
+    padding: 12px;
+  }
+}
