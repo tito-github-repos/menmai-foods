@@ -56,7 +56,7 @@ export default function AdminLoginPage() {
           sx={{
             display: "flex",
             justifyContent: "center",
-            mb: 2,
+            mb: 1,
           }}
         >
           <Image
@@ -92,7 +92,7 @@ export default function AdminLoginPage() {
           sx={{
             color: "#6b7280",
             fontSize: "0.95rem",
-            mb: 3,
+            mb: 2,
           }}
         >
           Sign in to access Menmai Foods Admin Panel
@@ -140,16 +140,16 @@ export default function AdminLoginPage() {
             mb: 2,
           }}
         >
-          <FormControlLabel
+          {/* <FormControlLabel
             control={<Checkbox size="small" />}
             label={
               <Typography fontSize="0.9rem">
                 Remember Me
               </Typography>
             }
-          />
+          /> */}
 
-          <Typography
+          {/* <Typography
             sx={{
               color: "#00695c",
               fontWeight: 600,
@@ -158,7 +158,7 @@ export default function AdminLoginPage() {
             }}
           >
             Forgot Password?
-          </Typography>
+          </Typography> */}
         </Box>
 
         {/* Login Button */}
