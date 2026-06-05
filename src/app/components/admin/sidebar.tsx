@@ -47,13 +47,13 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
       <Box sx={{ position: "absolute", inset: 0, background: "linear-gradient(rgba(65,15,0,.72), rgba(65,15,0,.92))" }} />
 
       <Box sx={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", height: "100%" }}>
-        <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}>
+        <Box sx={{ py: 2, display: "flex", justifyContent: "center" }}>
           <Image
             src="/logo.jpeg"
             alt="Menmai"
-            width={120}
-            height={120}
-            style={{ borderRadius: "50%", background: "#fff", padding: 4 }}
+            width={150}
+            height={150}
+            style={{ borderRadius: "50%", padding: 1 }}
           />
         </Box>
 
