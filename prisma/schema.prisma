@@ -121,7 +121,7 @@ model Order {
   OrderItem          OrderItem[]
   Payment            Payment?
   WhatsAppLog        WhatsAppLog[]
-
+  ReviewRequest      ReviewRequest?
   @@index([addressId], map: "Order_addressId_fkey")
   @@index([customerId], map: "Order_customerId_fkey")
 }
@@ -152,15 +152,6 @@ model Payment {
   Order             Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
-model WhatsAppLog {
-  id        Int      @id @default(autoincrement())
-  orderId   Int
-  status    String
-  createdAt DateTime @default(now())
-  Order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  @@index([orderId], map: "WhatsAppLog_orderId_fkey")
-}
 
 enum Payment_paymentStatus {
   PENDING
@@ -223,4 +214,34 @@ model ProductImage {
   Product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
+}
+
+model WhatsAppLog {
+  id        Int      @id @default(autoincrement())
+  orderId   Int?
+  messageId String?
+  phone     String?
+  direction String
+  eventType String
+  status    String
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  Order Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([messageId])
+  @@index([phone])
+}
+
+model ReviewRequest {
+  id          Int       @id @default(autoincrement())
+  orderId     Int       @unique
+  scheduledAt DateTime
+  sentAt      DateTime?
+  status      String    @default("SCHEDULED")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  Order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
