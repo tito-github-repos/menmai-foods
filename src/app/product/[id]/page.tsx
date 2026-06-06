@@ -262,6 +262,8 @@ type DbProduct = {
   netWeight: string | null;
   pieces: number | null;
   imageUrl: string | null;
+  isActive: boolean;          
+  stockQuantity: number;
   images: {
     id: number;
     imageUrl: string;
@@ -405,7 +407,61 @@ export default function ProductPage() {
   if (!product) {
     return (
       <Box sx={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Typography>Loading product...</Typography>
+        <Typography sx={{ fontFamily: "var(--font-main)", color: "#9a7a58", fontSize: 15 }}>
+          Loading product...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (!product.isActive) {
+    return (
+      <Box sx={{
+        minHeight: "70vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: 2,
+        px: 3,
+        textAlign: "center",
+      }}>
+        <Box sx={{
+          width: 72, height: 72, borderRadius: "50%",
+          background: "rgba(97,34,15,0.08)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+            stroke="#61220f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+          </svg>
+        </Box>
+        <Typography sx={{
+          fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 24,
+          color: "var(--primary-maroon-dark)",
+        }}>
+          Product Unavailable
+        </Typography>
+        <Typography sx={{
+          fontFamily: "var(--font-main)", fontSize: 14, color: "#9a7a58",
+          maxWidth: 340, lineHeight: 1.7,
+        }}>
+          This product is currently not available. Please check back later or explore our other products.
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => router.push("/")}
+          sx={{
+            mt: 1, borderRadius: "12px", px: 3.5, py: 1.2,
+            background: "var(--primary-maroon-mid)",
+            fontFamily: "var(--font-main)", fontWeight: 700, fontSize: 14,
+            textTransform: "none", boxShadow: "none",
+            "&:hover": { background: "var(--primary-maroon-dark)", boxShadow: "none" },
+          }}
+        >
+          Back to Home
+        </Button>
       </Box>
     );
   }
@@ -424,12 +480,13 @@ export default function ProductPage() {
   };
 
   const mrp = product.mrp ?? product.price;
-
+  
   const discount =
     mrp > product.price
       ? Math.round(((mrp - product.price) / mrp) * 100)
       : 0;
 
+  const isOutOfStock = product.stockQuantity === 0;
   const prevImg = () => {
     if (galleryImages.length === 0) return;
 
