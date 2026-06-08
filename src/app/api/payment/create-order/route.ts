@@ -3,12 +3,11 @@ import Razorpay from "razorpay";
 import { prisma } from "@/lib/db";
 import { unauthorized, verifyToken } from "@/lib/auth";
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
-
 export async function POST(req: NextRequest) {
+  const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID!,
+    key_secret: process.env.RAZORPAY_KEY_SECRET!,
+  });
   try {
     const auth = verifyToken(req);
 
@@ -21,7 +20,7 @@ export async function POST(req: NextRequest) {
     if (!orderId) {
       return NextResponse.json(
         { success: false, message: "Order ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -35,7 +34,7 @@ export async function POST(req: NextRequest) {
     if (!order) {
       return NextResponse.json(
         { success: false, message: "Order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -87,7 +86,7 @@ export async function POST(req: NextRequest) {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }
