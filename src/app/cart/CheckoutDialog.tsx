@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -15,7 +16,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import * as Yup from "yup";
-
+import Script from "next/script";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import SmartphoneOutlinedIcon from "@mui/icons-material/SmartphoneOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
@@ -129,6 +130,8 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
 
   const [confirmClose, setConfirmClose] = useState(false);
 
+  const [serverError, setServerError] = useState("");
+
   useEffect(() => {
     if (step === "address") {
       setForm((prev) => ({ ...prev, phone: mobile }));
@@ -139,6 +142,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
         city: "",
         pincode: "",
       });
+      setServerError("");
     }
   }, [step]);
 
@@ -196,7 +200,6 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
     });
 
     const data = await res.json();
-
     if (!res.ok) {
       setOtpError(data.message || "Failed to resend OTP. Try again.");
       return;
@@ -245,6 +248,10 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
 
   return (
     <>
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        strategy="lazyOnload"
+      />
       <Dialog
         open={open}
         onClose={(_, reason) => {
@@ -734,6 +741,15 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
           )}
 
           {/* BUTTON */}
+          {serverError && (
+            <Typography
+              color="error"
+              fontSize={13}
+              sx={{ mt: 1, mb: 1, textAlign: "center" }}
+            >
+              {serverError}
+            </Typography>
+          )}
           <Button
             fullWidth
             variant="contained"
@@ -864,7 +880,9 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                   // onClose();
                   const data = await res.json();
                   if (!res.ok) {
-                    console.error("Address save failed:", data.message);
+                    setServerError(
+                      data.message || "Failed to save address. Try again.",
+                    );
                     return;
                   }
 
@@ -888,14 +906,107 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
 
                   const orderData = await orderRes.json();
                   if (!orderRes.ok) {
-                    console.error("Order creation failed:", orderData.message);
+                    setServerError(
+                      orderData.message || "Failed to create order. Try again.",
+                    );
                     return;
                   }
 
-                  dispatch(clearCart());
+                  const paymentRes = await fetch("/api/payment/create-order", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                      orderId: orderData.orderId,
+                    }),
+                  });
+
+                  const paymentData = await paymentRes.json();
+
+                  if (!paymentRes.ok) {
+                    setServerError(
+                      paymentData.message ||
+                        "Failed to initiate payment. Try again.",
+                    );
+                    return;
+                  }
+
+                  const options = {
+                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+
+                    amount: paymentData.amount,
+
+                    currency: paymentData.currency,
+
+                    order_id: paymentData.razorpayOrderId,
+
+                    name: "Menmai Foods",
+
+                    description: "Order Payment",
+
+                    modal: {
+                      ondismiss: function () {
+                        setLoading(false);
+                      },
+                    },
+
+                    handler: async function (response: any) {
+                      const verifyRes = await fetch("/api/payment/verify", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                          razorpay_order_id: response.razorpay_order_id,
+                          razorpay_payment_id: response.razorpay_payment_id,
+                          razorpay_signature: response.razorpay_signature,
+                          orderId: orderData.orderId,
+                        }),
+                      });
+
+                      const verifyData = await verifyRes.json();
+
+                      if (!verifyRes.ok) {
+                        alert("Payment verification failed");
+                        return;
+                      }
+
+                      dispatch(clearCart());
+
+                      onClose();
+
+                      window.location.href =
+                        `/order-success?orderNumber=${orderData.orderNumber}` +
+                        `&totalAmount=${orderData.totalAmount}`;
+                    },
+
+                    prefill: {
+                      name: form.fullName,
+                      contact: mobile,
+                      email: form.email,
+                    },
+
+                    theme: {
+                      color: "#0F766E",
+                    },
+                  };
+
+                  if (!(window as any).Razorpay) {
+                    alert("Razorpay SDK not loaded");
+                    return;
+                  }
+
+                  const razorpay = new (window as any).Razorpay(options);
+
+                  razorpay.open();
+
+                  // dispatch(clearCart());
                   // Redirect to success page
-                  onClose();
-                  window.location.href = `/order-success?orderNumber=${orderData.orderNumber}&totalAmount=${orderData.totalAmount}`;
+                  // onClose();
+                  //   window.location.href = `/order-success?orderNumber=${orderData.orderNumber}&totalAmount=${orderData.totalAmount}`;
                 }
               } finally {
                 setLoading(false);
@@ -909,7 +1020,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
             ) : step === "otp" ? (
               "Verify OTP"
             ) : (
-              "Save Address"
+              "Proceed to Pay"
             )}
           </Button>
 
@@ -936,7 +1047,6 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
           </Box>
         </Box>
       </Dialog>
-
       <Dialog
         open={confirmClose}
         onClose={(_, reason) => {
