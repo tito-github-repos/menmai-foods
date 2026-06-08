@@ -143,23 +143,17 @@ model OrderItem {
 }
 
 model Payment {
-  id                Int @id @default(autoincrement())
-  orderId           Int @unique
-
-  razorpayOrderId   String?
+  id                Int                   @id @default(autoincrement())
+  orderId           Int                   @unique
   razorpayPaymentId String?
-  razorpaySignature String?
-
   amount            Float
-
   paymentStatus     Payment_paymentStatus @default(PENDING)
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  Order             Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  razorpayOrderId   String?
+  razorpaySignature String?
+  Order             Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
-
 
 model WhatsAppLog {
   id        Int      @id @default(autoincrement())
