@@ -120,8 +120,9 @@ model Order {
   Customer           Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
   OrderItem          OrderItem[]
   Payment            Payment?
-  WhatsAppLog        WhatsAppLog[]
   ReviewRequest      ReviewRequest?
+  WhatsAppLog        WhatsAppLog[]
+
   @@index([addressId], map: "Order_addressId_fkey")
   @@index([customerId], map: "Order_customerId_fkey")
 }
@@ -148,10 +149,70 @@ model Payment {
   amount            Float
   paymentStatus     Payment_paymentStatus @default(PENDING)
   createdAt         DateTime              @default(now())
-  updatedAt         DateTime
+  updatedAt         DateTime              @updatedAt
+  razorpayOrderId   String?
+  razorpaySignature String?
   Order             Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
+model WhatsAppLog {
+  id        Int      @id @default(autoincrement())
+  orderId   Int?
+  status    String
+  createdAt DateTime @default(now())
+  direction String
+  eventType String
+  messageId String?
+  payload   Json?
+  phone     String?
+  Order     Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@index([orderId])
+  @@index([phone])
+}
+
+model Product {
+  id                Int             @id @default(autoincrement())
+  name              String
+  slug              String          @unique
+  price             Float
+  mrp               Float?
+  netWeight         String?
+  pieces            Int?
+  imageUrl          String?
+  stockQuantity     Int             @default(0)
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  bulkPricePerPiece Float?
+  BulkOrderItem     BulkOrderItem[]
+  CartItem          CartItem[]
+  OrderItem         OrderItem[]
+  images            ProductImage[]
+}
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  imageUrl  String
+  altText   String?
+  sortOrder Int     @default(0)
+  Product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model ReviewRequest {
+  id          Int       @id @default(autoincrement())
+  orderId     Int       @unique
+  scheduledAt DateTime
+  sentAt      DateTime?
+  status      String    @default("SCHEDULED")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  Order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
 
 enum Payment_paymentStatus {
   PENDING
@@ -182,66 +243,4 @@ enum Order_orderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
-}
-
-model Product {
-  id            Int             @id @default(autoincrement())
-  name          String
-  slug          String          @unique
-  price         Float
-  mrp           Float?
-  netWeight     String?
-  pieces        Int?
-  imageUrl      String?
-  stockQuantity Int             @default(0)
-  isActive      Boolean         @default(true)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  images        ProductImage[]
-  BulkOrderItem BulkOrderItem[]
-  CartItem      CartItem[]
-  OrderItem     OrderItem[]
-  bulkPricePerPiece Float?
-}
-
-model ProductImage {
-  id        Int     @id @default(autoincrement())
-  productId Int
-  imageUrl  String
-  altText   String?
-  sortOrder Int     @default(0)
-
-  Product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([productId])
-}
-
-model WhatsAppLog {
-  id        Int      @id @default(autoincrement())
-  orderId   Int?
-  messageId String?
-  phone     String?
-  direction String
-  eventType String
-  status    String
-  payload   Json?
-  createdAt DateTime @default(now())
-
-  Order Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  @@index([orderId])
-  @@index([messageId])
-  @@index([phone])
-}
-
-model ReviewRequest {
-  id          Int       @id @default(autoincrement())
-  orderId     Int       @unique
-  scheduledAt DateTime
-  sentAt      DateTime?
-  status      String    @default("SCHEDULED")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  Order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }

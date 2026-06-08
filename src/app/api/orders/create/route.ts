@@ -23,8 +23,9 @@ async function generateOrderNumber(): Promise<string> {
     },
   });
 
-  const sequence = String(todayCount + 1).padStart(4, "0"); // 0001
-  return `ORD-${dateStr}-${sequence}`;
+ const sequence = String(todayCount + 1).padStart(4, "0"); // 0001
+const random = Math.floor(Math.random() * 100).toString().padStart(2, "0");
+return `ORD-${dateStr}-${sequence}-${random}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -107,9 +108,9 @@ export async function POST(req: NextRequest) {
   });
 
   // Clear cart from DB after order created
-  await prisma.cartItem.deleteMany({
-    where: { customerId },
-  });
+  // await prisma.cartItem.deleteMany({
+  //   where: { customerId },
+  // });
 
   return NextResponse.json({
     success: true,
