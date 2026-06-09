@@ -20,6 +20,8 @@ export async function GET() {
       pieces: p.pieces,
       imageUrl: p.imageUrl ?? "",
       bulkPricePerPiece: p.bulkPricePerPiece ?? null,
-    }))
+      isActive: p.isActive,
+      stockQuantity: p.stockQuantity,
+    })),
   );
 }
