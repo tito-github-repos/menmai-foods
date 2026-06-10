@@ -10,31 +10,40 @@ datasource db {
 
 model BulkOrderItem {
   id                 Int              @id @default(autoincrement())
-  bulkOrderRequestId Int
+  bulkOrderId Int
   productId          Int
   quantity           Int
   unitPrice          Float?
   totalPrice         Float?
-  BulkOrderRequest   BulkOrderRequest @relation(fields: [bulkOrderRequestId], references: [id], onDelete: Cascade)
+  BulkOrder          BulkOrder @relation(fields: [bulkOrderId], references: [id], onDelete: Cascade)
   Product            Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@index([bulkOrderRequestId], map: "BulkOrderItem_bulkOrderRequestId_fkey")
+  @@index([bulkOrderId], map: "BulkOrderItem_bulkOrderId_fkey")
   @@index([productId], map: "BulkOrderItem_productId_fkey")
 }
 
-model BulkOrderRequest {
-  id              Int                     @id @default(autoincrement())
+model BulkOrder {
+  id              Int   @id @default(autoincrement())
+  customerId      Int?           
   fullName        String
   phone           String
   email           String?
   deliveryDate    DateTime
+  deliveryTime    String
   occasionDetails String
   deliveryAddress String
-  status          BulkOrderRequest_status @default(PENDING)
-  createdAt       DateTime                @default(now())
-  updatedAt       DateTime
+  pincode         String
+  totalAmount     Float            @default(0)
+  status          BulkOrder_status @default(PENDING)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   BulkOrderItem   BulkOrderItem[]
+  Customer        Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([customerId], map: "BulkOrder_customerId_fkey")
+
 }
+
 
 model CartItem {
   id         Int      @id @default(autoincrement())
@@ -61,6 +70,7 @@ model Customer {
   CartItem        CartItem[]
   CustomerAddress CustomerAddress[]
   Order           Order[]
+  BulkOrder       BulkOrder[]
 }
 
 model CustomerAddress {
@@ -169,7 +179,7 @@ enum Order_paymentStatus {
   REFUNDED
 }
 
-enum BulkOrderRequest_status {
+enum BulkOrder_status {
   PENDING
   QUOTED
   CONFIRMED
