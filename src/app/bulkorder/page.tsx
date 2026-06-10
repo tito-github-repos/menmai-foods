@@ -25,6 +25,7 @@ import {
   TableRow,
   SelectChangeEvent,
   Skeleton,
+  FormHelperText,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -55,12 +56,19 @@ import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import MarkunreadMailboxOutlinedIcon from "@mui/icons-material/MarkunreadMailboxOutlined";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
   validateBulkOrderForm,
   validateField,
+  validatePincode,
+  validateProductQuantities,
+  getAvailableTimeSlots,
+  getLeadTimeHours,
   FormErrors,
-} from "@/lib/validations/bulkOrderValidation"; 
-
+} from "@/lib/validations/bulkOrderValidation";
+import BulkCheckoutDialog from "@/app/components/bulk/BulkCheckoutDialog";
 /* ════════════════════════════════════════
    ANIMATION HELPERS
 ════════════════════════════════════════ */
@@ -92,10 +100,9 @@ const zoomIn = (delay = 0) => ({
 /* ════════════════════════════════════════
    CONSTANTS
 ════════════════════════════════════════ */
-// Minimum pieces per product for bulk order
 const MIN_BULK_QTY = 200;
+const BULK_ORDER_PHONE = "+919876543210"; 
 
-// Bulk discount tiers — hardcoded business logic, fine to keep here
 const getDiscount = (subtotal: number): number => {
   if (subtotal >= 5000) return 0.1;
   if (subtotal >= 2000) return 0.05;
@@ -103,7 +110,7 @@ const getDiscount = (subtotal: number): number => {
 };
 
 /* ════════════════════════════════════════
-   STATIC UI DATA — not from DB
+   STATIC UI DATA
 ════════════════════════════════════════ */
 const HERO_BADGES = [
   { icon: <GrainOutlinedIcon sx={{ fontSize: 22 }} />,         label: "Freshly\nPrepared"      },
@@ -169,24 +176,37 @@ const tableHeadCellSx = {
 /* ════════════════════════════════════════
    TYPES
 ════════════════════════════════════════ */
-
-// Shape of product fetched from /api/products
 interface ProductOption {
   id:                number;
   name:              string;
-  image:             string;   // from ProductImage (first) or Product.imageUrl
-  pieces:            number;   // pieces per retail packet
-  bulkPricePerPiece: number;   // from Product.bulkPricePerPiece (DB)
+  image:             string;
+  pieces:            number;
+  bulkPricePerPiece: number;
 }
 
-// Row in the quantity table
 interface ProductRow {
   id:                number;
   name:              string;
   image:             string;
   pieces:            number;
   bulkPricePerPiece: number;
-  qty:               string;   // string for controlled input
+  qty:               string;
+}
+
+/* ════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════ */
+
+/** Returns today's date as YYYY-MM-DD for the date input min attribute */
+function todayStr(): string {
+  const d = new Date();
+  return d.toISOString().split("T")[0];
+}
+
+/** Returns true if the given YYYY-MM-DD string is a Sunday */
+function isSunday(dateStr: string): boolean {
+  if (!dateStr) return false;
+  return new Date(dateStr).getDay() === 0;
 }
 
 /* ════════════════════════════════════════
@@ -197,7 +217,7 @@ export default function BulkOrderPage() {
   /* ── Products from DB ── */
   const [allProducts, setAllProducts]         = useState<ProductOption[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
-
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   useEffect(() => {
     fetch("/api/products")
       .then((res) => res.json())
@@ -205,11 +225,11 @@ export default function BulkOrderPage() {
         setAllProducts(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           data.map((p: any) => ({
-            id:    p.id,
-            name:  p.name,
-            image: p.imageUrl ?? "",                          // ProductImage first, fallback Product.imageUrl
-            pieces: p.pieces ?? 1,                            // pieces per retail packet
-            bulkPricePerPiece: p.bulkPricePerPiece ?? 0,     // bulk price per piece from DB
+            id:                p.id,
+            name:              p.name,
+            image:             p.imageUrl ?? "",
+            pieces:            p.pieces ?? 1,
+            bulkPricePerPiece: p.bulkPricePerPiece ?? 0,
           }))
         );
         setProductsLoading(false);
@@ -222,22 +242,43 @@ export default function BulkOrderPage() {
   const [productRows, setProductRows]     = useState<ProductRow[]>([]);
   const [submitted, setSubmitted]         = useState(false);
   const [form, setForm] = useState({
-    name: "", phone: "", email: "",
-    deliveryDate: "", occasion: "", address: "",
+    name:         "",
+    phone:        "",
+    email:        "",
+    deliveryDate: "",
+    deliveryTime: "",   // ← NEW
+    occasion:     "",
+    address:      "",
+    pincode:      "",   // ← NEW
   });
-  const [bulkOrderSubmitted, setBulkOrderSubmitted] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});   // ← add this
+  // const [bulkOrderSubmitted, setBulkOrderSubmitted] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  
+  /* ── Derived: total pieces across all rows ── */
+  const totalPieces = useMemo(
+    () => productRows.reduce((sum, r) => sum + (parseInt(r.qty) || 0), 0),
+    [productRows]
+  );
+
+  /* ── Derived: available time slots for selected date ── */
+  const availableSlots = useMemo(
+    () => getAvailableTimeSlots(form.deliveryDate, totalPieces),
+    [form.deliveryDate, totalPieces]
+  );
+
+  /* ── When date or totalPieces changes, reset deliveryTime if slot no longer valid ── */
+  useEffect(() => {
+    if (form.deliveryTime && !availableSlots.includes(form.deliveryTime)) {
+      setForm((prev) => ({ ...prev, deliveryTime: "" }));
+    }
+  }, [availableSlots, form.deliveryTime]);
+
   /* ── Derived pricing ── */
   const pricing = useMemo(() => {
     const rows = productRows.map((r) => {
       const qty   = parseInt(r.qty) || 0;
-      const total = qty * r.bulkPricePerPiece;   // ← pieces × bulk price per piece from DB
-      return {
-        ...r,
-        qtyNum:    qty,
-        unitPrice: r.bulkPricePerPiece,           // shown as ₹X / piece in table
-        total,
-      };
+      const total = qty * r.bulkPricePerPiece;
+      return { ...r, qtyNum: qty, unitPrice: r.bulkPricePerPiece, total };
     });
     const subtotal       = rows.reduce((s, r) => s + r.total, 0);
     const discountRate   = getDiscount(subtotal);
@@ -247,20 +288,62 @@ export default function BulkOrderPage() {
     return { rows, subtotal, discountRate, discountAmt, estimatedTotal, allFilled };
   }, [productRows]);
 
-  /* ── Handlers ── */
-  const handleFieldChange = (field: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const value = e.target.value;
-      setForm((prev) => ({ ...prev, [field]: value }));
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    };
+  /* ── Lead time info for UI hint ── */
+  const leadTimeHours = totalPieces > 0 ? getLeadTimeHours(totalPieces) : null;
 
+  const timeSlotDisabledReason = !form.deliveryDate
+  ? ""
+  : productRows.length === 0
+    ? "Please select at least one product before choosing delivery time."
+    : availableSlots.length === 0
+      ? `${totalPieces} pieces need ${leadTimeHours} hours of preparation time. No delivery slots are available for this date. Please choose a later date or contact us for urgent bulk orders.`
+      : "";
+  const selectedDeliveryDateError = form.deliveryDate
+    ? validateField("deliveryDate", form.deliveryDate)
+    : undefined;
+
+  const showUrgentBulkContact =
+    Boolean(form.deliveryDate) &&
+    !selectedDeliveryDateError &&
+    pricing.allFilled &&
+    productRows.length > 0 &&
+    availableSlots.length === 0;  
+
+  const currentValidation = validateBulkOrderForm(form, productRows);
+  const hasFormErrors = !currentValidation.isValid;
+  /* ── Handlers ── */
+  // const handleFieldChange = (field: keyof typeof form) =>
+  //   (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  //     const value = e.target.value;
+  //     setForm((prev) => ({ ...prev, [field]: value }));
+  //     setErrors((prev) => ({ ...prev, [field]: undefined }));
+  //   };
+
+  const handleFieldChange = (field: keyof typeof form) =>
+  (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const value = e.target.value;
+
+    setSubmitted(false);
+    // setBulkOrderSubmitted(false);
+
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+      ...(field === "deliveryDate" ? { deliveryTime: "" } : {}),
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: validateField(field, value),
+      ...(field === "deliveryDate" ? { deliveryTime: undefined } : {}),
+    }));
+  };
   const handleProductSelect = (e: SelectChangeEvent<string[]>) => {
     const val = typeof e.target.value === "string"
       ? e.target.value.split(",")
       : e.target.value;
     setSelectedNames(val);
-
+    setErrors((prev) => ({ ...prev, products: undefined }));
     setProductRows((prev) =>
       val.map((name) => {
         const existing = prev.find((r) => r.name === name);
@@ -278,11 +361,27 @@ export default function BulkOrderPage() {
   };
 
   const handleQtyChange = (name: string, qty: string) => {
-    setProductRows((prev) =>
-      prev.map((r) => r.name === name ? { ...r, qty } : r)
+  setProductRows((prev) => {
+    const updatedRows = prev.map((r) =>
+      r.name === name ? { ...r, qty } : r
     );
-  };
 
+    const qtyErrors = validateProductQuantities(updatedRows);
+
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      qty: Object.keys(qtyErrors).length > 0 ? qtyErrors : undefined,
+      deliveryTime: undefined,
+    }));
+
+    setForm((prevForm) => ({
+      ...prevForm,
+      deliveryTime: "",
+    }));
+
+    return updatedRows;
+  });
+};
   const handleRemoveProduct = (name: string) => {
     setSelectedNames((prev) => prev.filter((n) => n !== name));
     setProductRows((prev) => prev.filter((r) => r.name !== name));
@@ -307,20 +406,25 @@ export default function BulkOrderPage() {
     setSelectedNames([]);
     setProductRows([]);
     setSubmitted(false);
-    setBulkOrderSubmitted(false);
+    // setBulkOrderSubmitted(false);
     setErrors({});
-    setForm({ name: "", phone: "", email: "", deliveryDate: "", occasion: "", address: "" });
+    setForm({
+      name: "", phone: "", email: "",
+      deliveryDate: "", deliveryTime: "",
+      occasion: "", address: "", pincode: "",
+    });
   };
 
   const handleBulkOrderSubmit = () => {
-    // TODO: connect to POST /api/bulk-order in next step
-    setBulkOrderSubmitted(true);
-    setTimeout(() => setBulkOrderSubmitted(false), 2500);
+    const { errors: newErrors, isValid } = validateBulkOrderForm(form, productRows);
+    setErrors(newErrors);
+    if (!isValid) return;
+    setCheckoutOpen(true);
   };
-
+  
   const fmt = (n: number) =>
     n.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-  
+
   /* ════════════════════════════════════════
      RENDER
   ════════════════════════════════════════ */
@@ -328,76 +432,62 @@ export default function BulkOrderPage() {
     <Box sx={{ pb: 10 }}>
 
       {/* ════════════════════════════════
-    HERO
-════════════════════════════════ */}
+          HERO
+      ════════════════════════════════ */}
       <Box sx={{ position: "relative", overflow: "hidden", backgroundColor: "#f7f6f3", minHeight: { xs: "auto", md: 340 } }}>
-
         <Box component="img" src="/img/bulkorder.png" alt="" aria-hidden="true"
           sx={{ position: "absolute", top: 0, right: 0, width: { xs: "100%", md: "65%" }, height: "100%", objectFit: "cover", objectPosition: "center top", display: "block", zIndex: 0 }}
-  />
+        />
         <Box sx={{ position: "absolute", top: 0, left: 0, width: { xs: "100%", md: "50%" }, height: "100%", background: { xs: "linear-gradient(to bottom, #f7f6f3 60%, transparent 100%)", md: "linear-gradient(to right, #f7f6f3 45%, rgba(247,246,243,0.85) 65%, rgba(247,246,243,0.3) 82%, transparent 100%)" }, zIndex: 1, pointerEvents: "none" }} />
         <Box sx={{ position: "absolute", top: 0, left: { xs: "0%", md: "30%" }, width: { xs: "0%", md: "20%" }, height: "100%", background: "linear-gradient(to right, #f7f6f3 0%, rgba(247,246,243,0.5) 40%, transparent 100%)", zIndex: 1, pointerEvents: "none", display: { xs: "none", md: "block" } }} />
 
-  {/* Content */}
-  <Container maxWidth="lg" sx={{ position: "relative", zIndex: 2 }}>
-    <Grid container alignItems="center">
-
-      {/* Left text */}
-      <Grid item xs={12} md={7}>
-        <Box sx={{ px: { xs: 3, sm: 4, md: 6 }, py: { xs: 4, md: 5 } }}>
-
-          {/* Eyebrow */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
+        <Container maxWidth="lg" sx={{ position: "relative", zIndex: 2 }}>
+          <Grid container alignItems="center">
+            <Grid item xs={12} md={7}>
+              <Box sx={{ px: { xs: 3, sm: 4, md: 6 }, py: { xs: 4, md: 5 } }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
                   <Typography sx={{ fontSize: ".72rem", fontWeight: 500, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--primary-teal-dark)", whiteSpace: "nowrap" }}>
-              Fresh. Hygienic. Delivered.
-            </Typography>
+                    Fresh. Hygienic. Delivered.
+                  </Typography>
                   <Box sx={{ width: 26, height: 24, backgroundColor: "var(--green)", mask: "url('/plant.png') no-repeat center / contain", WebkitMask: "url('/plant.png') no-repeat center / contain", opacity: 0.7 }} />
-          </Box>
-
-          <motion.div {...fadeUp(0)}>
+                </Box>
+                <motion.div {...fadeUp(0)}>
                   <Typography sx={{ fontSize: { xs: "1.9rem", md: "2.6rem" }, fontWeight: 700, fontFamily: "var(--font-heading)", color: "var(--primary-maroon-dark)", lineHeight: 1.15, mb: 1.25 }}>
-              Bulk Orders,<br />Made Simple
-            </Typography>
-          </motion.div>
-
-          <motion.div {...fadeUp(0.05)}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-              <Box sx={{ width: 28, height: 2, backgroundColor: "var(--or)", borderRadius: 1 }} />
+                    Bulk Orders,<br />Made Simple
+                  </Typography>
+                </motion.div>
+                <motion.div {...fadeUp(0.05)}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+                    <Box sx={{ width: 28, height: 2, backgroundColor: "var(--or)", borderRadius: 1 }} />
                     <Box sx={{ width: 16, height: 16, backgroundColor: "var(--or)", mask: "url('/grain-wheat-icon.svg') no-repeat center / contain", WebkitMask: "url('/grain-wheat-icon.svg') no-repeat center / contain", opacity: 0.75 }} />
-              <Box sx={{ width: 28, height: 2, backgroundColor: "var(--or)", borderRadius: 1 }} />
-            </Box>
-          </motion.div>
-
-          <motion.div {...fadeUp(0.1)}>
+                    <Box sx={{ width: 28, height: 2, backgroundColor: "var(--or)", borderRadius: 1 }} />
+                  </Box>
+                </motion.div>
+                <motion.div {...fadeUp(0.1)}>
                   <Typography sx={{ fontSize: { xs: ".88rem", md: ".95rem" }, color: "var(--text)", lineHeight: 1.65, mb: 2.5, maxWidth: 420 }}>
                     Order fresh Chapathi and Poori in large quantities for weddings, corporate events, temple functions, and catering needs.
-            </Typography>
-          </motion.div>
-
-          <motion.div {...fadeUp(0.18)}>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: { xs: 2, sm: 2.5 } }}>
-              {HERO_BADGES.map((b) => (
+                  </Typography>
+                </motion.div>
+                <motion.div {...fadeUp(0.18)}>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: { xs: 2, sm: 2.5 } }}>
+                    {HERO_BADGES.map((b) => (
                       <Box key={b.label} sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5, minWidth: 56 }}>
                         <Box sx={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "--org2", borderColor: "color-mix(in srgb, var(--primary-teal-dark), transparent 65%)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--gold)", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-                    {b.icon}
-                  </Box>
+                          {b.icon}
+                        </Box>
                         <Typography sx={{ fontSize: ".65rem", fontWeight: 500, color: "var(--text)", textAlign: "center", lineHeight: 1.3, whiteSpace: "pre-line" }}>
-                    {b.label}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </motion.div>
-
-        </Box>
-      </Grid>
-
-      {/* Right — empty, image is absolute background */}
-      <Grid item xs={12} md={5} />
-
-    </Grid>
-  </Container>
-</Box>
+                          {b.label}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </motion.div>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={5} />
+          </Grid>
+        </Container>
+      </Box>
 
       {/* ════════════════════════════════
           FORM + ORDER SUMMARY
@@ -430,8 +520,7 @@ export default function BulkOrderPage() {
                       <TextField fullWidth label="Your Name" required placeholder="Enter your name"
                         value={form.name} onChange={handleFieldChange("name")} sx={fieldSx}
                         InputProps={{ startAdornment: <InputAdornment position="start"><PersonOutlineOutlinedIcon sx={{ color: "var(--primary-teal-dark)", fontSize: 19 }} /></InputAdornment> }}
-                        error={!!errors.name}
-                        helperText={errors.name}
+                        error={!!errors.name} helperText={errors.name}
                         onBlur={() => setErrors(prev => ({ ...prev, name: validateField("name", form.name) }))}
                       />
                     </Grid>
@@ -441,8 +530,7 @@ export default function BulkOrderPage() {
                       <TextField fullWidth label="Phone Number" required placeholder="Enter your phone number"
                         value={form.phone} onChange={handleFieldChange("phone")} sx={fieldSx}
                         InputProps={{ startAdornment: <InputAdornment position="start"><PhoneOutlinedIcon sx={{ color: "var(--primary-teal-dark)", fontSize: 19 }} /></InputAdornment> }}
-                        error={!!errors.phone}
-                        helperText={errors.phone}
+                        error={!!errors.phone} helperText={errors.phone}
                         onBlur={() => setErrors(prev => ({ ...prev, phone: validateField("phone", form.phone) }))}
                       />
                     </Grid>
@@ -452,13 +540,12 @@ export default function BulkOrderPage() {
                       <TextField fullWidth label="Email Address" required placeholder="Enter your email"
                         value={form.email} onChange={handleFieldChange("email")} sx={fieldSx}
                         InputProps={{ startAdornment: <InputAdornment position="start"><EmailOutlinedIcon sx={{ color: "var(--primary-teal-dark)", fontSize: 19 }} /></InputAdornment> }}
-                        error={!!errors.email}
-                        helperText={errors.email}
+                        error={!!errors.email} helperText={errors.email}
                         onBlur={() => setErrors(prev => ({ ...prev, email: validateField("email", form.email) }))}
                       />
                     </Grid>
 
-                    {/* ── Products multi-select — from DB ── */}
+                    {/* ── Products multi-select ── */}
                     <Grid item xs={12}>
                       <FormControl fullWidth required sx={fieldSx} disabled={productsLoading}>
                         <InputLabel>
@@ -486,13 +573,11 @@ export default function BulkOrderPage() {
                             </Box>
                           )}
                         >
-                          {/* ← allProducts from DB, not hardcoded */}
                           {allProducts.map((p) => (
                             <MenuItem key={p.name} value={p.name}>
                               <Checkbox checked={selectedNames.includes(p.name)} size="small"
                                 sx={{ color: "var(--primary-teal-dark)", "&.Mui-checked": { color: "var(--primary-teal-dark)" } }}
                               />
-                              {/* Show product thumbnail in dropdown */}
                               {p.image && (
                                 <Box component="img" src={p.image} alt={p.name}
                                   sx={{ width: 28, height: 28, borderRadius: "6px", objectFit: "cover", mr: 1, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
@@ -509,7 +594,6 @@ export default function BulkOrderPage() {
                         </Select>
                       </FormControl>
 
-                      {/* Loading skeleton */}
                       {productsLoading && (
                         <Skeleton variant="rectangular" height={40} sx={{ borderRadius: "10px", mt: 0.5 }} />
                       )}
@@ -549,22 +633,19 @@ export default function BulkOrderPage() {
                             <TableBody>
                               {pricing.rows.map((row) => (
                                 <TableRow key={row.name} sx={{ "&:last-child td": { border: 0 } }}>
-
-                                  {/* Product image + name — from DB */}
                                   <TableCell sx={tableCellSx}>
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
                                       {row.image ? (
-                                      <Box component="img" src={row.image} alt={row.name}
-                                        sx={{ width: 36, height: 36, borderRadius: "8px", objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
-                                      />
+                                        <Box component="img" src={row.image} alt={row.name}
+                                          sx={{ width: 36, height: 36, borderRadius: "8px", objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
+                                        />
                                       ) : (
                                         <Box sx={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: "rgba(0,0,0,0.06)", flexShrink: 0 }} />
                                       )}
                                       <Box>
-                                      <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--primary-maroon-dark)" }}>
-                                        {row.name}
-                                      </Typography>
-                                        {/* Packet equivalent helper */}
+                                        <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--primary-maroon-dark)" }}>
+                                          {row.name}
+                                        </Typography>
                                         {row.qtyNum >= MIN_BULK_QTY && (
                                           <Typography sx={{ fontSize: "0.7rem", color: "var(--text)", opacity: 0.55 }}>
                                             = {Math.ceil(row.qtyNum / row.pieces)} packets
@@ -573,52 +654,45 @@ export default function BulkOrderPage() {
                                       </Box>
                                     </Box>
                                   </TableCell>
-
-                                  {/* Qty input */}
                                   <TableCell sx={tableCellSx}>
                                     <TextField
-                                      size="small" type="number" placeholder="Enter quantity"
+                                      size="small"
+                                      type="number"
+                                      placeholder="Enter quantity"
                                       value={row.qty}
-                                      onChange={(e) => {
-                                        handleQtyChange(row.name, e.target.value);
-                                        setErrors(prev => ({
-                                          ...prev,
-                                          qty: { ...prev.qty, [row.name]: undefined as any }
-                                        }));
-                                      }}
-                                      error={!!errors.qty?.[row.name]}
-                                      helperText={errors.qty?.[row.name]}
-                                      inputProps={{ min: 1 }}
+                                      onChange={(e) => handleQtyChange(row.name, e.target.value)}
+                                      error={Boolean(errors.qty?.[row.name])}
+                                      helperText={errors.qty?.[row.name] || " "}
+                                      inputProps={{ min: MIN_BULK_QTY }}
                                       sx={{
                                         width: 140,
                                         "& .MuiOutlinedInput-root": {
-                                          borderRadius: "8px", fontSize: "0.85rem",
+                                          borderRadius: "8px",
+                                          fontSize: "0.85rem",
                                           "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
                                           "&:hover fieldset": { borderColor: "var(--primary-teal-dark)" },
-                                          "&.Mui-focused fieldset": { borderColor: "var(--primary-teal-dark)" },
+                                          "&.Mui-focused fieldset": {
+                                            borderColor: "var(--primary-teal-dark)",
+                                          },
+                                        },
+                                        "& .MuiFormHelperText-root": {
+                                          mx: 0,
+                                          fontSize: "0.72rem",
                                         },
                                       }}
                                     />
                                   </TableCell>
-
-                                  {/* Unit price — from DB (bulkPricePerPiece) */}
                                   <TableCell sx={tableCellSx} align="right">
                                     <Typography sx={{ fontSize: "0.85rem", color: "var(--text)" }}>
                                       ₹ {row.unitPrice.toFixed(2)}
                                     </Typography>
-                                    <Typography sx={{ fontSize: "0.7rem", color: "var(--text)", opacity: 0.5 }}>
-                                      per piece
-                                    </Typography>
+                                    <Typography sx={{ fontSize: "0.7rem", color: "var(--text)", opacity: 0.5 }}>per piece</Typography>
                                   </TableCell>
-
-                                  {/* Total */}
                                   <TableCell sx={tableCellSx} align="right">
                                     <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--primary-maroon-dark)" }}>
                                       {row.qtyNum >= MIN_BULK_QTY ? `₹ ${fmt(row.total)}` : "–"}
                                     </Typography>
                                   </TableCell>
-
-                                  {/* Delete */}
                                   <TableCell sx={{ ...tableCellSx, p: 0.5 }}>
                                     <IconButton size="small" onClick={() => handleRemoveProduct(row.name)}
                                       sx={{ color: "rgba(0,0,0,0.35)", "&:hover": { color: "#c62828" } }}
@@ -626,14 +700,12 @@ export default function BulkOrderPage() {
                                       <DeleteOutlineIcon sx={{ fontSize: 18 }} />
                                     </IconButton>
                                   </TableCell>
-
                                 </TableRow>
                               ))}
                             </TableBody>
                           </Table>
                         </Box>
 
-                        {/* Add another product — uses allProducts from DB */}
                         {selectedNames.length < allProducts.length && (
                           <Button size="small" startIcon={<AddIcon />} onClick={handleAddProduct}
                             sx={{
@@ -648,20 +720,194 @@ export default function BulkOrderPage() {
                             Add Another Product
                           </Button>
                         )}
+
+                        {/* ── Lead time hint banner (shown once quantities are entered) ── */}
+                        {leadTimeHours && totalPieces >= MIN_BULK_QTY && (
+                          <Box sx={{
+                            mt: 1.5, display: "flex", alignItems: "center", gap: 1,
+                            p: "10px 14px", borderRadius: "10px",
+                            backgroundColor: "color-mix(in srgb, var(--primary-teal-dark), transparent 92%)",
+                            border: "1px solid color-mix(in srgb, var(--primary-teal-dark), transparent 75%)",
+                          }}>
+                            <ScheduleOutlinedIcon sx={{ fontSize: 17, color: "var(--primary-teal-dark)", flexShrink: 0 }} />
+                            <Typography sx={{ fontSize: "0.78rem", color: "var(--primary-teal-dark)", fontWeight: 500 }}>
+                              {totalPieces.toLocaleString("en-IN")} pieces need{" "}
+                              <strong>
+                                {leadTimeHours < 24
+                                  ? `${leadTimeHours} hours`
+                                  : `${leadTimeHours / 24} day${leadTimeHours > 24 ? "s" : ""}`}
+                              </strong>{" "}
+                              of preparation time. Delivery slots below are filtered accordingly.
+                            </Typography>
+                          </Box>
+                        )}
                       </Grid>
                     )}
+                    {/* ── Delivery Date + Time Slot ── */}
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Delivery Date"
+                        required
+                        type="date"
+                        value={form.deliveryDate}
+                        onChange={(e) => {
+                          const val = e.target.value;
 
-                    {/* Delivery Date */}
-                    <Grid item xs={12}>
-                      <TextField fullWidth label="Delivery Date" required type="date"
-                        value={form.deliveryDate} onChange={handleFieldChange("deliveryDate")}
-                        InputLabelProps={{ shrink: true }} sx={fieldSx}
-                        InputProps={{ startAdornment: <InputAdornment position="start"><CalendarTodayOutlinedIcon sx={{ color: "var(--primary-teal-dark)", fontSize: 17 }} /></InputAdornment> }}
+                          setForm((prev) => ({
+                            ...prev,
+                            deliveryDate: val,
+                            deliveryTime: "",
+                          }));
+
+                          setErrors((prev) => ({
+                            ...prev,
+                            deliveryDate: undefined,
+                            deliveryTime: undefined,
+                          }));
+                        }}
+                        inputProps={{ min: todayStr() }}
+                        InputLabelProps={{ shrink: true }}
+                        sx={{
+                          ...fieldSx,
+                          ...(isSunday(form.deliveryDate)
+                            ? {
+                                "& .MuiOutlinedInput-root fieldset": {
+                                  borderColor: "#c62828 !important",
+                                },
+                              }
+                            : {}),
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <CalendarTodayOutlinedIcon
+                                sx={{ color: "var(--primary-teal-dark)", fontSize: 17 }}
+                              />
+                            </InputAdornment>
+                          ),
+                        }}
                         error={!!errors.deliveryDate}
-                        helperText={errors.deliveryDate}
-                        onBlur={() => setErrors(prev => ({ ...prev, deliveryDate: validateField("deliveryDate", form.deliveryDate) }))}
+                        helperText={errors.deliveryDate || " "}
+                        onBlur={() =>
+                          setErrors((prev) => ({
+                            ...prev,
+                            deliveryDate: validateField("deliveryDate", form.deliveryDate),
+                          }))
+                        }
                       />
                     </Grid>
+
+                    {/* Time Slot Select */}
+                    <Grid item xs={12} sm={6}>
+                      <FormControl
+                        fullWidth
+                        required
+                        error={!!errors.deliveryTime}
+                        sx={fieldSx}
+                      >
+                        <InputLabel sx={{ fontSize: "0.87rem" }}>
+                          Delivery Time Slot
+                        </InputLabel>
+
+                        <Select
+                          value={form.deliveryTime}
+                          onChange={(e) => {
+                            const value = e.target.value;
+
+                            setForm((prev) => ({
+                              ...prev,
+                              deliveryTime: value,
+                            }));
+
+                            setErrors((prev) => ({
+                              ...prev,
+                              deliveryTime: validateField("deliveryTime", value),
+                            }));
+                          }}
+                          displayEmpty
+                          disabled={!form.deliveryDate || availableSlots.length === 0}
+                          startAdornment={
+                            <InputAdornment position="start">
+                              <AccessTimeOutlinedIcon
+                                sx={{ color: "var(--primary-teal-dark)" }}
+                              />
+                            </InputAdornment>
+                          }
+                        >
+                          <MenuItem value="" disabled>
+                            Select delivery time slot
+                          </MenuItem>
+
+                          {availableSlots.map((slot) => (
+                            <MenuItem key={slot} value={slot}>
+                              {slot}
+                            </MenuItem>
+                          ))}
+                        </Select>
+
+                        {errors.deliveryTime && (
+                          <FormHelperText sx={{ fontSize: "0.75rem", mx: 0, mt: 0.5 }}>
+                            {errors.deliveryTime}
+                          </FormHelperText>
+                        )}
+                      </FormControl>
+                    </Grid>
+                    {showUrgentBulkContact && (
+                      <Grid item xs={12}>
+                        <Box
+                          sx={{
+                            mt: -0.5,
+                            p: "12px 14px",
+                            borderRadius: "10px",
+                            border: "1px solid rgba(59, 22, 7, 0.22)",
+                            backgroundColor: "rgba(59, 22, 7, 0.04)",
+                            display: "flex",
+                            alignItems: { xs: "flex-start", sm: "center" },
+                            justifyContent: "space-between",
+                            gap: 1.5,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              fontSize: "0.86rem",
+                              color: "var(--primary-maroon-dark)",
+                              fontWeight: 600,
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            {totalPieces} pieces need {leadTimeHours} hours of preparation time.
+                            This date does not have enough available delivery time. Please choose
+                            a later date, or call us for urgent bulk order confirmation.
+                          </Typography>
+
+                          <Button
+                            component="a"
+                            href={`tel:${BULK_ORDER_PHONE}`}
+                            startIcon={<PhoneOutlinedIcon />}
+                            sx={{
+                              color: "var(--primary-maroon-dark)",
+                              borderColor: "var(--primary-maroon-dark)",
+                              border: "1px solid",
+                              borderRadius: "10px",
+                              px: 2,
+                              py: 0.8,
+                              fontWeight: 700,
+                              fontSize: "0.82rem",
+                              textTransform: "none",
+                              whiteSpace: "nowrap",
+                              "&:hover": {
+                                backgroundColor: "rgba(59, 22, 7, 0.08)",
+                                borderColor: "var(--primary-maroon-dark)",
+                              },
+                            }}
+                          >
+                            Call Us
+                          </Button>
+                        </Box>
+                      </Grid>
+                    )}
 
                     {/* Occasion */}
                     <Grid item xs={12}>
@@ -669,21 +915,85 @@ export default function BulkOrderPage() {
                         placeholder="e.g. Wedding, Corporate Lunch, Temple Function..."
                         value={form.occasion} onChange={handleFieldChange("occasion")} sx={fieldSx}
                         InputProps={{ startAdornment: <InputAdornment position="start"><EventNoteOutlinedIcon sx={{ color: "var(--primary-teal-dark)", fontSize: 19 }} /></InputAdornment> }}
-                        error={!!errors.occasion}
-                        helperText={errors.occasion}
+                        error={!!errors.occasion} helperText={errors.occasion}
                         onBlur={() => setErrors(prev => ({ ...prev, occasion: validateField("occasion", form.occasion) }))}
                       />
                     </Grid>
 
                     {/* Delivery Address */}
-                    <Grid item xs={12}>
+                    <Grid item xs={12} sm={8}>
                       <TextField fullWidth label="Delivery Address" required
                         placeholder="Enter complete delivery address"
                         value={form.address} onChange={handleFieldChange("address")} sx={fieldSx}
                         InputProps={{ startAdornment: <InputAdornment position="start"><LocationOnOutlinedIcon sx={{ color: "var(--primary-teal-dark)", fontSize: 19 }} /></InputAdornment> }}
-                        error={!!errors.address}
-                        helperText={errors.address}
+                        error={!!errors.address} helperText={errors.address}
                         onBlur={() => setErrors(prev => ({ ...prev, address: validateField("address", form.address) }))}
+                      />
+                    </Grid>
+
+                    {/* Pincode */}
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        fullWidth
+                        label="Pincode"
+                        required
+                        placeholder="6-digit pincode"
+                        value={form.pincode}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+
+                          setSubmitted(false);
+                          // setBulkOrderSubmitted(false);
+
+                          setForm((prev) => ({
+                            ...prev,
+                            pincode: val,
+                          }));
+
+                          setErrors((prev) => ({
+                            ...prev,
+                            pincode: validateField("pincode", val),
+                          }));
+                        }}
+                        onBlur={() =>
+                          setErrors((prev) => ({
+                            ...prev,
+                            pincode: validateField("pincode", form.pincode),
+                          }))
+                        }
+                        inputProps={{
+                          maxLength: 6,
+                          inputMode: "numeric",
+                        }}
+                        sx={fieldSx}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <MarkunreadMailboxOutlinedIcon
+                                sx={{ color: "var(--primary-teal-dark)", fontSize: 18 }}
+                              />
+                            </InputAdornment>
+                          ),
+                        }}
+                        error={!!errors.pincode}
+                        helperText={
+                          errors.pincode
+                            ? errors.pincode
+                            : form.pincode.length === 6 && !validatePincode(form.pincode)
+                              ? "✓ Delivery available in your area"
+                              : "Madurai delivery zone only"
+                        }
+                        FormHelperTextProps={{
+                          sx: {
+                            color:
+                              form.pincode.length === 6 && !validatePincode(form.pincode)
+                                ? "var(--primary-teal-dark) !important"
+                                : undefined,
+                            fontSize: "0.74rem",
+                            mx: 0,
+                            mt: 0.5,
+                          },
+                        }}
                       />
                     </Grid>
 
@@ -765,7 +1075,7 @@ export default function BulkOrderPage() {
                         <TableHead>
                           <TableRow>
                             <TableCell sx={tableHeadCellSx}>Product</TableCell>
-                            <TableCell sx={tableHeadCellSx} align="center">Qty (Pieces)</TableCell>
+                            <TableCell sx={tableHeadCellSx} align="center">Qty</TableCell>
                             <TableCell sx={tableHeadCellSx} align="right">Price/Piece</TableCell>
                             <TableCell sx={tableHeadCellSx} align="right">Total</TableCell>
                           </TableRow>
@@ -776,9 +1086,9 @@ export default function BulkOrderPage() {
                               <TableCell sx={tableCellSx}>
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                   {row.image ? (
-                                  <Box component="img" src={row.image} alt={row.name}
-                                    sx={{ width: 30, height: 30, borderRadius: "6px", objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
-                                  />
+                                    <Box component="img" src={row.image} alt={row.name}
+                                      sx={{ width: 30, height: 30, borderRadius: "6px", objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
+                                    />
                                   ) : (
                                     <Box sx={{ width: 30, height: 30, borderRadius: "6px", backgroundColor: "rgba(0,0,0,0.06)", flexShrink: 0 }} />
                                   )}
@@ -840,12 +1150,13 @@ export default function BulkOrderPage() {
                   )}
 
                   {/* Order details after submit */}
-                  {submitted && (form.deliveryDate || form.occasion || form.address) && (
+                  {submitted && (form.deliveryDate || form.deliveryTime || form.occasion || form.address || form.pincode) && (
                     <Box sx={{ mb: 2 }}>
                       {[
                         { label: "Delivery Date",    value: form.deliveryDate },
+                        { label: "Time Slot",        value: form.deliveryTime },
                         { label: "Occasion / Event", value: form.occasion     },
-                        { label: "Delivery Address", value: form.address      },
+                        { label: "Delivery Address", value: form.address ? `${form.address}${form.pincode ? ` – ${form.pincode}` : ""}` : "" },
                       ].filter((r) => r.value).map((r, i, arr) => (
                         <Box key={r.label}>
                           <Box sx={{ display: "flex", gap: 1.5, py: 1 }}>
@@ -872,19 +1183,20 @@ export default function BulkOrderPage() {
                   {/* Action buttons after submit */}
                   {submitted && (
                     <Box sx={{ display: "flex", gap: 1.5, mt: 1, flexWrap: "wrap" }}>
+                      {/* ← Renamed to "Place Bulk Order" */}
                       <Button fullWidth variant="contained"
-                        startIcon={bulkOrderSubmitted ? <TaskAltIcon /> : <ShoppingCartOutlinedIcon />}
+                        startIcon={<ShoppingCartOutlinedIcon />}
                         onClick={handleBulkOrderSubmit}
-                        disabled={!pricing.allFilled}
+                        disabled={hasFormErrors}
                         sx={{
-                          backgroundColor: bulkOrderSubmitted ? "var(--primary-teal-dark)" : "var(--primary-maroon-dark)",
+                          backgroundColor: "var(--primary-maroon-dark)",
                           color: "#fff", fontWeight: 700, fontSize: ".9rem", py: 1.3, borderRadius: "10px",
                           textTransform: "none", boxShadow: "0 4px 16px rgba(0,0,0,0.14)", transition: "all 0.25s ease",
-                          "&:hover": { backgroundColor: bulkOrderSubmitted ? "var(--primary-teal-dark)" : "color-mix(in srgb, var(--primary-maroon-dark), black 12%)", transform: "translateY(-1px)", boxShadow: "0 8px 22px rgba(0,0,0,0.18)" },
+                          "&:hover": { backgroundColor: "color-mix(in srgb, var(--primary-maroon-dark), black 12%)", transform: "translateY(-1px)", boxShadow: "0 8px 22px rgba(0,0,0,0.18)" },
                           "&.Mui-disabled": { backgroundColor: "rgba(0,0,0,0.1)", color: "rgba(0,0,0,0.35)" },
                         }}
                       >
-                        {bulkOrderSubmitted ? "Bulk Order Submitted!" : "Submit Bulk Order"}
+                        Buy Bulk Order
                       </Button>
                       <Button variant="outlined" startIcon={<FileDownloadOutlinedIcon />}
                         sx={{ flex: 1, textTransform: "none", fontWeight: 600, fontSize: ".82rem", borderRadius: "10px", borderColor: "var(--primary-teal-dark)", color: "var(--primary-teal-dark)", py: 1, "&:hover": { backgroundColor: "color-mix(in srgb, var(--primary-teal-dark), transparent 92%)" } }}
@@ -961,8 +1273,33 @@ export default function BulkOrderPage() {
             </Grid>
           </Box>
         </motion.div>
-
       </Container>
+      <BulkCheckoutDialog
+        open={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        formData={{
+          fullName:        form.name,
+          phone:           form.phone,
+          email:           form.email,
+          deliveryDate:    form.deliveryDate,
+          deliveryTime:    form.deliveryTime,
+          occasionDetails: form.occasion,
+          deliveryAddress: form.address,
+          pincode:         form.pincode,
+          items: pricing.rows.map((r) => ({
+            productId: r.id,
+            name:      r.name,
+            image:     r.image,
+            quantity:  r.qtyNum,
+            unitPrice: r.unitPrice,
+            total:     r.total,
+          })),
+          subtotal:       pricing.subtotal,
+          discountRate:   pricing.discountRate,
+          discountAmt:    pricing.discountAmt,
+          estimatedTotal: pricing.estimatedTotal,
+        }}
+      />
     </Box>
   );
 }
