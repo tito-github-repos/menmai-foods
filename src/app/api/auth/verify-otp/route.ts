@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       phone: mobile,
     },
     process.env.JWT_SECRET!,
-    { expiresIn: "7d" }, 
+    { expiresIn: "30d" }, 
   );
 
   return NextResponse.json({
