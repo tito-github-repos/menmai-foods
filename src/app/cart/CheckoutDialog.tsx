@@ -815,6 +815,19 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                     }
                     setCustomerId(data.customerId);
                     setToken(data.token);
+                    localStorage.setItem("token", data.token);
+
+                    await fetch("/api/cart/sync", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                      },
+                      body: JSON.stringify({
+                        items: cartItems,
+                      }),
+                    });
+
                     setOtpError("");
                     if (data.existingAddress) {
                       setForm((prev) => ({
@@ -860,7 +873,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
-                      Authorization: `Bearer ${token}`,
+                      Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
                     body: JSON.stringify({
                       // customerId,
@@ -891,7 +904,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
-                      Authorization: `Bearer ${token}`,
+                      Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
                     body: JSON.stringify({
                       // customerId,
@@ -916,7 +929,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
-                      Authorization: `Bearer ${token}`,
+                      Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
                     body: JSON.stringify({
                       orderId: orderData.orderId,
@@ -957,7 +970,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                         method: "POST",
                         headers: {
                           "Content-Type": "application/json",
-                          Authorization: `Bearer ${token}`,
+                          Authorization: `Bearer ${localStorage.getItem("token")}`,
                         },
                         body: JSON.stringify({
                           razorpay_order_id: response.razorpay_order_id,
