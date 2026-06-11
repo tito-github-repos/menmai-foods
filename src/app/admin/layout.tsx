@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import AdminSidebar from "../components/admin/sidebar";
 import AdminHeader from "../components/admin/header";
+import Providers from "./providers"; // ← ADD
 import "./admin.css";
 
 export default function AdminLayout({
@@ -14,37 +15,34 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
 
-  const [mobileOpen, setMobileOpen] =
-    useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleDrawerToggle = () =>
     setMobileOpen((prev) => !prev);
 
   // Hide sidebar & header on login page
   if (pathname === "/admin") {
-    return <>{children}</>;
+    return <Providers>{children}</Providers>; 
   }
 
   return (
-    <div className="admin-wrapper">
-      <AdminSidebar
-        mobileOpen={mobileOpen}
-        handleDrawerToggle={
-          handleDrawerToggle
-        }
-      />
-
-      <div className="admin-content">
-        <AdminHeader
-          handleDrawerToggle={
-            handleDrawerToggle
-          }
+    <Providers> {/* ← wrap */}
+      <div className="admin-wrapper">
+        <AdminSidebar
+          mobileOpen={mobileOpen}
+          handleDrawerToggle={handleDrawerToggle}
         />
 
-        <main className="admin-main">
-          {children}
-        </main>
+        <div className="admin-content">
+          <AdminHeader
+            handleDrawerToggle={handleDrawerToggle}
+          />
+
+          <main className="admin-main">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </Providers>
   );
 }

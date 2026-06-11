@@ -22,15 +22,32 @@ import PeopleOutlineOutlinedIcon from "@mui/icons-material/PeopleOutlineOutlined
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 
 import Image from "next/image";
+import { signOut } from "next-auth/react";
 
 export const drawerWidth = 210; // ← CHANGED FROM 250 TO 280
 
 const menus = [
-  { title: "Dashboard", path: "/admin/dashboard", icon: <DashboardOutlinedIcon /> },
+  {
+    title: "Dashboard",
+    path: "/admin/dashboard",
+    icon: <DashboardOutlinedIcon />,
+  },
   { title: "Orders", path: "/admin/orders", icon: <ShoppingBagOutlinedIcon /> },
-  { title: "Products", path: "/admin/products", icon: <Inventory2OutlinedIcon /> },
-  { title: "Broadcast", path: "/admin/broadcast", icon: <CampaignOutlinedIcon /> },
-  { title: "Customers", path: "/admin/customers", icon: <PeopleOutlineOutlinedIcon /> },
+  {
+    title: "Products",
+    path: "/admin/products",
+    icon: <Inventory2OutlinedIcon />,
+  },
+  {
+    title: "Broadcast",
+    path: "/admin/broadcast",
+    icon: <CampaignOutlinedIcon />,
+  },
+  {
+    title: "Customers",
+    path: "/admin/customers",
+    icon: <PeopleOutlineOutlinedIcon />,
+  },
 ];
 
 interface Props {
@@ -38,15 +55,48 @@ interface Props {
   handleDrawerToggle: () => void;
 }
 
-export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) {
+export default function AdminSidebar({
+  mobileOpen,
+  handleDrawerToggle,
+}: Props) {
   const pathname = usePathname();
 
   const drawerContent = (
-    <Box sx={{ height: "100%", display: "flex", flexDirection: "column", position: "relative", color: "#fff" }}>
-      <Box sx={{ position: "absolute", inset: 0, backgroundImage: "url('/img/admin/sidebar-img.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
-      <Box sx={{ position: "absolute", inset: 0, background: "linear-gradient(rgba(65,15,0,.72), rgba(65,15,0,.92))" }} />
+    <Box
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        color: "#fff",
+      }}
+    >
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: "url('/img/admin/sidebar-img.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(rgba(65,15,0,.72), rgba(65,15,0,.92))",
+        }}
+      />
 
-      <Box sx={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 2,
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+        }}
+      >
         <Box sx={{ py: 2, display: "flex", justifyContent: "center" }}>
           <Image
             src="/logo.jpeg"
@@ -61,7 +111,11 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
           {menus.map((menu) => {
             const active = pathname.startsWith(menu.path);
             return (
-              <Link key={menu.path} href={menu.path} style={{ textDecoration: "none" }}>
+              <Link
+                key={menu.path}
+                href={menu.path}
+                style={{ textDecoration: "none" }}
+              >
                 <ListItemButton
                   sx={{
                     height: 54,
@@ -88,7 +142,13 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
           <Button
             fullWidth
             startIcon={<LogoutOutlinedIcon />}
-            sx={{ color: "#fff", height: 50, borderRadius: "14px", background: "rgba(255,255,255,.08)" }}
+            onClick={() => signOut({ callbackUrl: "/admin" })}
+            sx={{
+              color: "#fff",
+              height: 50,
+              borderRadius: "14px",
+              background: "rgba(255,255,255,.08)",
+            }}
           >
             Logout
           </Button>
@@ -119,10 +179,10 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
         open
         sx={{
           display: { xs: "none", lg: "block" },
-          width: 0,                             // ← KEEPS WRAPPER AT 0 WIDTH
+          width: 0, // ← KEEPS WRAPPER AT 0 WIDTH
           flexShrink: 0,
           "& .MuiDrawer-paper": {
-            width: drawerWidth,                 // ← 280px
+            width: drawerWidth, // ← 280px
             border: 0,
             position: "fixed",
             left: 0,
