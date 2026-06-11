@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 import {
   Box,
@@ -9,14 +12,48 @@ import {
   TextField,
   Button,
   InputAdornment,
-  Checkbox,
-  FormControlLabel,
+  Alert,
+  IconButton,
 } from "@mui/material";
 
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 export default function AdminLoginPage() {
+  const router = useRouter();
+
+  const [username, setUsername]         = useState("");
+  const [password, setPassword]         = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError]               = useState("");
+  const [loading, setLoading]           = useState(false);
+
+  const handleLogin = async () => {
+    if (!username || !password) {
+      setError("Please enter username and password");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    const result = await signIn("credentials", {
+      username,
+      password,
+      redirect: false,
+    });
+
+    setLoading(false);
+
+    if (result?.error) {
+      setError("Invalid username or password");
+    } else {
+      router.push("/admin/dashboard");
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -47,8 +84,7 @@ export default function AdminLoginPage() {
 
           border: "1px solid #ececec",
 
-          boxShadow:
-            "0 15px 40px rgba(0,0,0,0.08)",
+          boxShadow: "0 15px 40px rgba(0,0,0,0.08)",
         }}
       >
         {/* Logo */}
@@ -64,9 +100,7 @@ export default function AdminLoginPage() {
             alt="Menmai Foods"
             width={130}
             height={130}
-            style={{
-              borderRadius: "50%",
-            }}
+            style={{ borderRadius: "50%" }}
           />
         </Box>
 
@@ -98,12 +132,25 @@ export default function AdminLoginPage() {
           Sign in to access Menmai Foods Admin Panel
         </Typography>
 
+        {/* Error alert */}
+        {error && (
+          <Alert
+            severity="error"
+            sx={{ mb: 2, borderRadius: 2 }}
+            onClose={() => setError("")}
+          >
+            {error}
+          </Alert>
+        )}
+
         {/* Username */}
         <TextField
           fullWidth
           size="small"
           label="Username"
           margin="normal"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -117,56 +164,43 @@ export default function AdminLoginPage() {
         <TextField
           fullWidth
           size="small"
-          type="password"
           label="Password"
           margin="normal"
+          type={showPassword ? "text" : "password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
                 <LockOutlinedIcon />
               </InputAdornment>
             ),
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowPassword(!showPassword)}
+                  edge="end"
+                  size="small"
+                >
+                  {showPassword
+                    ? <VisibilityOffIcon fontSize="small" />
+                    : <VisibilityIcon fontSize="small" />}
+                </IconButton>
+              </InputAdornment>
+            ),
           }}
         />
-
-        {/* Remember Me */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-
-            mt: 1,
-            mb: 2,
-          }}
-        >
-          {/* <FormControlLabel
-            control={<Checkbox size="small" />}
-            label={
-              <Typography fontSize="0.9rem">
-                Remember Me
-              </Typography>
-            }
-          /> */}
-
-          {/* <Typography
-            sx={{
-              color: "#00695c",
-              fontWeight: 600,
-              cursor: "pointer",
-              fontSize: "0.9rem",
-            }}
-          >
-            Forgot Password?
-          </Typography> */}
-        </Box>
 
         {/* Login Button */}
         <Button
           fullWidth
           variant="contained"
+          onClick={handleLogin}
+          disabled={loading}
           sx={{
             height: 48,
+            mt: 3,
 
             borderRadius: "12px",
 
@@ -182,7 +216,7 @@ export default function AdminLoginPage() {
             },
           }}
         >
-          Login
+          {loading ? "Signing in…" : "Login"}
         </Button>
       </Paper>
     </Box>
