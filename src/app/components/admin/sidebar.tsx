@@ -20,11 +20,12 @@ import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import PeopleOutlineOutlinedIcon from "@mui/icons-material/PeopleOutlineOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 
 import Image from "next/image";
 import { signOut } from "next-auth/react";
 
-export const drawerWidth = 210; // ← CHANGED FROM 250 TO 280
+export const drawerWidth = 220; 
 
 const menus = [
   {
@@ -32,7 +33,8 @@ const menus = [
     path: "/admin/dashboard",
     icon: <DashboardOutlinedIcon />,
   },
-  { title: "Orders", path: "/admin/orders", icon: <ShoppingBagOutlinedIcon /> },
+  { title: "Retail Orders", path: "/admin/orders", icon: <ShoppingBagOutlinedIcon /> },
+  { title: "Bulk Orders", path: "/admin/bulk-orders", icon: <LocalShippingOutlinedIcon  /> },
   {
     title: "Products",
     path: "/admin/products",
