@@ -23,6 +23,11 @@ export default function AdminHeader({ handleDrawerToggle }: Props) {
     subtitle = "Manage customer orders";
   }
 
+  if (pathname.includes("bulk-orders")) {
+    title = "Bulk Orders";
+    subtitle = "Manage Bulk orders";
+  }
+
   if (pathname.includes("products")) {
     title = "Products";
     subtitle = "Manage products and inventory";
@@ -82,9 +87,10 @@ export default function AdminHeader({ handleDrawerToggle }: Props) {
               fontSize: {
                 xs: "1.4rem",
                 md: "1.8rem",
-              },
+                             },
               fontWeight: 700,
               color: "#4A1E00",
+              ml:2,
             }}
           >
             {title}
@@ -92,6 +98,7 @@ export default function AdminHeader({ handleDrawerToggle }: Props) {
 
           <Typography
             sx={{
+              ml:2,
               color: "#777",
               fontSize: "0.85rem",
 
