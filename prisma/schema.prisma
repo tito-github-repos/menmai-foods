@@ -78,6 +78,8 @@ model Customer {
   CustomerAddress CustomerAddress[]
   Order           Order[]
   BulkOrder       BulkOrder[]
+
+  OTPVerification OTPVerification[]
 }
 
 model CustomerAddress {
@@ -111,12 +113,24 @@ model GoogleSheetSyncLog {
 }
 
 model OTPVerification {
-  id        Int      @id @default(autoincrement())
-  phone     String
-  otpCode   String
-  verified  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  expiresAt DateTime
+  id         Int      @id @default(autoincrement())
+  
+  phone      String   @unique
+  otpCode    String
+  verified   Boolean  @default(false)
+
+  resendCount Int     @default(0)
+  lastSentAt  DateTime?
+  expiresAt   DateTime
+
+  customerId  Int?
+  Customer    Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([phone])
+  @@index([customerId])
 }
 
 model Order {
