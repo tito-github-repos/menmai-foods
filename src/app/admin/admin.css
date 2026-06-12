@@ -5,7 +5,7 @@
 }
 
 .admin-content {
-  margin-left: 210px; /* matches drawerWidth exactly */
+  margin-left: 215px; /* matches drawerWidth exactly */
   display: flex;
   flex-direction: column;
   min-height: 100vh;
