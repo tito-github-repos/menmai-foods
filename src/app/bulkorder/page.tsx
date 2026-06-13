@@ -64,11 +64,13 @@ import {
   validateField,
   validatePincode,
   validateProductQuantities,
+  // getAvailableTimeSlots,
+  // getLeadTimeHours,
   getAvailableTimeSlots,
-  getLeadTimeHours,
+  getDeliveryChargeByPincode,
   FormErrors,
 } from "@/lib/validations/bulkOrderValidation";
-import BulkCheckoutDialog from "@/app/components/bulk/BulkCheckoutDialog";
+// import BulkCheckoutDialog from "@/app/components/bulk/BulkCheckoutDialog";
 /* ════════════════════════════════════════
    ANIMATION HELPERS
 ════════════════════════════════════════ */
@@ -217,7 +219,7 @@ export default function BulkOrderPage() {
   /* ── Products from DB ── */
   const [allProducts, setAllProducts]         = useState<ProductOption[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  // const [checkoutOpen, setCheckoutOpen] = useState(false);
   useEffect(() => {
     fetch("/api/products")
       .then((res) => res.json())
@@ -229,7 +231,9 @@ export default function BulkOrderPage() {
             name:              p.name,
             image:             p.imageUrl ?? "",
             pieces:            p.pieces ?? 1,
-            bulkPricePerPiece: p.bulkPricePerPiece ?? 0,
+            bulkPricePerPiece: Number(
+              p.bulkPricePerPiece ?? (p.pieces ? p.price / p.pieces : p.price) ?? 0
+            ),
           }))
         );
         setProductsLoading(false);
@@ -253,7 +257,10 @@ export default function BulkOrderPage() {
   });
   // const [bulkOrderSubmitted, setBulkOrderSubmitted] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
-  
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [bookedSlotsLoading, setBookedSlotsLoading] = useState(false);
+  const [submittedOrderRef, setSubmittedOrderRef] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState("");
   /* ── Derived: total pieces across all rows ── */
   const totalPieces = useMemo(
     () => productRows.reduce((sum, r) => sum + (parseInt(r.qty) || 0), 0),
@@ -261,9 +268,13 @@ export default function BulkOrderPage() {
   );
 
   /* ── Derived: available time slots for selected date ── */
+  // const availableSlots = useMemo(
+  //   () => getAvailableTimeSlots(form.deliveryDate, totalPieces),
+  //   [form.deliveryDate, totalPieces]
+  // );
   const availableSlots = useMemo(
-    () => getAvailableTimeSlots(form.deliveryDate, totalPieces),
-    [form.deliveryDate, totalPieces]
+    () => getAvailableTimeSlots(form.deliveryDate),
+    [form.deliveryDate]
   );
 
   /* ── When date or totalPieces changes, reset deliveryTime if slot no longer valid ── */
@@ -281,23 +292,33 @@ export default function BulkOrderPage() {
       return { ...r, qtyNum: qty, unitPrice: r.bulkPricePerPiece, total };
     });
     const subtotal       = rows.reduce((s, r) => s + r.total, 0);
-    const discountRate   = getDiscount(subtotal);
-    const discountAmt    = subtotal * discountRate;
-    const estimatedTotal = subtotal - discountAmt;
+    const deliveryCharge =
+    subtotal > 0 ? getDeliveryChargeByPincode(form.pincode) : 0;
+    // const discountRate   = getDiscount(subtotal);
+    // const discountAmt    = subtotal * discountRate;
+    const estimatedTotal = subtotal + deliveryCharge;
     const allFilled      = rows.length > 0 && rows.every((r) => r.qtyNum >= MIN_BULK_QTY);
-    return { rows, subtotal, discountRate, discountAmt, estimatedTotal, allFilled };
-  }, [productRows]);
+    return { rows, subtotal,deliveryCharge, estimatedTotal, allFilled };
+  }, [productRows, form.pincode]);
 
   /* ── Lead time info for UI hint ── */
-  const leadTimeHours = totalPieces > 0 ? getLeadTimeHours(totalPieces) : null;
+  // const leadTimeHours = totalPieces > 0 ? getLeadTimeHours(totalPieces) : null;
 
+  // const timeSlotDisabledReason = !form.deliveryDate
+  // ? ""
+  // : productRows.length === 0
+  //   ? "Please select at least one product before choosing delivery time."
+  //   : availableSlots.length === 0
+  //     ? `${totalPieces} pieces need ${leadTimeHours} hours of preparation time. No delivery slots are available for this date. Please choose a later date or contact us for urgent bulk orders.`
+  //     : "";
   const timeSlotDisabledReason = !form.deliveryDate
   ? ""
-  : productRows.length === 0
-    ? "Please select at least one product before choosing delivery time."
+  : bookedSlotsLoading
+    ? "Checking available slots..."
     : availableSlots.length === 0
-      ? `${totalPieces} pieces need ${leadTimeHours} hours of preparation time. No delivery slots are available for this date. Please choose a later date or contact us for urgent bulk orders.`
+      ? "No delivery slots are available for this date. Please choose another date or call us."
       : "";
+
   const selectedDeliveryDateError = form.deliveryDate
     ? validateField("deliveryDate", form.deliveryDate)
     : undefined;
@@ -402,6 +423,27 @@ export default function BulkOrderPage() {
     }]);
   };
 
+  useEffect(() => {
+    if (!form.deliveryDate) {
+      setBookedSlots([]);
+      return;
+    }
+
+    setBookedSlotsLoading(true);
+
+    fetch(`/api/bulk-orders/booked-slots?date=${form.deliveryDate}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setBookedSlots(data.bookedSlots || []);
+      })
+      .catch(() => {
+        setBookedSlots([]);
+      })
+      .finally(() => {
+        setBookedSlotsLoading(false);
+      });
+  }, [form.deliveryDate]);
+
   const handleReset = () => {
     setSelectedNames([]);
     setProductRows([]);
@@ -415,16 +457,80 @@ export default function BulkOrderPage() {
     });
   };
 
-  const handleBulkOrderSubmit = () => {
+  // const handleBulkOrderSubmit = () => {
+  //   const { errors: newErrors, isValid } = validateBulkOrderForm(form, productRows);
+  //   setErrors(newErrors);
+  //   if (!isValid) return;
+  //   setCheckoutOpen(true);
+  // };
+
+
+  const handleBulkOrderSubmit = async () => {
     const { errors: newErrors, isValid } = validateBulkOrderForm(form, productRows);
     setErrors(newErrors);
+
     if (!isValid) return;
-    setCheckoutOpen(true);
+
+    if (bookedSlots.includes(form.deliveryTime)) {
+      setErrors((prev) => ({
+        ...prev,
+        deliveryTime: "This slot is already booked. Please choose another slot or call us.",
+      }));
+      return;
+    }
+
+    const res = await fetch("/api/bulk-orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        customerName: form.name,
+        phone: form.phone,
+        email: form.email,
+        deliveryDate: form.deliveryDate,
+        deliveryTime: form.deliveryTime,
+        occasion: form.occasion,
+        deliveryAddress: form.address,
+        pincode: form.pincode,
+        subtotal: pricing.subtotal,
+        deliveryCharge: pricing.deliveryCharge,
+        estimatedTotal: pricing.estimatedTotal,
+        source: "CUSTOMER_FORM",
+        items: pricing.rows.map((r) => ({
+          productId: r.id,
+          name: r.name,
+          quantity: r.qtyNum,
+          unitPrice: r.unitPrice,
+          total: r.total,
+        })),
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      alert(data.message || "Could not submit bulk order. Please try again.");
+      return;
+    }
+
+    setSubmittedOrderRef(data.order.orderRef);
+    setSubmitSuccess(
+      `Your bulk order quote has been submitted successfully. Quote No: ${data.order.orderRef}`
+    );
   };
   
   const fmt = (n: number) =>
     n.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
+  const handleDownloadQuote = () => {
+    if (!submittedOrderRef) {
+      alert("Please submit the bulk order first. Then you can download the quote.");
+      return;
+    }
+
+    window.open(`/api/bulk-orders/quote-pdf/${submittedOrderRef}`, "_blank");
+  };
   /* ════════════════════════════════════════
      RENDER
   ════════════════════════════════════════ */
@@ -722,7 +828,7 @@ export default function BulkOrderPage() {
                         )}
 
                         {/* ── Lead time hint banner (shown once quantities are entered) ── */}
-                        {leadTimeHours && totalPieces >= MIN_BULK_QTY && (
+                        {/* {leadTimeHours && totalPieces >= MIN_BULK_QTY && (
                           <Box sx={{
                             mt: 1.5, display: "flex", alignItems: "center", gap: 1,
                             p: "10px 14px", borderRadius: "10px",
@@ -740,7 +846,7 @@ export default function BulkOrderPage() {
                               of preparation time. Delivery slots below are filtered accordingly.
                             </Typography>
                           </Box>
-                        )}
+                        )} */}
                       </Grid>
                     )}
                     {/* ── Delivery Date + Time Slot ── */}
@@ -839,11 +945,22 @@ export default function BulkOrderPage() {
                             Select delivery time slot
                           </MenuItem>
 
-                          {availableSlots.map((slot) => (
-                            <MenuItem key={slot} value={slot}>
-                              {slot}
-                            </MenuItem>
-                          ))}
+                          {availableSlots.map((slot) => {
+                            const isBooked = bookedSlots.includes(slot);
+
+                            return (
+                              <MenuItem key={slot} value={slot} disabled={isBooked}>
+                                <ListItemText
+                                  primary={slot}
+                                  secondary={
+                                    isBooked
+                                      ? "Already booked. Choose another slot or call us."
+                                      : undefined
+                                  }
+                                />
+                              </MenuItem>
+                            );
+                          })}
                         </Select>
 
                         {errors.deliveryTime && (
@@ -853,7 +970,7 @@ export default function BulkOrderPage() {
                         )}
                       </FormControl>
                     </Grid>
-                    {showUrgentBulkContact && (
+                    {bookedSlots.length > 0 && (
                       <Grid item xs={12}>
                         <Box
                           sx={{
@@ -877,9 +994,11 @@ export default function BulkOrderPage() {
                               lineHeight: 1.5,
                             }}
                           >
-                            {totalPieces} pieces need {leadTimeHours} hours of preparation time.
+                            {/* {totalPieces} pieces need {leadTimeHours} hours of preparation time.
                             This date does not have enough available delivery time. Please choose
-                            a later date, or call us for urgent bulk order confirmation.
+                            a later date, or call us for urgent bulk order confirmation. */}
+                            Some delivery slots are already booked for this date. Please choose another
+                            available slot, or call us for urgent bulk order confirmation.
                           </Typography>
 
                           <Button
@@ -1119,11 +1238,17 @@ export default function BulkOrderPage() {
                       <Box sx={{ px: 2, py: 1.5, borderTop: "1.5px solid rgba(0,0,0,0.07)", backgroundColor: "rgba(0,0,0,0.015)" }}>
                         {[
                           { label: "Subtotal", value: pricing.subtotal > 0 ? `₹ ${fmt(pricing.subtotal)}` : "–" },
-                          { label: `Bulk Discount (${Math.round(pricing.discountRate * 100)}%)`, value: pricing.discountAmt > 0 ? `– ₹ ${fmt(pricing.discountAmt)}` : "–", accent: true },
+                          // { label: `Bulk Discount (${Math.round(pricing.discountRate * 100)}%)`, value: pricing.discountAmt > 0 ? `– ₹ ${fmt(pricing.discountAmt)}` : "–", accent: true },
+                          {
+                            label: "Delivery Charge",
+                            value: pricing.deliveryCharge > 0 ? `₹ ${fmt(pricing.deliveryCharge)}` : "–",
+                          },
                         ].map((r) => (
                           <Box key={r.label} sx={{ display: "flex", justifyContent: "space-between", mb: 0.75 }}>
                             <Typography sx={{ fontSize: ".82rem", color: "var(--text)", opacity: 0.7 }}>{r.label}</Typography>
-                            <Typography sx={{ fontSize: ".82rem", color: r.accent ? "#c62828" : "var(--text)", fontWeight: 500 }}>{r.value}</Typography>
+                            <Typography sx={{ fontSize: ".82rem", color: "var(--text)", fontWeight: 500 }}>
+                              {r.value}
+                            </Typography>
                           </Box>
                         ))}
                         <Divider sx={{ my: 1 }} />
@@ -1196,12 +1321,16 @@ export default function BulkOrderPage() {
                           "&.Mui-disabled": { backgroundColor: "rgba(0,0,0,0.1)", color: "rgba(0,0,0,0.35)" },
                         }}
                       >
-                        Buy Bulk Order
+                        Submit Bulk Order
                       </Button>
-                      <Button variant="outlined" startIcon={<FileDownloadOutlinedIcon />}
+                      <Button 
+                        variant="outlined" 
+                        startIcon={<FileDownloadOutlinedIcon />}
+                        onClick={handleDownloadQuote}
+                        disabled={!submittedOrderRef}
                         sx={{ flex: 1, textTransform: "none", fontWeight: 600, fontSize: ".82rem", borderRadius: "10px", borderColor: "var(--primary-teal-dark)", color: "var(--primary-teal-dark)", py: 1, "&:hover": { backgroundColor: "color-mix(in srgb, var(--primary-teal-dark), transparent 92%)" } }}
                       >
-                        Download Quote (PDF)
+                        Download Quote
                       </Button>
                       <Button variant="outlined" startIcon={<RefreshOutlinedIcon />} onClick={handleReset}
                         sx={{ flex: 1, textTransform: "none", fontWeight: 600, fontSize: ".82rem", borderRadius: "10px", borderColor: "rgba(0,0,0,0.2)", color: "var(--text)", py: 1, "&:hover": { backgroundColor: "rgba(0,0,0,0.04)" } }}
@@ -1274,7 +1403,7 @@ export default function BulkOrderPage() {
           </Box>
         </motion.div>
       </Container>
-      <BulkCheckoutDialog
+      {/* <BulkCheckoutDialog
         open={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}
         formData={{
@@ -1299,7 +1428,7 @@ export default function BulkOrderPage() {
           discountAmt:    pricing.discountAmt,
           estimatedTotal: pricing.estimatedTotal,
         }}
-      />
+      /> */}
     </Box>
   );
 }
