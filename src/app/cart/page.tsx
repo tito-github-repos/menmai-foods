@@ -36,6 +36,8 @@ import Link from "next/link";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { removeFromCart, setQuantity } from "@/store/cartSlice";
 import CheckoutDialog from "./CheckoutDialog";
+import BulkOrderLimitDialog from "../components/BulkOrderLimitDialog";
+import { getProductLimit } from "@/constants/productLimits";
 
 const theme = createTheme({
   palette: {
@@ -122,13 +124,21 @@ export default function CartCheckout() {
     saveAddress: false,
   });
 
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+
   const updateQty = (productId: number, delta: number) => {
     const item = cartItems.find((item) => item.productId === productId);
     if (!item) return;
 
     const newQty = item.quantity + delta;
+    const MAX_RETAIL_QTY = getProductLimit(item.slug);
 
     if (newQty < 1) return;
+
+    if (newQty > MAX_RETAIL_QTY) {
+      setBulkDialogOpen(true);
+      return;
+    }
 
     dispatch(setQuantity({ productId, quantity: newQty }));
   };
@@ -194,7 +204,7 @@ export default function CartCheckout() {
         <Box
           sx={{
             pt: 4,
-            pb:1.5,
+            pb: 1.5,
             backgroundColor: "#f7f6f3",
           }}
         >
@@ -1020,6 +1030,11 @@ export default function CartCheckout() {
           cartItems={cartItems}
         />
       </Box>
+
+      <BulkOrderLimitDialog
+        open={bulkDialogOpen}
+        onClose={() => setBulkDialogOpen(false)}
+      />
     </ThemeProvider>
   );
 }

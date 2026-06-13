@@ -156,8 +156,10 @@ model Order {
   subtotal           Float
   deliveryCharge     Float                @default(0)
   totalAmount        Float
+  cartSnapshot       Json? 
   paymentStatus      Order_paymentStatus  @default(PENDING)
   orderStatus        Order_orderStatus    @default(PENDING)
+  orderExpiresAt     DateTime?
   orderedAt          DateTime             @default(now())
   createdAt          DateTime             @default(now())
   updatedAt          DateTime
@@ -236,6 +238,8 @@ enum Order_orderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+  EXPIRED
+  ABANDONED
 }
 
 model Product {
@@ -319,4 +323,10 @@ model Review {
   @@index([customerId])
   @@index([orderId])
   @@index([productId])
+}
+
+model WebhookLog {
+  id        Int      @id @default(autoincrement())
+  eventId   String   @unique
+  createdAt DateTime @default(now())
 }
