@@ -1,3 +1,4 @@
+import { getProductLimit } from "@/constants/productLimits";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export type CartItem = {
@@ -38,9 +39,26 @@ const cartSlice = createSlice({
       );
 
       if (existing) {
-        existing.quantity += action.payload.quantity;
+        const newQty = existing.quantity + action.payload.quantity;
+const MAX_RETAIL_QTY = getProductLimit(existing.slug);
+
+        if (newQty > MAX_RETAIL_QTY) {
+          return;
+        }
+
+        existing.quantity = newQty;
       } else {
-        state.items.push(action.payload);
+        const MAX_RETAIL_QTY = getProductLimit(action.payload.slug);
+        
+        const quantity = Math.min(
+          action.payload.quantity,
+          MAX_RETAIL_QTY,
+        );
+
+        state.items.push({
+          ...action.payload,
+          quantity,
+        });
       }
 
       saveToStorage(state.items);
@@ -54,6 +72,16 @@ const cartSlice = createSlice({
         state.items = state.items.filter(
           (item) => item.productId !== action.payload.productId,
         );
+
+        saveToStorage(state.items);
+        return;
+      }
+
+      const MAX_RETAIL_QTY = getProductLimit(
+        state.items.find((item) => item.productId === action.payload.productId)?.slug ?? ""
+      );
+
+      if (action.payload.quantity > MAX_RETAIL_QTY) {
         return;
       }
 
