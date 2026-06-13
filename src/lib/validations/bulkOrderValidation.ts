@@ -32,12 +32,45 @@ export interface FormErrors {
   qty?: Record<string, string>;
 }
 
-const ALLOWED_MADURAI_PINCODES = [
-  "625001", "625002", "625003", "625004", "625005",
-  "625006", "625007", "625008", "625009", "625010",
-  "625011", "625012", "625014", "625016", "625017",
-  "625018", "625020",
-];
+type DeliveryPincodeZone = {
+  label: string;
+  charge: number;
+  pincodes: string[];
+};
+
+export const DELIVERY_PINCODE_ZONES: Record<string, DeliveryPincodeZone> = {
+  WITHIN_5_KM: {
+    label: "Within 5 km",
+    charge: 0,
+    pincodes: ["625001", "625002", "625003", "625004", "625005"],
+  },
+  ABOVE_5_KM: {
+    label: "Above 5 km",
+    charge: 50,
+    pincodes: ["625006", "625007", "625008", "625009", "625010", "625011"],
+  },
+  OUTER_ZONE: {
+    label: "Outer delivery zone",
+    charge: 100,
+    pincodes: ["625012", "625014", "625016", "625017", "625018", "625020"],
+  },
+};
+
+const ALLOWED_MADURAI_PINCODES = Object.values(DELIVERY_PINCODE_ZONES).flatMap(
+  (zone) => zone.pincodes
+);
+
+export function getDeliveryZoneByPincode(pincode: string) {
+  const trimmed = pincode.trim();
+
+  return Object.values(DELIVERY_PINCODE_ZONES).find((zone) =>
+    zone.pincodes.includes(trimmed)
+  );
+}
+
+export function getDeliveryChargeByPincode(pincode: string): number {
+  return getDeliveryZoneByPincode(pincode)?.charge ?? 0;
+}
 
 function parseDateInput(value: string): Date {
   const [year, month, day] = value.split("-").map(Number);
@@ -197,31 +230,46 @@ function formatHour(hour: number): string {
   });
 }
 
-export function getAvailableTimeSlots(
-  deliveryDate: string,
-  totalPieces: number
-): string[] {
-  if (!deliveryDate || totalPieces <= 0) return [];
+export function getAvailableTimeSlots(deliveryDate: string): string[] {
+  if (!deliveryDate) return [];
 
   const selectedDate = parseDateInput(deliveryDate);
   if (isSundayDate(selectedDate)) return [];
 
-  const leadTimeHours = getLeadTimeHours(totalPieces);
-  const earliestDeliveryTime = addWorkingHours(new Date(), leadTimeHours);
-
   const slots: string[] = [];
 
   for (let hour = WORK_START_HOUR; hour < WORK_END_HOUR; hour++) {
-    const slotStart = parseDateInput(deliveryDate);
-    slotStart.setHours(hour, 0, 0, 0);
-
-    if (slotStart >= earliestDeliveryTime) {
-      slots.push(`${formatHour(hour)} - ${formatHour(hour + 1)}`);
-    }
+    slots.push(`${formatHour(hour)} - ${formatHour(hour + 1)}`);
   }
 
   return slots;
 }
+
+// export function getAvailableTimeSlots(
+//   deliveryDate: string,
+//   totalPieces: number
+// ): string[] {
+//   if (!deliveryDate || totalPieces <= 0) return [];
+
+//   const selectedDate = parseDateInput(deliveryDate);
+//   if (isSundayDate(selectedDate)) return [];
+
+//   const leadTimeHours = getLeadTimeHours(totalPieces);
+//   const earliestDeliveryTime = addWorkingHours(new Date(), leadTimeHours);
+
+//   const slots: string[] = [];
+
+//   for (let hour = WORK_START_HOUR; hour < WORK_END_HOUR; hour++) {
+//     const slotStart = parseDateInput(deliveryDate);
+//     slotStart.setHours(hour, 0, 0, 0);
+
+//     if (slotStart >= earliestDeliveryTime) {
+//       slots.push(`${formatHour(hour)} - ${formatHour(hour + 1)}`);
+//     }
+//   }
+
+//   return slots;
+// }
 
 export function validateProductsSelected(
   productRows: ProductRowForValidation[]
@@ -270,7 +318,7 @@ export function validateBulkOrderForm(
   errors.address = validateAddress(form.address);
   errors.pincode = validatePincode(form.pincode);
 
-  const availableSlots = getAvailableTimeSlots(form.deliveryDate, totalPieces);
+  const availableSlots = getAvailableTimeSlots(form.deliveryDate)
   if (form.deliveryTime && !availableSlots.includes(form.deliveryTime)) {
     errors.deliveryTime = "Selected delivery time is not available for this quantity.";
   }

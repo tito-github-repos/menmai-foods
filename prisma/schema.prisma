@@ -19,36 +19,51 @@ model BulkOrderItem {
   id                 Int              @id @default(autoincrement())
   bulkOrderId Int
   productId          Int
+
+  productName        String
   quantity           Int
   unitPrice          Float?
   totalPrice         Float?
+
   BulkOrder          BulkOrder @relation(fields: [bulkOrderId], references: [id], onDelete: Cascade)
   Product            Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@index([bulkOrderId], map: "BulkOrderItem_bulkOrderId_fkey")
-  @@index([productId], map: "BulkOrderItem_productId_fkey")
+  @@index([bulkOrderId])
+  @@index([productId])
 }
 
 model BulkOrder {
   id              Int   @id @default(autoincrement())
-  customerId      Int?           
-  fullName        String
+  orderRef        String          @unique
+  customerId      Int?    
+
+  customerName    String
   phone           String
   email           String?
+
   deliveryDate    DateTime
   deliveryTime    String
-  occasionDetails String
+  occasion        String
   deliveryAddress String
   pincode         String
-  totalAmount     Float            @default(0)
-  status          BulkOrder_status @default(PENDING)
+
+  subtotal        Float           @default(0)
+  deliveryCharge  Float           @default(0)
+  estimatedTotal  Float           @default(0)
+
+  status          BulkOrder_status@default(NEW)
+  source          BulkOrderSource @default(CUSTOMER_FORM)
+  notes           String?         @db.Text
+
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
-  BulkOrderItem   BulkOrderItem[]
+ 
   Customer        Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items           BulkOrderItem[]
 
-  @@index([customerId], map: "BulkOrder_customerId_fkey")
-
+  @@index([customerId])
+  @@index([deliveryDate])
+  @@index([status])
 }
 
 
@@ -78,7 +93,7 @@ model Customer {
   CustomerAddress CustomerAddress[]
   Order           Order[]
   BulkOrder       BulkOrder[]
-
+  Review          Review[]
   OTPVerification OTPVerification[]
 }
 
@@ -153,6 +168,7 @@ model Order {
   Payment            Payment?
   WhatsAppLog        WhatsAppLog[]
   ReviewRequest      ReviewRequest?
+  Review             Review[]
   @@index([addressId], map: "Order_addressId_fkey")
   @@index([customerId], map: "Order_customerId_fkey")
 }
@@ -201,11 +217,16 @@ enum Order_paymentStatus {
 }
 
 enum BulkOrder_status {
-  PENDING
-  QUOTED
-  CONFIRMED
+  NEW
+  ACCEPTED
+  IN_DISCUSSION
+  REJECTED
   DELIVERED
-  CANCELLED
+}
+
+enum BulkOrderSource {
+  CUSTOMER_FORM
+  ADMIN_MANUAL
 }
 
 enum Order_orderStatus {
@@ -235,6 +256,7 @@ model Product {
   CartItem      CartItem[]
   OrderItem     OrderItem[]
   bulkPricePerPiece Float?
+  Review            Review[]
 }
 
 model ProductImage {
@@ -270,6 +292,7 @@ model WhatsAppLog {
 model ReviewRequest {
   id          Int       @id @default(autoincrement())
   orderId     Int       @unique
+  token       String?   @unique
   scheduledAt DateTime
   sentAt      DateTime?
   status      String    @default("SCHEDULED")
@@ -277,4 +300,23 @@ model ReviewRequest {
   updatedAt   DateTime  @updatedAt
 
   Order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  orderId    Int
+  productId  Int
+  customerId Int
+  rating     Int
+  comment    String?  @db.Text
+  isApproved Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  Customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  Order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  Product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([orderId])
+  @@index([productId])
 }
