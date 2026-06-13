@@ -5,13 +5,17 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   const { mobile, otp } = await req.json();
 
-  // 1. Find OTP record
-  const record = await prisma.oTPVerification.findFirst({
-    where: {
-      phone: mobile,
-      verified: false,
-    },
-    orderBy: { createdAt: "desc" },
+  // 1. Validate input
+  if (!mobile || !otp) {
+    return NextResponse.json(
+      { message: "Mobile and OTP are required" },
+      { status: 400 },
+    );
+  }
+
+  // 2. Fetch OTP record (NEW: use findUnique because phone is unique)
+  const record = await prisma.oTPVerification.findUnique({
+    where: { phone: mobile },
   });
 
   if (!record) {
@@ -21,16 +25,23 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 2. Check expiry
+  // 3. Check if already verified
+  if (record.verified) {
+    return NextResponse.json(
+      { message: "OTP already verified" },
+      { status: 400 },
+    );
+  }
+
+  // 4. Check expiry
   if (new Date() > record.expiresAt) {
-    await prisma.oTPVerification.delete({ where: { id: record.id } });
     return NextResponse.json(
       { message: "OTP expired. Please resend." },
       { status: 400 },
     );
   }
 
-  // 3. Check OTP match
+  // 5. Check OTP match
   if (record.otpCode !== otp) {
     return NextResponse.json(
       { message: "Invalid OTP. Try again." },
@@ -38,13 +49,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4. Mark as verified
-  await prisma.oTPVerification.update({
-    where: { id: record.id },
-    data: { verified: true },
-  });
-
-  // 5. Create or fetch customer
+  // 6. Find or create customer
   let customer = await prisma.customer.findUnique({
     where: { phone: mobile },
   });
@@ -61,25 +66,37 @@ export async function POST(req: NextRequest) {
   } else {
     await prisma.customer.update({
       where: { phone: mobile },
-      data: { isPhoneVerified: true },
+      data: {
+        isPhoneVerified: true,
+      },
     });
   }
 
-  // 6. Fetch most recent default address if exists
+  // 7. Mark OTP as verified
+  await prisma.oTPVerification.update({
+    where: { phone: mobile },
+    data: {
+      verified: true,
+    },
+  });
+
+  // 8. Fetch default / latest address
   const existingAddress = await prisma.customerAddress.findFirst({
     where: { customerId: customer.id },
     orderBy: { isDefault: "desc" },
   });
 
+  // 9. Generate JWT
   const token = jwt.sign(
     {
       customerId: customer.id,
       phone: mobile,
     },
     process.env.JWT_SECRET!,
-    { expiresIn: "30d" }, 
+    { expiresIn: "30d" },
   );
 
+  // 10. Response
   return NextResponse.json({
     success: true,
     token,

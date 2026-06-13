@@ -17,9 +17,11 @@ import {
   CustomerReviewsSection,
   DeliverySection,
 } from "./components/DeliveryandReviews";
-import { useAppDispatch } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { addToCart } from "@/store/cartSlice";
 import { useMediaQuery, useTheme } from "@mui/material";
+import BulkOrderLimitDialog from "./components/BulkOrderLimitDialog";
+import { getProductLimit } from "@/constants/productLimits";
 
 /* ─────────────────────────────────────────
    HERO BANNERS
@@ -387,6 +389,8 @@ export default function HomePage() {
 
   const dispatch = useAppDispatch();
 
+  const cartItems = useAppSelector((state: any) => state.cart.items);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
 
@@ -467,6 +471,9 @@ export default function HomePage() {
   const [snackOpen, setSnackOpen] = useState(false); // ← ADD
 
   const [activeWhy, setActiveWhy] = useState(0);
+
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+
   const touchStartX = useRef(0);
 
   useEffect(() => {
@@ -693,265 +700,305 @@ export default function HomePage() {
             </Typography>
           </Box>
           <Grid container spacing={{ xs: 2, md: 3 }}>
-          {productsLoading
-            ? [0, 1].map((i) => (
-                <Grid item xs={12} md={6} key={i}>
-                  <Box
-                    sx={{
-                      borderRadius: "20px",
-                      overflow: "hidden",
-                      border: "1.5px solid #e8e2d8",
-                      minHeight: 220,
-                      display: "flex",
-                      flexDirection: { xs: "column", md: "row" },
-                      background: "#fafaf8",
-                      "@keyframes shimmer": {
-                        "0%": { backgroundPosition: "200% 0" },
-                        "100%": { backgroundPosition: "-200% 0" },
-                      },
-                    }}
-                  >
+            {productsLoading
+              ? [0, 1].map((i) => (
+                  <Grid item xs={12} md={6} key={i}>
                     <Box
                       sx={{
-                        width: { xs: "100%", md: "42%" },
-                        height: { xs: 200, md: "auto" },
-                        minHeight: { md: 220 },
-                        background:
-                          "linear-gradient(90deg, #f0ebe3 25%, #e8e2d8 50%, #f0ebe3 75%)",
-                        backgroundSize: "200% 100%",
-                        animation: "shimmer 1.4s infinite",
-                      }}
-                    />
-                    <Box
-                      sx={{
-                        flex: 1,
-                        p: "14px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1.4,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 80,
-                          height: 18,
-                          borderRadius: "20px",
-                          background:
-                            "linear-gradient(90deg, #e8e2d8 25%, #ddd7ce 50%, #e8e2d8 75%)",
-                          backgroundSize: "200% 100%",
-                          animation: "shimmer 1.4s infinite",
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          width: "55%",
-                          height: 26,
-                          borderRadius: "8px",
-                          background:
-                            "linear-gradient(90deg, #e8e2d8 25%, #ddd7ce 50%, #e8e2d8 75%)",
-                          backgroundSize: "200% 100%",
-                          animation: "shimmer 1.4s infinite",
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          width: "90%",
-                          height: 13,
-                          borderRadius: "6px",
-                          background:
-                            "linear-gradient(90deg, #ede8e0 25%, #e4ddd4 50%, #ede8e0 75%)",
-                          backgroundSize: "200% 100%",
-                          animation: "shimmer 1.4s infinite",
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          width: "70%",
-                          height: 13,
-                          borderRadius: "6px",
-                          background:
-                            "linear-gradient(90deg, #ede8e0 25%, #e4ddd4 50%, #ede8e0 75%)",
-                          backgroundSize: "200% 100%",
-                          animation: "shimmer 1.4s infinite",
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          mt: "auto",
-                          display: "flex",
-                          gap: 1,
-                          pt: 1,
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            flex: 1,
-                            height: 36,
-                            borderRadius: "999px",
-                            background:
-                              "linear-gradient(90deg, #e8e2d8 25%, #ddd7ce 50%, #e8e2d8 75%)",
-                            backgroundSize: "200% 100%",
-                            animation: "shimmer 1.4s infinite",
-                          }}
-                        />
-                        <Box
-                          sx={{
-                            flex: 1,
-                            height: 36,
-                            borderRadius: "999px",
-                            background:
-                              "linear-gradient(90deg, #e8e2d8 25%, #ddd7ce 50%, #e8e2d8 75%)",
-                            backgroundSize: "200% 100%",
-                            animation: "shimmer 1.4s infinite",
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  </Box>
-                </Grid>
-              ))
-            : products.map((product) => {
-                const display =
-                  productDisplay[product.slug as keyof typeof productDisplay];
-
-                const isOutOfStock = product.stockQuantity === 0;
-
-                const isTeal = product.name === "Chapathi";
-                return (
-                  <Grid item xs={12} md={6} key={product.name}>
-                    <Card
-                      sx={{
+                        borderRadius: "20px",
+                        overflow: "hidden",
+                        border: "1.5px solid #e8e2d8",
+                        minHeight: 220,
                         display: "flex",
                         flexDirection: { xs: "column", md: "row" },
-                        borderRadius: "20px",
-                        backgroundColor: display.bg,
-                        border: `1.5px solid ${display.border}`,
-                        boxShadow: "var(--shadow)",
-                        overflow: "hidden",
-                        minHeight: 220,
+                        background: "#fafaf8",
+                        "@keyframes shimmer": {
+                          "0%": { backgroundPosition: "200% 0" },
+                          "100%": { backgroundPosition: "-200% 0" },
+                        },
                       }}
                     >
                       <Box
                         sx={{
-                          position: "relative",
                           width: { xs: "100%", md: "42%" },
                           height: { xs: 200, md: "auto" },
+                          minHeight: { md: 220 },
+                          background:
+                            "linear-gradient(90deg, #f0ebe3 25%, #e8e2d8 50%, #f0ebe3 75%)",
+                          backgroundSize: "200% 100%",
+                          animation: "shimmer 1.4s infinite",
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          flex: 1,
+                          p: "14px",
                           display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          p: "10px 0 10px 10px",
+                          flexDirection: "column",
+                          gap: 1.4,
                         }}
                       >
                         <Box
-                          component="img"
-                          src={product.imageUrl ?? ""}
-                          alt={product.name}
                           sx={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "contain",
-                            maxHeight: 200,
+                            width: 80,
+                            height: 18,
+                            borderRadius: "20px",
+                            background:
+                              "linear-gradient(90deg, #e8e2d8 25%, #ddd7ce 50%, #e8e2d8 75%)",
+                            backgroundSize: "200% 100%",
+                            animation: "shimmer 1.4s infinite",
                           }}
                         />
-
-                        {isOutOfStock && (
+                        <Box
+                          sx={{
+                            width: "55%",
+                            height: 26,
+                            borderRadius: "8px",
+                            background:
+                              "linear-gradient(90deg, #e8e2d8 25%, #ddd7ce 50%, #e8e2d8 75%)",
+                            backgroundSize: "200% 100%",
+                            animation: "shimmer 1.4s infinite",
+                          }}
+                        />
+                        <Box
+                          sx={{
+                            width: "90%",
+                            height: 13,
+                            borderRadius: "6px",
+                            background:
+                              "linear-gradient(90deg, #ede8e0 25%, #e4ddd4 50%, #ede8e0 75%)",
+                            backgroundSize: "200% 100%",
+                            animation: "shimmer 1.4s infinite",
+                          }}
+                        />
+                        <Box
+                          sx={{
+                            width: "70%",
+                            height: 13,
+                            borderRadius: "6px",
+                            background:
+                              "linear-gradient(90deg, #ede8e0 25%, #e4ddd4 50%, #ede8e0 75%)",
+                            backgroundSize: "200% 100%",
+                            animation: "shimmer 1.4s infinite",
+                          }}
+                        />
+                        <Box
+                          sx={{
+                            mt: "auto",
+                            display: "flex",
+                            gap: 1,
+                            pt: 1,
+                          }}
+                        >
                           <Box
                             sx={{
-                              position: "absolute",
-                              inset: 0,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backdropFilter: "blur(2px)",
+                              flex: 1,
+                              height: 36,
+                              borderRadius: "999px",
+                              background:
+                                "linear-gradient(90deg, #e8e2d8 25%, #ddd7ce 50%, #e8e2d8 75%)",
+                              backgroundSize: "200% 100%",
+                              animation: "shimmer 1.4s infinite",
                             }}
-                          >
-                            <Typography
-                              sx={{
-                                fontWeight: 800,
-                                fontSize: 14,
-                                color: "#d32f2f",
-                                letterSpacing: 1,
-                                background: "rgba(255,255,255,0.8)",
-                                px: 2,
-                                py: 0.5,
-                                borderRadius: "12px",
-                                fontFamily: "var(--font-heading)",
-                              }}
-                            >
-                              OUT OF STOCK
-                            </Typography>
-                          </Box>
-                        )}
+                          />
+                          <Box
+                            sx={{
+                              flex: 1,
+                              height: 36,
+                              borderRadius: "999px",
+                              background:
+                                "linear-gradient(90deg, #e8e2d8 25%, #ddd7ce 50%, #e8e2d8 75%)",
+                              backgroundSize: "200% 100%",
+                              animation: "shimmer 1.4s infinite",
+                            }}
+                          />
+                        </Box>
                       </Box>
+                    </Box>
+                  </Grid>
+                ))
+              : products.map((product) => {
+                  const display =
+                    productDisplay[product.slug as keyof typeof productDisplay];
 
-                      <CardContent
+                  const isOutOfStock = product.stockQuantity === 0;
+
+                  const isTeal = product.name === "Chapathi";
+                  return (
+                    <Grid item xs={12} md={6} key={product.name}>
+                      <Card
                         sx={{
-                          flex: 1,
-                          p: {
-                            xs: "12px 14px !important",
-                            md: "14px 14px 14px 8px !important",
-                          },
                           display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "space-between",
+                          flexDirection: { xs: "column", md: "row" },
+                          borderRadius: "20px",
+                          backgroundColor: display.bg,
+                          border: `1.5px solid ${display.border}`,
+                          boxShadow: "var(--shadow)",
+                          overflow: "hidden",
+                          minHeight: 220,
                         }}
                       >
-                        <Box>
-                          <Typography
-                            sx={{
-                              display: "inline-block",
-                              fontSize: 10,
-                              fontWeight: 700,
-                              letterSpacing: 1.5,
-                              px: 1.5,
-                              py: 0.3,
-                              borderRadius: "20px",
-                              bgcolor: isTeal
-                                ? "var(--primary-teal-mid)"
-                                : "var(--primary-maroon-mid)",
-                              color: "#fff",
-                              mb: 0.5,
-                              fontFamily: "var(--font-main)",
-                            }}
-                          >
-                            {isTeal ? "BEST SELLER" : "HOME SPECIAL"}
-                          </Typography>
-
-                          <Typography
-                            sx={{
-                              fontWeight: 700,
-                              fontSize: { xs: 22, md: 26 },
-                              color: isTeal
-                                ? "var(--primary-teal-dark)"
-                                : "var(--primary-maroon-dark)",
-                              fontFamily: "var(--font-heading)",
-                              lineHeight: 1.1,
-                              mb: 0.3,
-                            }}
-                          >
-                            {product.name}
-                          </Typography>
-
-                          <Typography
-                            sx={{
-                              fontSize: 14,
-                              color: "var(--primary-maroon-light)",
-                              lineHeight: 1.45,
-                              fontFamily: "var(--font-main)",
-                              mb: 0.5,
-                            }}
-                          >
-                            {display.desc}
-                          </Typography>
-
+                        <Box
+                          sx={{
+                            position: "relative",
+                            width: { xs: "100%", md: "42%" },
+                            height: { xs: 200, md: "auto" },
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            p: "10px 0 10px 10px",
+                          }}
+                        >
                           <Box
+                            component="img"
+                            src={product.imageUrl ?? ""}
+                            alt={product.name}
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 2,
-                              my: 0.75,
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "contain",
+                              maxHeight: 200,
                             }}
-                          >
+                          />
+
+                          {isOutOfStock && (
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                inset: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                backdropFilter: "blur(2px)",
+                              }}
+                            >
+                              <Typography
+                                sx={{
+                                  fontWeight: 800,
+                                  fontSize: 14,
+                                  color: "#d32f2f",
+                                  letterSpacing: 1,
+                                  background: "rgba(255,255,255,0.8)",
+                                  px: 2,
+                                  py: 0.5,
+                                  borderRadius: "12px",
+                                  fontFamily: "var(--font-heading)",
+                                }}
+                              >
+                                OUT OF STOCK
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
+
+                        <CardContent
+                          sx={{
+                            flex: 1,
+                            p: {
+                              xs: "12px 14px !important",
+                              md: "14px 14px 14px 8px !important",
+                            },
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <Box>
+                            <Typography
+                              sx={{
+                                display: "inline-block",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                letterSpacing: 1.5,
+                                px: 1.5,
+                                py: 0.3,
+                                borderRadius: "20px",
+                                bgcolor: isTeal
+                                  ? "var(--primary-teal-mid)"
+                                  : "var(--primary-maroon-mid)",
+                                color: "#fff",
+                                mb: 0.5,
+                                fontFamily: "var(--font-main)",
+                              }}
+                            >
+                              {isTeal ? "BEST SELLER" : "HOME SPECIAL"}
+                            </Typography>
+
+                            <Typography
+                              sx={{
+                                fontWeight: 700,
+                                fontSize: { xs: 22, md: 26 },
+                                color: isTeal
+                                  ? "var(--primary-teal-dark)"
+                                  : "var(--primary-maroon-dark)",
+                                fontFamily: "var(--font-heading)",
+                                lineHeight: 1.1,
+                                mb: 0.3,
+                              }}
+                            >
+                              {product.name}
+                            </Typography>
+
+                            <Typography
+                              sx={{
+                                fontSize: 14,
+                                color: "var(--primary-maroon-light)",
+                                lineHeight: 1.45,
+                                fontFamily: "var(--font-main)",
+                                mb: 0.5,
+                              }}
+                            >
+                              {display.desc}
+                            </Typography>
+
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
+                                my: 0.75,
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.5,
+                                }}
+                              >
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke={
+                                    isTeal
+                                      ? "var(--primary-teal-mid)"
+                                      : "var(--primary-maroon-mid)"
+                                  }
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <circle cx="12" cy="12" r="10" />
+                                  <polyline points="12 6 12 12 15.5 14" />
+                                </svg>
+                                <Typography
+                                  sx={{
+                                    fontSize: 12,
+                                    color: isTeal
+                                      ? "var(--primary-teal-dark)"
+                                      : "var(--primary-maroon-dark)",
+                                    fontFamily: "var(--font-main)",
+                                  }}
+                                >
+                                  Ready in 2 minutes
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Box>
+
+                          <Box>
                             <Box
                               sx={{
                                 display: "flex",
@@ -973,206 +1020,191 @@ export default function HomePage() {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                               >
-                                <circle cx="12" cy="12" r="10" />
-                                <polyline points="12 6 12 12 15.5 14" />
+                                <path d="M6 2h12l2 6H4L6 2z" />
+                                <rect
+                                  x="3"
+                                  y="8"
+                                  width="18"
+                                  height="13"
+                                  rx="2"
+                                />
                               </svg>
                               <Typography
                                 sx={{
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   color: isTeal
                                     ? "var(--primary-teal-dark)"
                                     : "var(--primary-maroon-dark)",
                                   fontFamily: "var(--font-main)",
                                 }}
                               >
-                                Ready in 2 minutes
+                                Net Wt. {product.netWeight}{" "}
+                                <Box
+                                  component="span"
+                                  sx={{
+                                    fontSize: 9,
+                                    opacity: 0.7,
+                                    fontStyle: "italic",
+                                    ml: 0.3,
+                                  }}
+                                >
+                                  (approx)
+                                </Box>
                               </Typography>
                             </Box>
-                          </Box>
-                        </Box>
 
-                        <Box>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
-                          >
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke={
-                                isTeal
-                                  ? "var(--primary-teal-mid)"
-                                  : "var(--primary-maroon-mid)"
-                              }
-                              strokeWidth="1.8"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M6 2h12l2 6H4L6 2z" />
-                              <rect x="3" y="8" width="18" height="13" rx="2" />
-                            </svg>
-                            <Typography
+                            <Box
                               sx={{
-                                fontSize: 11,
-                                color: isTeal
-                                  ? "var(--primary-teal-dark)"
-                                  : "var(--primary-maroon-dark)",
-                                fontFamily: "var(--font-main)",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.75,
                               }}
                             >
-                              Net Wt. {product.netWeight}{" "}
-                              <Box
-                                component="span"
+                              <Typography
                                 sx={{
-                                  fontSize: 9,
-                                  opacity: 0.7,
-                                  fontStyle: "italic",
-                                  ml: 0.3,
-                                }}
-                              >
-                                (approx)
-                              </Box>
-                            </Typography>
-                          </Box>
-
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.75,
-                            }}
-                          >
-                            <Typography
-                              sx={{
-                                fontSize: 13,
-                                color: isTeal
-                                  ? "var(--primary-teal-dark)"
-                                  : "var(--primary-maroon-dark)",
-                                fontFamily: "var(--font-main)",
-                              }}
-                            >
-                              MRP:
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontSize: 16,
-                                fontWeight: 800,
-                                color: isTeal
-                                  ? "var(--primary-teal-mid)"
-                                  : "var(--primary-maroon-mid)",
-                                fontFamily: "var(--font-main)",
-                              }}
-                            >
-                              ₹{product.price}
-                            </Typography>
-                            <Typography
-                              component="span"
-                              sx={{
-                                fontSize: 13,
-                                textDecoration: "line-through",
-                                fontFamily: "var(--font-main)",
-                                color: isTeal
-                                  ? "var(--primary-teal-dark)"
-                                  : "var(--primary-maroon-light)",
-                              }}
-                            >
-                              ₹{product.mrp}
-                            </Typography>
-                          </Box>
-
-                          <Box
-                            sx={{
-                              borderTop: "1.5px dashed",
-                              borderColor: isTeal
-                                ? "var(--primary-teal-mid)"
-                                : "var(--primary-maroon-light)",
-                              my: 1,
-                            }}
-                          />
-
-                          <Box sx={{ display: "flex", gap: 1 }}>
-                            <Button
-                              variant="contained"
-                              onClick={() =>
-                                dispatch(
-                                  addToCart({
-                                    productId: product.id,
-                                    slug: product.slug,
-                                    name: product.name,
-                                    packLabel: product.netWeight ?? "",
-                                    pieces: product.pieces ?? 0,
-                                    mrp: product.mrp ?? product.price,
-                                    price: product.price,
-                                    quantity: 1,
-                                    img: product.imageUrl ?? "",
-                                  }),
-                                )
-                              }
-                              sx={{
-                                flex: 1,
-                                borderRadius: "999px",
-                                fontSize: 12,
-                                fontWeight: 700,
-                                height: 36,
-                                fontFamily: "var(--font-main)",
-                                boxShadow: "none",
-                                whiteSpace: "nowrap",
-                                bgcolor: isTeal
-                                  ? "var(--primary-teal-mid)"
-                                  : "var(--primary-maroon-mid)",
-                                "&:hover": {
-                                  bgcolor: isTeal
+                                  fontSize: 13,
+                                  color: isTeal
                                     ? "var(--primary-teal-dark)"
                                     : "var(--primary-maroon-dark)",
-                                  boxShadow: "none",
-                                },
-                              }}
-                              disabled={isOutOfStock}
-                            >
-                              Add to Cart
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              onClick={() => router.push(`/product/${product.slug}`)}
+                                  fontFamily: "var(--font-main)",
+                                }}
+                              >
+                                MRP:
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  fontSize: 16,
+                                  fontWeight: 800,
+                                  color: isTeal
+                                    ? "var(--primary-teal-mid)"
+                                    : "var(--primary-maroon-mid)",
+                                  fontFamily: "var(--font-main)",
+                                }}
+                              >
+                                ₹{product.price}
+                              </Typography>
+                              <Typography
+                                component="span"
+                                sx={{
+                                  fontSize: 13,
+                                  textDecoration: "line-through",
+                                  fontFamily: "var(--font-main)",
+                                  color: isTeal
+                                    ? "var(--primary-teal-dark)"
+                                    : "var(--primary-maroon-light)",
+                                }}
+                              >
+                                ₹{product.mrp}
+                              </Typography>
+                            </Box>
+
+                            <Box
                               sx={{
-                                flex: 1,
-                                borderRadius: "999px",
-                                fontSize: 12,
-                                fontWeight: 700,
-                                height: 36,
-                                fontFamily: "var(--font-main)",
-                                whiteSpace: "nowrap",
-                                color: isTeal
-                                  ? "var(--primary-teal-mid)"
-                                  : "var(--primary-maroon-mid)",
+                                borderTop: "1.5px dashed",
                                 borderColor: isTeal
                                   ? "var(--primary-teal-mid)"
-                                  : "var(--primary-maroon-mid)",
-                                "&:hover": {
+                                  : "var(--primary-maroon-light)",
+                                my: 1,
+                              }}
+                            />
+
+                            <Box sx={{ display: "flex", gap: 1 }}>
+                              <Button
+                                variant="contained"
+                                onClick={() => {
+                                  const existingItem = cartItems.find(
+                                    (item: any) =>
+                                      item.productId === product.id,
+                                  );
+
+                                  const currentQty =
+                                    existingItem?.quantity ?? 0;
+
+                                  const MAX_RETAIL_QTY = getProductLimit(
+                                    product.slug,
+                                  );
+
+                                  if (currentQty + 1 > MAX_RETAIL_QTY) {
+                                    setBulkDialogOpen(true);
+                                    return;
+                                  }
+
+                                  dispatch(
+                                    addToCart({
+                                      productId: product.id,
+                                      slug: product.slug,
+                                      name: product.name,
+                                      packLabel: product.netWeight ?? "",
+                                      pieces: product.pieces ?? 0,
+                                      mrp: product.mrp ?? product.price,
+                                      price: product.price,
+                                      quantity: 1,
+                                      img: product.imageUrl ?? "",
+                                    }),
+                                  );
+                                }}
+                                sx={{
+                                  flex: 1,
+                                  borderRadius: "999px",
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  height: 36,
+                                  fontFamily: "var(--font-main)",
+                                  boxShadow: "none",
+                                  whiteSpace: "nowrap",
                                   bgcolor: isTeal
-                                    ? "rgba(9,97,113,0.08)"
-                                    : "rgba(97,34,15,0.08)",
+                                    ? "var(--primary-teal-mid)"
+                                    : "var(--primary-maroon-mid)",
+                                  "&:hover": {
+                                    bgcolor: isTeal
+                                      ? "var(--primary-teal-dark)"
+                                      : "var(--primary-maroon-dark)",
+                                    boxShadow: "none",
+                                  },
+                                }}
+                                disabled={isOutOfStock}
+                              >
+                                Add to Cart
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                onClick={() =>
+                                  router.push(`/product/${product.slug}`)
+                                }
+                                sx={{
+                                  flex: 1,
+                                  borderRadius: "999px",
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  height: 36,
+                                  fontFamily: "var(--font-main)",
+                                  whiteSpace: "nowrap",
+                                  color: isTeal
+                                    ? "var(--primary-teal-mid)"
+                                    : "var(--primary-maroon-mid)",
                                   borderColor: isTeal
                                     ? "var(--primary-teal-mid)"
                                     : "var(--primary-maroon-mid)",
-                                },
-                              }}
-                            >
-                              View Product
-                            </Button>
+                                  "&:hover": {
+                                    bgcolor: isTeal
+                                      ? "rgba(9,97,113,0.08)"
+                                      : "rgba(97,34,15,0.08)",
+                                    borderColor: isTeal
+                                      ? "var(--primary-teal-mid)"
+                                      : "var(--primary-maroon-mid)",
+                                  },
+                                }}
+                              >
+                                View Product
+                              </Button>
+                            </Box>
                           </Box>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                );
-              })}
-        </Grid>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  );
+                })}
+          </Grid>
         </Box>
 
         {/* ══ WHY CHOOSE MENMAI ══ */}
@@ -2212,6 +2244,11 @@ export default function HomePage() {
         <DeliverySection />
         <CustomerReviewsSection />
       </Box>
+
+      <BulkOrderLimitDialog
+        open={bulkDialogOpen}
+        onClose={() => setBulkDialogOpen(false)}
+      />
     </>
   );
 }
