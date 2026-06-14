@@ -1,6 +1,6 @@
-// app/api/admin/dashboard/retail-orders/route.ts
+// File location: src/app/api/admin/dashboard/retail-orders/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // adjust to your prisma client import
+import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,11 +9,9 @@ export async function GET(req: NextRequest) {
     const limit = Math.max(1, parseInt(searchParams.get("limit") ?? "5", 10));
     const skip  = (page - 1) * limit;
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const todayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
     const where = { orderedAt: { gte: todayStart, lte: todayEnd } };
 
@@ -24,9 +22,17 @@ export async function GET(req: NextRequest) {
         take: limit,
         orderBy: { orderedAt: "desc" },
         include: {
-          Customer: { select: { fullName: true, phone: true } },
+          // schema relations use PascalCase: Customer, CustomerAddress, OrderItem
+          Customer: {
+            select: { fullName: true, phone: true },
+          },
           CustomerAddress: {
-            select: { fullAddress: true, area: true, city: true, pincode: true },
+            select: {
+              fullAddress: true,
+              area:        true,
+              city:        true,
+              pincode:     true,
+            },
           },
           OrderItem: {
             select: { productName: true, quantity: true },
@@ -37,43 +43,36 @@ export async function GET(req: NextRequest) {
     ]);
 
     const orders = rawOrders.map((order) => {
-      // Build readable items string, e.g. "Chapathi × 10, Poori × 6"
-      const items = order.OrderItem.map(
-        (i) => `${i.productName} × ${i.quantity}`
-      ).join(", ");
+      const items =
+        order.OrderItem.map((i) => `${i.productName} × ${i.quantity}`).join(", ") ||
+        "—";
 
-      // Build readable address
-      const addr = order.CustomerAddress;
-      const address = [
-        addr.fullAddress,
-        addr.area,
-        addr.city,
-        addr.pincode,
-      ]
+      const addr    = order.CustomerAddress;
+      const address = [addr.fullAddress, addr.area, addr.city, addr.pincode]
         .filter(Boolean)
         .join(", ");
 
       return {
-        id: order.id,
-        orderNumber: order.orderNumber,
+        id:            order.id,
+        orderNumber:   order.orderNumber,
         customer: {
           fullName: order.Customer.fullName,
-          phone: order.Customer.phone,
+          phone:    order.Customer.phone,
         },
         items,
-        totalAmount: order.totalAmount,
-        orderStatus: order.orderStatus,
+        totalAmount:   order.totalAmount,
+        orderStatus:   order.orderStatus,
         paymentStatus: order.paymentStatus,
         address,
-        orderedAt: order.orderedAt.toISOString(),
+        orderedAt:     order.orderedAt.toISOString(),
       };
     });
 
     return NextResponse.json({ orders, total });
   } catch (error) {
-    console.error("[dashboard/retail-orders]", error);
+    console.error("[dashboard/retail-orders] Error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch retail orders" },
+      { error: "Failed to fetch retail orders", detail: String(error) },
       { status: 500 }
     );
   }

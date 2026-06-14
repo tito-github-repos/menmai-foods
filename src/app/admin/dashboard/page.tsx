@@ -42,7 +42,7 @@ interface RetailOrder {
     fullName: string;
     phone: string;
   };
-  items: string;       // e.g. "Chapathi × 10, Poori × 6"
+  items: string; // e.g. "Chapathi × 10, Poori × 6"
   totalAmount: number;
   orderStatus: string;
   paymentStatus: string;
@@ -51,10 +51,11 @@ interface RetailOrder {
 }
 
 interface BulkOrder {
+  orderRef: string;
   id: number;
   fullName: string;
   phone: string;
-  items: string;       // e.g. "Custom Bulk × 50"
+  items: string; // e.g. "Custom Bulk × 50"
   totalAmount: number;
   status: string;
   address: string;
@@ -69,23 +70,31 @@ const ROWS_PER_PAGE = 5;
 // ─── Status chip helper ───────────────────────────────────────────────────────
 
 const statusStyles: Record<string, { bg: string; text: string }> = {
-  DELIVERED:  { bg: "#DCFCE7", text: "#166534" },
-  CONFIRMED:  { bg: "#DCFCE7", text: "#166534" },
-  PENDING:    { bg: "#FEF3C7", text: "#B45309" },
-  QUOTED:     { bg: "#FEF3C7", text: "#B45309" },
+  DELIVERED: { bg: "#DCFCE7", text: "#166534" },
+  CONFIRMED: { bg: "#DCFCE7", text: "#166534" },
+  PENDING: { bg: "#FEF3C7", text: "#B45309" },
+  QUOTED: { bg: "#FEF3C7", text: "#B45309" },
   PROCESSING: { bg: "#DBEAFE", text: "#1D4ED8" },
-  PREPARING:  { bg: "#DBEAFE", text: "#1D4ED8" },
-  SHIPPED:    { bg: "#EDE9FE", text: "#6D28D9" },
-  CANCELLED:  { bg: "#FEE2E2", text: "#991B1B" },
+  PREPARING: { bg: "#DBEAFE", text: "#1D4ED8" },
+  SHIPPED: { bg: "#EDE9FE", text: "#6D28D9" },
+  CANCELLED: { bg: "#FEE2E2", text: "#991B1B" },
 };
 
 function StatusChip({ status }: { status: string }) {
-  const style = statusStyles[status.toUpperCase()] ?? { bg: "#F3F4F6", text: "#374151" };
+  const style = statusStyles[status.toUpperCase()] ?? {
+    bg: "#F3F4F6",
+    text: "#374151",
+  };
   return (
     <Chip
       label={status.charAt(0) + status.slice(1).toLowerCase()}
       size="small"
-      sx={{ bgcolor: style.bg, color: style.text, fontWeight: 600, fontSize: "0.75rem" }}
+      sx={{
+        bgcolor: style.bg,
+        color: style.text,
+        fontWeight: 600,
+        fontSize: "0.75rem",
+      }}
     />
   );
 }
@@ -98,7 +107,8 @@ function EmptyState({ orderType }: { orderType: OrderType }) {
     <TableRow>
       <TableCell colSpan={colSpan} sx={{ textAlign: "center", py: 6 }}>
         <Typography sx={{ color: "#9CA3AF", fontSize: "0.95rem" }}>
-          No {orderType === "retail" ? "retail" : "bulk"} orders placed today yet.
+          No {orderType === "retail" ? "retail" : "bulk"} orders placed today
+          yet.
         </Typography>
       </TableCell>
     </TableRow>
@@ -149,17 +159,18 @@ export default function DashboardPage() {
       try {
         if (orderType === "retail") {
           const res = await fetch(
-            `/api/admin/dashboard/retail-orders?page=${retailPage}&limit=${ROWS_PER_PAGE}`
+            `/api/admin/dashboard/retail-orders?page=${retailPage}&limit=${ROWS_PER_PAGE}`,
           );
           if (!res.ok) throw new Error("Failed to fetch retail orders");
-          const data: { orders: RetailOrder[]; total: number } = await res.json();
+          const data: { orders: RetailOrder[]; total: number } =
+            await res.json();
           if (!cancelled) {
             setRetailOrders(data.orders);
             setRetailTotal(data.total);
           }
         } else {
           const res = await fetch(
-            `/api/admin/dashboard/bulk-orders?page=${bulkPage}&limit=${ROWS_PER_PAGE}`
+            `/api/admin/dashboard/bulk-orders?page=${bulkPage}&limit=${ROWS_PER_PAGE}`,
           );
           if (!res.ok) throw new Error("Failed to fetch bulk orders");
           const data: { orders: BulkOrder[]; total: number } = await res.json();
@@ -176,8 +187,9 @@ export default function DashboardPage() {
     }
 
     fetchOrders();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
   }, [orderType, retailPage, bulkPage]);
 
   // ── Summary card data ────────────────────────────────────────────────────
@@ -211,18 +223,21 @@ export default function DashboardPage() {
   ];
 
   // ── Pagination ───────────────────────────────────────────────────────────
-  const activePage    = orderType === "retail" ? retailPage : bulkPage;
-  const activeTotal   = orderType === "retail" ? retailTotal : bulkTotal;
-  const pageCount     = Math.max(1, Math.ceil(activeTotal / ROWS_PER_PAGE));
-  const startRow      = (activePage - 1) * ROWS_PER_PAGE + 1;
-  const endRow        = Math.min(activePage * ROWS_PER_PAGE, activeTotal);
+  const activePage = orderType === "retail" ? retailPage : bulkPage;
+  const activeTotal = orderType === "retail" ? retailTotal : bulkTotal;
+  const pageCount = Math.max(1, Math.ceil(activeTotal / ROWS_PER_PAGE));
+  const startRow = (activePage - 1) * ROWS_PER_PAGE + 1;
+  const endRow = Math.min(activePage * ROWS_PER_PAGE, activeTotal);
 
   function handlePageChange(_: React.ChangeEvent<unknown>, value: number) {
     if (orderType === "retail") setRetailPage(value);
     else setBulkPage(value);
   }
 
-  function handleToggle(_: React.MouseEvent<HTMLElement>, value: OrderType | null) {
+  function handleToggle(
+    _: React.MouseEvent<HTMLElement>,
+    value: OrderType | null,
+  ) {
     if (value) setOrderType(value);
   }
 
@@ -256,7 +271,11 @@ export default function DashboardPage() {
               boxShadow: "none",
             }}
           >
-            <Stack direction="row" spacing={{ xs: 1.5, md: 2 }} alignItems="flex-start">
+            <Stack
+              direction="row"
+              spacing={{ xs: 1.5, md: 2 }}
+              alignItems="flex-start"
+            >
               <Box
                 sx={{
                   width: { xs: 42, md: 50 },
@@ -268,7 +287,9 @@ export default function DashboardPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
-                  "& .MuiSvgIcon-root": { fontSize: { xs: "1.2rem", md: "1.5rem" } },
+                  "& .MuiSvgIcon-root": {
+                    fontSize: { xs: "1.2rem", md: "1.5rem" },
+                  },
                 }}
               >
                 {item.icon}
@@ -371,7 +392,9 @@ export default function DashboardPage() {
         </Box>
 
         {/* Table */}
-        <TableContainer sx={{ overflowX: "auto", position: "relative", minHeight: 120 }}>
+        <TableContainer
+          sx={{ overflowX: "auto", position: "relative", minHeight: 120 }}
+        >
           {loadingOrders && (
             <Box
               sx={{
@@ -384,7 +407,10 @@ export default function DashboardPage() {
                 zIndex: 2,
               }}
             >
-              <CircularProgress size={32} sx={{ color: "var(--primary-teal-mid)" }} />
+              <CircularProgress
+                size={32}
+                sx={{ color: "var(--primary-teal-mid)" }}
+              />
             </Box>
           )}
 
@@ -404,7 +430,11 @@ export default function DashboardPage() {
                   ].map((col) => (
                     <TableCell
                       key={col}
-                      sx={{ color: "var(--primary-maroon-mid)", fontWeight: 600, whiteSpace: "nowrap" }}
+                      sx={{
+                        color: "var(--primary-maroon-mid)",
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                      }}
                     >
                       {col}
                     </TableCell>
@@ -426,7 +456,9 @@ export default function DashboardPage() {
                       <TableCell sx={{ whiteSpace: "nowrap" }}>
                         {order.customer.phone}
                       </TableCell>
-                      <TableCell sx={{ maxWidth: 200 }}>{order.items}</TableCell>
+                      <TableCell sx={{ maxWidth: 200 }}>
+                        {order.items}
+                      </TableCell>
                       <TableCell sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>
                         ₹{order.totalAmount.toLocaleString("en-IN")}
                       </TableCell>
@@ -444,7 +476,9 @@ export default function DashboardPage() {
                       <TableCell>
                         <StatusChip status={order.orderStatus} />
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap", color: "#6B7280" }}>
+                      <TableCell
+                        sx={{ whiteSpace: "nowrap", color: "#6B7280" }}
+                      >
                         {new Date(order.orderedAt).toLocaleTimeString("en-IN", {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -470,7 +504,11 @@ export default function DashboardPage() {
                   ].map((col) => (
                     <TableCell
                       key={col}
-                      sx={{ color: "var(--primary-maroon-mid)", fontWeight: 600, whiteSpace: "nowrap" }}
+                      sx={{
+                        color: "var(--primary-maroon-mid)",
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                      }}
                     >
                       {col}
                     </TableCell>
@@ -484,11 +522,17 @@ export default function DashboardPage() {
                   bulkOrders.map((order) => (
                     <TableRow key={order.id} hover>
                       <TableCell sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>
-                        #{String(order.id).padStart(4, "0")}
+                        {order.orderRef}
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap" }}>{order.fullName}</TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap" }}>{order.phone}</TableCell>
-                      <TableCell sx={{ maxWidth: 200 }}>{order.items}</TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                        {order.fullName}
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                        {order.phone}
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 200 }}>
+                        {order.items}
+                      </TableCell>
                       <TableCell sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>
                         ₹{order.totalAmount.toLocaleString("en-IN")}
                       </TableCell>
@@ -503,12 +547,17 @@ export default function DashboardPage() {
                       <TableCell>
                         <StatusChip status={order.status} />
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap", color: "#6B7280" }}>
-                        {new Date(order.deliveryDate).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                      <TableCell
+                        sx={{ whiteSpace: "nowrap", color: "#6B7280" }}
+                      >
+                        {new Date(order.deliveryDate).toLocaleDateString(
+                          "en-IN",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          },
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
