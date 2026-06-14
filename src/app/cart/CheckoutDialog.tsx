@@ -107,7 +107,10 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
 
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [otpError, setOtpError] = useState("");
+  const [resendCount, setResendCount] = useState(0);
   const [timer, setTimer] = useState(30);
+
+  const [paymentInProgress, setPaymentInProgress] = useState(false);
 
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
@@ -205,7 +208,9 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
       return;
     }
 
-    setTimer(30);
+    // Update resend count and timer
+    setResendCount(data.resendCount ?? resendCount + 1);
+    setTimer(data.resendCooldown ?? 30);
   };
 
   const validateField = async (name: string, value: string) => {
@@ -766,6 +771,9 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
               "&:hover": { bgcolor: "var(--primary-teal-mid)" },
             }}
             onClick={async () => {
+              if (paymentInProgress) return;
+              setPaymentInProgress(true);
+
               setLoading(true);
               try {
                 if (step === "mobile") {
@@ -782,6 +790,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                     const data = await res.json();
                     if (!res.ok) {
                       setMobileError(data.message);
+                      setPaymentInProgress(false);
                       return;
                     }
                     setMobileError("");
@@ -794,7 +803,9 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                 } else if (step === "otp") {
                   // Block if timer expired
                   if (timer === 0) {
-                    setOtpError("OTP expired. Please resend.");
+                    setOtpError(
+                      "OTP expired. Please click Resend OTP and try again.",
+                    );
                     return;
                   }
                   try {
@@ -811,6 +822,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                     const data = await res.json();
                     if (!res.ok) {
                       setOtpError(data.message);
+                      setPaymentInProgress(false);
                       return;
                     }
                     setCustomerId(data.customerId);
@@ -896,6 +908,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                     setServerError(
                       data.message || "Failed to save address. Try again.",
                     );
+                    setPaymentInProgress(false);
                     return;
                   }
 
@@ -922,6 +935,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                     setServerError(
                       orderData.message || "Failed to create order. Try again.",
                     );
+                    setPaymentInProgress(false);
                     return;
                   }
 
@@ -943,6 +957,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                       paymentData.message ||
                         "Failed to initiate payment. Try again.",
                     );
+                    setPaymentInProgress(false);
                     return;
                   }
 
@@ -962,10 +977,12 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                     modal: {
                       ondismiss: function () {
                         setLoading(false);
+                        setPaymentInProgress(false);
                       },
                     },
 
                     handler: async function (response: any) {
+                      setPaymentInProgress(false);
                       const verifyRes = await fetch("/api/payment/verify", {
                         method: "POST",
                         headers: {
@@ -1023,6 +1040,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                 }
               } finally {
                 setLoading(false);
+                setPaymentInProgress(false);
               }
             }}
           >
