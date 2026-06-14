@@ -70,24 +70,15 @@ const productDisplay = {
 /* ─────────────────────────────────────────
    BULK ORDER FORM TYPES
 ───────────────────────────────────────── */
-type BulkProduct = "Chapathi" | "Poori" | "Both – Chapathi & Poori";
+
 
 interface BulkForm {
   name: string;
   phone: string;
   email: string;
   address: string;
-  product: BulkProduct | "";
-  quantity: string;
-  deliveryDate: string;
   notes: string;
 }
-
-const bulkProducts: BulkProduct[] = [
-  "Chapathi",
-  "Poori",
-  "Both – Chapathi & Poori",
-];
 
 const bulkFeatures = [
   {
@@ -433,13 +424,11 @@ export default function HomePage() {
 
   const [bulkForm, setBulkForm] = useState<BulkForm>({
     name: "",
-    phone: "",
-    email: "",
-    address: "",
-    product: "",
-    quantity: "",
-    deliveryDate: "",
-    notes: "",
+  phone: "",
+  email: "",
+  address: "",
+  notes: "",
+
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof BulkForm, string>>>(
@@ -461,11 +450,47 @@ export default function HomePage() {
       }));
     }
   };
-  const handleBulkSubmit = () => {
-    if (!validate()) return;
-    setBulkSubmitted(true);
-    setSnackOpen(true);
-  };
+  // const handleBulkSubmit = () => {
+  //   if (!validate()) return;
+  //   setBulkSubmitted(true);
+  //   setSnackOpen(true);
+  // };
+
+
+ const handleBulkSubmit = async () => {
+  console.log("Submit clicked");
+
+  try {
+    const response = await fetch("/api/enquiry", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(bulkForm),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      setBulkSubmitted(true);
+      setSnackOpen(true);
+
+      setBulkForm({
+        name: "",
+        phone: "",
+        email: "",
+        address: "",
+        notes: "",
+      });
+      
+    } else {
+      alert("Failed to send enquiry");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Something went wrong");
+  }
+};
 
   const [bulkSubmitted, setBulkSubmitted] = useState(false);
   const [snackOpen, setSnackOpen] = useState(false); // ← ADD
@@ -1743,7 +1768,7 @@ export default function HomePage() {
                       maxWidth: 260,
                     }}
                   >
-                    We'll contact you to confirm your bulk order details as soon
+                    We will contact to you as soon
                     as possible.
                   </Typography>
                   <Button
