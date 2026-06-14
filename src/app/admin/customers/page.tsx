@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Avatar,
   Box,
+  Card,
+  CardContent,
   Container,
   Pagination,
   Paper,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -16,212 +19,364 @@ import {
   TextField,
   Typography,
   InputAdornment,
+  Alert,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 import SearchIcon from "@mui/icons-material/Search";
 
-export default function CustomersPage() {
-  const [page, setPage] = useState(1);
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-  const customers = [
-    {
-      name: "Priya S.",
-      phone: "9876543210",
-      totalOrders: 8,
-      lastOrder: "Today",
-      totalSpent: "₹2,240",
-      color: "#FDE8E8",
-    },
-    {
-      name: "Ravi K.",
-      phone: "9123456789",
-      totalOrders: 15,
-      lastOrder: "Yesterday",
-      totalSpent: "₹4,800",
-      color: "#E8F5E9",
-    },
-    {
-      name: "Meena R.",
-      phone: "9001122334",
-      totalOrders: 3,
-      lastOrder: "3 days ago",
-      totalSpent: "₹840",
-      color: "#FFF3E0",
-    },
-    {
-      name: "Kumar T.",
-      phone: "8765432109",
-      totalOrders: 22,
-      lastOrder: "Today",
-      totalSpent: "₹6,600",
-      color: "#E0F2F1",
-    },
-    {
-      name: "Lakshmi V.",
-      phone: "9988776655",
-      totalOrders: 6,
-      lastOrder: "1 week ago",
-      totalSpent: "₹1,800",
-      color: "#F3E5F5",
-    },
-  ];
+interface Customer {
+  id: number;
+  name: string;
+  phone: string;
+  email: string | null;
+  totalOrders: number;
+  lastOrderDate: string | null; // ISO string or null
+  totalSpent: number;
+  address: string; // primary address
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatDate(iso: string | null): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day:   "2-digit",
+    month: "short",
+    year:  "numeric",
+  });
+}
+
+const AVATAR_COLORS = [
+  { bg: "#FDE8E8", text: "#7B2D2D" },
+  { bg: "#E8F5E9", text: "#1B5E20" },
+  { bg: "#FFF3E0", text: "#7B4000" },
+  { bg: "#E0F2F1", text: "#00493E" },
+  { bg: "#F3E5F5", text: "#4A148C" },
+  { bg: "#E3F2FD", text: "#0D47A1" },
+  { bg: "#FCE4EC", text: "#880E4F" },
+];
+
+function avatarColor(name: string) {
+  const code = (name ?? "").charCodeAt(0);
+  const idx  = (isNaN(code) ? 0 : code) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[idx] ?? AVATAR_COLORS[0];
+}
+
+const ROWS_PER_PAGE = 10;
+
+// ─── Skeleton rows ────────────────────────────────────────────────────────────
+
+function SkeletonRows({ cols }: { cols: number }) {
+  return (
+    <>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <TableRow key={i}>
+          {Array.from({ length: cols }).map((_, j) => (
+            <TableCell key={j}>
+              <Skeleton variant="text" width={j === 0 ? 140 : "75%"} />
+            </TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export default function CustomersPage() {
+  const theme  = useTheme();
+  const mobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState<string | null>(null);
+  const [search,    setSearch]    = useState("");
+  const [page,      setPage]      = useState(1);
+
+  // ── Fetch ──────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchCustomers() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/admin/customers");
+        if (!res.ok) throw new Error(`Failed to fetch customers (${res.status})`);
+        const data: Customer[] = await res.json();
+        if (!cancelled) setCustomers(data);
+      } catch (err: unknown) {
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : "Something went wrong");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchCustomers();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Filter + paginate ──────────────────────────────────────────────────────
+  const filtered = customers.filter((c) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(q)  ||
+      c.phone.includes(q)               ||
+      (c.email ?? "").toLowerCase().includes(q)
+    );
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
+  const paginated  = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE);
+  const startRow   = Math.min((page - 1) * ROWS_PER_PAGE + 1, filtered.length);
+  const endRow     = Math.min(page * ROWS_PER_PAGE, filtered.length);
+
+  const COL_COUNT = 7; // NAME | PHONE | ADDRESS | TOTAL ORDERS | LAST ORDER DATE | TOTAL SPENT
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <Container
-      maxWidth={false}
-      sx={{
-        py: { xs: 2, md: 4 },
-        px: { xs: 1, sm: 2, md: 3 },
-      }}
-    >
-      {/* Header */}
-      <Box
-        sx={{
-          px: { xs: 2, md: 3 },
-          pb: { xs: 2, md: 3 },
-          display: "flex",
-          justifyContent: "flex-end",
-        }}
-      >
+    <Container maxWidth={false} sx={{ py: { xs: 2, md: 4 }, px: { xs: 1.5, sm: 2, md: 3 } }}>
+
+      {/* ── Search bar ── */}
+      <Box sx={{ pb: { xs: 2, md: 3 }, display: "flex", justifyContent: "flex-end" }}>
         <TextField
-          placeholder="Search by phone..."
+          placeholder="Search by name, phone or email…"
           size="small"
-          sx={{
-            width: {
-              xs: "100%",
-              md: 350,
-            },
-          }}
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          sx={{ width: { xs: "100%", md: 350 } }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon />
+                <SearchIcon fontSize="small" />
               </InputAdornment>
             ),
+            sx: { borderRadius: 2, fontSize: 13 },
           }}
         />
       </Box>
 
-      <Paper
-        sx={{
-          borderRadius: 4,
-          border: "1px solid #ECECEC",
-          boxShadow: "none",
-          overflow: "hidden",
-        }}
-      >
-        {/* Table */}
-        <TableContainer
-          sx={{
-            overflowX: "auto",
-          }}
-        >
-          <Table
-            sx={{
-              minWidth: 900,
-            }}
-          >
-            <TableHead>
-              <TableRow>
-                <TableCell
-                  sx={{ color: "var(--primary-maroon-mid)", fontWeight: 600 }}
-                >
-                  NAME
-                </TableCell>
-                <TableCell
-                  sx={{ color: "var(--primary-maroon-mid)", fontWeight: 600 }}
-                >
-                  PHONE
-                </TableCell>
-                <TableCell
-                  sx={{ color: "var(--primary-maroon-mid)", fontWeight: 600 }}
-                >
-                  TOTAL ORDERS
-                </TableCell>
-                <TableCell
-                  sx={{ color: "var(--primary-maroon-mid)", fontWeight: 600 }}
-                >
-                  LAST ORDER
-                </TableCell>
-                <TableCell
-                  sx={{ color: "var(--primary-maroon-mid)", fontWeight: 600 }}
-                >
-                  TOTAL SPENT
-                </TableCell>
-              </TableRow>
-            </TableHead>
+      {/* ── Error ── */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2, borderRadius: 3 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
-            <TableBody>
-              {customers.map((customer) => (
-                <TableRow key={customer.phone}>
-                  <TableCell>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                      }}
+      {/* ── Table card ── */}
+      <Paper sx={{ borderRadius: 4, border: "1px solid #ECECEC", boxShadow: "none", overflow: "hidden" }}>
+
+        {/* ── DESKTOP TABLE ── */}
+        {!mobile && (
+          <TableContainer sx={{ overflowX: "auto" }}>
+            <Table sx={{ minWidth: 1000 }}>
+              <TableHead>
+                <TableRow>
+                  {[
+                    "NAME",
+                    "PHONE",
+                    "ADDRESS",
+                    "TOTAL ORDERS",
+                    "LAST ORDER DATE",
+                    "TOTAL SPENT",
+                  ].map((col) => (
+                    <TableCell
+                      key={col}
+                      sx={{ color: "var(--primary-maroon-mid)", fontWeight: 600, whiteSpace: "nowrap" }}
                     >
-                      <Avatar
-                        sx={{
-                          bgcolor: customer.color,
-                          color: "#333",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {customer.name.charAt(0)}
-                      </Avatar>
-
-                      <Typography fontWeight={500}>{customer.name}</Typography>
-                    </Box>
-                  </TableCell>
-
-                  <TableCell>{customer.phone}</TableCell>
-
-                  <TableCell>{customer.totalOrders}</TableCell>
-
-                  <TableCell>{customer.lastOrder}</TableCell>
-
-                  <TableCell
-                    sx={{
-                      color: "var(--primary-teal-mid)",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {customer.totalSpent}
-                  </TableCell>
+                      {col}
+                    </TableCell>
+                  ))}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
 
-        {/* Pagination */}
+              <TableBody>
+                {loading ? (
+                  <SkeletonRows cols={COL_COUNT} />
+                ) : paginated.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={COL_COUNT} align="center" sx={{ py: 6 }}>
+                      <Typography color="text.secondary" fontSize={14}>
+                        No customers found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginated.map((customer) => {
+                    const color = avatarColor(customer.name);
+                    return (
+                      <TableRow
+                        key={customer.id}
+                        sx={{ "&:hover": { bgcolor: "#FAFAFA" }, "&:last-child td": { border: 0 } }}
+                      >
+                        {/* NAME */}
+                        <TableCell>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <Avatar sx={{ bgcolor: color.bg, color: color.text, fontWeight: 600, width: 36, height: 36, fontSize: 14 }}>
+                              {customer.name.charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Box>
+                              <Typography fontWeight={600} fontSize={13}>
+                                {customer.name}
+                              </Typography>
+                              {customer.email && (
+                                <Typography fontSize={11} color="text.secondary">
+                                  {customer.email}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                        </TableCell>
+
+                        {/* PHONE */}
+                        <TableCell>
+                          <Typography fontSize={13} whiteSpace="nowrap">{customer.phone}</Typography>
+                        </TableCell>
+
+                        {/* ADDRESS */}
+                        <TableCell sx={{ maxWidth: 220 }}>
+                          <Typography
+                            fontSize={12}
+                            color="text.secondary"
+                            title={customer.address}
+                            sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                          >
+                            {customer.address || "—"}
+                          </Typography>
+                        </TableCell>
+
+                        {/* TOTAL ORDERS */}
+                        <TableCell>
+                          <Typography fontSize={13} fontWeight={600} textAlign="center">
+                            {customer.totalOrders}
+                          </Typography>
+                        </TableCell>
+
+                        {/* LAST ORDER DATE */}
+                        <TableCell>
+                          <Typography fontSize={13} color="text.secondary" whiteSpace="nowrap">
+                            {formatDate(customer.lastOrderDate)}
+                          </Typography>
+                        </TableCell>
+
+                        {/* TOTAL SPENT */}
+                        <TableCell>
+                          <Typography fontSize={13} fontWeight={700} color="var(--primary-teal-mid)" whiteSpace="nowrap">
+                            ₹{customer.totalSpent.toLocaleString("en-IN")}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        {/* ── MOBILE CARDS ── */}
+        {mobile && (
+          <Box p={2}>
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <Card key={i} sx={{ mb: 2, borderRadius: 3, boxShadow: "none", border: "1px solid #eee" }}>
+                  <CardContent>
+                    <Skeleton width={120} />
+                    <Skeleton width="50%" />
+                    <Skeleton width="70%" sx={{ mt: 1 }} />
+                  </CardContent>
+                </Card>
+              ))
+            ) : paginated.length === 0 ? (
+              <Typography color="text.secondary" fontSize={14} textAlign="center" py={4}>
+                No customers found
+              </Typography>
+            ) : (
+              paginated.map((customer) => {
+                const color = avatarColor(customer.name);
+                return (
+                  <Card key={customer.id} sx={{ mb: 2, borderRadius: 3, boxShadow: "none", border: "1px solid #ECECEC" }}>
+                    <CardContent sx={{ pb: "12px !important" }}>
+
+                      {/* Name + avatar */}
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+                        <Avatar sx={{ bgcolor: color.bg, color: color.text, fontWeight: 600, width: 36, height: 36, fontSize: 14 }}>
+                          {customer.name.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box>
+                          <Typography fontWeight={600} fontSize={14}>{customer.name}</Typography>
+                          {customer.email && (
+                            <Typography fontSize={11} color="text.secondary">{customer.email}</Typography>
+                          )}
+                        </Box>
+                      </Box>
+
+                      <Typography fontSize={13} color="text.secondary" mb={0.5}>{customer.phone}</Typography>
+
+                      {/* Address */}
+                      <Typography fontSize={12} color="text.secondary" mb={1}>{customer.address || "—"}</Typography>
+
+                      {/* Stats row */}
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+                        <Box>
+                          <Typography fontSize={11} color="text.secondary">Orders</Typography>
+                          <Typography fontSize={13} fontWeight={600}>{customer.totalOrders}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography fontSize={11} color="text.secondary">Last Order</Typography>
+                          <Typography fontSize={13}>{formatDate(customer.lastOrderDate)}</Typography>
+                        </Box>
+                        <Box textAlign="right">
+                          <Typography fontSize={11} color="text.secondary">Total Spent</Typography>
+                          <Typography fontSize={14} fontWeight={700} color="var(--primary-teal-mid)">
+                            ₹{customer.totalSpent.toLocaleString("en-IN")}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </Box>
+        )}
+
+        {/* ── Pagination ── */}
         <Box
           sx={{
             p: { xs: 2, md: 3 },
             borderTop: "1px solid #ECECEC",
             display: "flex",
-            flexDirection: {
-              xs: "column",
-              sm: "row",
-            },
+            flexDirection: { xs: "column", sm: "row" },
             gap: 2,
             justifyContent: "space-between",
             alignItems: "center",
           }}
         >
-          <Typography variant="body2" color="text.secondary">
-            Showing 1 to 5 of 25 customers
+          <Typography variant="body2" color="text.secondary" textAlign={{ xs: "center", sm: "left" }}>
+            {loading
+              ? "Loading…"
+              : filtered.length === 0
+              ? "No customers to show"
+              : `Showing ${startRow} to ${endRow} of ${filtered.length} customers`}
           </Typography>
 
           <Pagination
-            count={5}
+            count={totalPages}
             page={page}
-            onChange={(_, value) => setPage(value)}
+            onChange={(_, value) => { setPage(value); }}
             shape="rounded"
             siblingCount={0}
             boundaryCount={1}
+            size={mobile ? "small" : "medium"}
             sx={{
               "& .MuiPaginationItem-root": {
                 color: "var(--primary-teal-mid)",
@@ -235,29 +390,12 @@ export default function CustomersPage() {
           />
         </Box>
       </Paper>
-        {/* FOOTER */}
-      
-            <Box
-              sx={{
-                mt: 4,
-                display: "flex",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: 2,
-                color: "#777",
-                fontSize: 13,
-              }}
-            >
-              <Typography variant="body2">
-                © 2024 Menmai Foods. All rights
-                reserved.
-              </Typography>
-      
-              <Typography variant="body2">
-                Made with ❤️ for better food
-                experiences.
-              </Typography>
-            </Box>
+
+      {/* ── Footer ── */}
+      <Box sx={{ mt: 4, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2, color: "#777", fontSize: 13 }}>
+        <Typography variant="body2">© 2024 Menmai Foods. All rights reserved.</Typography>
+        <Typography variant="body2">Made with ❤️ for better food experiences.</Typography>
+      </Box>
     </Container>
   );
 }

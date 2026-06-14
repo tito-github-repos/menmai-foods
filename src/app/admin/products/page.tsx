@@ -5,7 +5,7 @@ import {
   Box, Typography, Button, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, IconButton, Stack, Tabs, Tab, Switch,
-  Divider, Chip,
+  Divider, Chip, Container,
 } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -294,6 +294,8 @@ function ProductModal({ product, onClose, onSave }: {
   );
 }
 
+// ─── Product Card ─────────────────────────────────────────────────────────────
+
 function ProductCard({ product, onEdit }: { product: Product; onEdit: () => void }) {
   const isOutOfStock = product.stockQuantity === 0;
 
@@ -310,29 +312,49 @@ function ProductCard({ product, onEdit }: { product: Product; onEdit: () => void
       opacity: product.isActive ? 1 : 0.55,
       "&:hover": { boxShadow: "0 4px 18px rgba(70,33,18,.11)" },
     }}>
-      <Box sx={{ width: "100%", height: 150, background: "#f9f6f2", position: "relative", overflow: "hidden" }}>
+
+      {/* ── Image — fixed aspect ratio so full image is always visible ── */}
+      <Box sx={{
+        width: "100%",
+        aspectRatio: "3 / 4",   // keeps proportional on all screen sizes
+        background: "#f9f6f2",
+        position: "relative",
+        overflow: "hidden",
+      }}>
         {product.imageUrl ? (
-          <Box component="img" src={product.imageUrl} alt={product.name}
-            sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          <Box
+            component="img"
+            src={product.imageUrl}
+            alt={product.name}
+            sx={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",      // fills frame without stretching
+              objectPosition: "center",
+              display: "block",
+            }}
+          />
         ) : (
           <Box sx={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Typography sx={{ fontSize: 36 }}>🍽</Typography>
+            <Typography sx={{ fontSize: 48 }}>🍽</Typography>
           </Box>
         )}
+
         {/* Status badge — INACTIVE takes priority over OUT OF STOCK */}
         {!product.isActive ? (
-          <Box sx={{ position: "absolute", top: 7, left: 7, bgcolor: "rgba(160,0,0,0.85)", color: "#fff", fontSize: 9.5, fontWeight: 700, fontFamily: C.fontMain, px: 0.8, py: 0.25, borderRadius: "5px", letterSpacing: "0.05em" }}>
+          <Box sx={{ position: "absolute", top: 8, left: 8, bgcolor: "rgba(160,0,0,0.85)", color: "#fff", fontSize: 10, fontWeight: 700, fontFamily: C.fontMain, px: 1, py: 0.3, borderRadius: "6px", letterSpacing: "0.05em" }}>
             INACTIVE
           </Box>
         ) : isOutOfStock ? (
-          <Box sx={{ position: "absolute", top: 7, left: 7, bgcolor: "rgba(180,90,0,0.88)", color: "#fff", fontSize: 9.5, fontWeight: 700, fontFamily: C.fontMain, px: 0.8, py: 0.25, borderRadius: "5px", letterSpacing: "0.05em" }}>
+          <Box sx={{ position: "absolute", top: 8, left: 8, bgcolor: "rgba(180,90,0,0.88)", color: "#fff", fontSize: 10, fontWeight: 700, fontFamily: C.fontMain, px: 1, py: 0.3, borderRadius: "6px", letterSpacing: "0.05em" }}>
             OUT OF STOCK
           </Box>
         ) : null}
       </Box>
 
+      {/* ── Info ── */}
       <Box sx={{ px: 2, pt: 1.5, pb: 0.5, flexGrow: 1 }}>
-        <Typography sx={{ fontFamily: C.fontHeading, fontWeight: 700, fontSize: 15, color: "#1a0a04", mb: 0.5, lineHeight: 1.2 }}>
+        <Typography sx={{ fontFamily: C.fontHeading, fontWeight: 700, fontSize: { xs: 14, md: 15 }, color: "#1a0a04", mb: 0.5, lineHeight: 1.2 }}>
           {product.name}
         </Typography>
         <Typography sx={{ fontFamily: C.fontMain, fontSize: 13.5, fontWeight: 700, color: MAROON, mb: 0.4 }}>
@@ -346,17 +368,24 @@ function ProductCard({ product, onEdit }: { product: Product; onEdit: () => void
         </Typography>
       </Box>
 
+      {/* ── Actions ── */}
       <Box sx={{ px: 2, pt: 1.2, pb: 1.5 }}>
         <Stack direction="row" spacing={0.75}>
-          <Button variant="outlined" fullWidth
+          <Button
+            variant="outlined"
+            fullWidth
             startIcon={<VisibilityOutlinedIcon sx={{ fontSize: "13px !important" }} />}
-            sx={{ borderColor: "#e0d5c8", color: "#999", borderRadius: "7px", textTransform: "none", fontWeight: 500, fontSize: 12.5, py: 0.6, fontFamily: C.fontMain, "&:hover": { borderColor: "#bbb", background: "transparent" } }}>
+            sx={{ borderColor: "#e0d5c8", color: "#999", borderRadius: "7px", textTransform: "none", fontWeight: 500, fontSize: 12.5, py: 0.6, fontFamily: C.fontMain, "&:hover": { borderColor: "#bbb", background: "transparent" } }}
+          >
             View
           </Button>
-          <Button variant="outlined" fullWidth
+          <Button
+            variant="outlined"
+            fullWidth
             startIcon={<EditOutlinedIcon sx={{ fontSize: "13px !important" }} />}
             onClick={onEdit}
-            sx={{ borderColor: MAROON, color: MAROON, borderRadius: "7px", textTransform: "none", fontWeight: 600, fontSize: 12.5, py: 0.6, fontFamily: C.fontMain, "&:hover": { background: "rgba(97,34,15,0.04)", borderColor: MAROON_DARK } }}>
+            sx={{ borderColor: MAROON, color: MAROON, borderRadius: "7px", textTransform: "none", fontWeight: 600, fontSize: 12.5, py: 0.6, fontFamily: C.fontMain, "&:hover": { background: "rgba(97,34,15,0.04)", borderColor: MAROON_DARK } }}
+          >
             Edit
           </Button>
         </Stack>
@@ -364,6 +393,8 @@ function ProductCard({ product, onEdit }: { product: Product; onEdit: () => void
     </Box>
   );
 }
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProductsPage() {
   const [products, setProducts]       = useState<Product[]>([]);
@@ -413,15 +444,20 @@ export default function ProductsPage() {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-      <Typography sx={{ fontFamily: C.fontHeading, fontWeight: 700, fontSize: 17, color: "#1a0a04", mb: 2 }}>
-        Products
-      </Typography>
-
+    <Container
+      maxWidth={false}
+      sx={{ py: { xs: 2, md: 4 }, px: { xs: 1.5, sm: 2, md: 3 } }}
+    >
       {loading ? (
-        <Typography sx={{ fontFamily: C.fontMain, color: C.muted, fontSize: 13 }}>Loading…</Typography>
+        <Typography sx={{ fontFamily: C.fontMain, color: C.muted, fontSize: 13 }}>
+          Loading…
+        </Typography>
+      ) : products.length === 0 ? (
+        <Typography sx={{ fontFamily: C.fontMain, color: C.muted, fontSize: 13 }}>
+          No products found.
+        </Typography>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={{ xs: 2, md: 3 }}>
           {products.map((p) => (
             <Grid item key={p.id} xs={12} sm={6} md={4} lg={3} sx={{ display: "flex" }}>
               <ProductCard product={p} onEdit={() => setEditProduct(p)} />
@@ -437,6 +473,22 @@ export default function ProductsPage() {
           onSave={handleSave}
         />
       )}
-    </Box>
+
+      {/* ── Footer ── */}
+      <Box
+        sx={{
+          mt: 4,
+          display: "flex",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 2,
+          color: "#777",
+          fontSize: 13,
+        }}
+      >
+        <Typography variant="body2">© 2024 Menmai Foods. All rights reserved.</Typography>
+        <Typography variant="body2">Made with ❤️ for better food experiences.</Typography>
+      </Box>
+    </Container>
   );
 }
