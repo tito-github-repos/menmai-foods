@@ -983,6 +983,61 @@ export default function BulkOrderPage() {
                       </Grid>
                     )}
 
+                    {availableSlots.length === 0 &&
+                      form.deliveryDate &&
+                      !errors.deliveryDate && (
+                        <Grid item xs={12}>
+                          <Box
+                            sx={{
+                              p: "14px",
+                              borderRadius: "10px",
+                              border: "1px solid #FFD54F",
+                              backgroundColor: "#FFF8E1",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 2,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <Box>
+                              <Typography
+                                sx={{
+                                  fontWeight: 700,
+                                  fontSize: "0.9rem",
+                                }}
+                              >
+                                Need an urgent bulk order?
+                              </Typography>
+
+                              <Typography
+                                sx={{
+                                  fontSize: "0.82rem",
+                                  mt: 0.5,
+                                }}
+                              >
+                                Regular delivery slots are unavailable for the
+                                selected date. Please call our team and we'll try
+                                our best to accommodate your request.
+                              </Typography>
+                            </Box>
+
+                            <Button
+                              component="a"
+                              href={`tel:${BULK_ORDER_PHONE}`}
+                              variant="outlined"
+                              startIcon={<PhoneOutlinedIcon />}
+                              sx={{
+                                textTransform: "none",
+                                fontWeight: 700,
+                              }}
+                            >
+                              Call Us
+                            </Button>
+                          </Box>
+                        </Grid>
+                    )}
+
                     {/* Occasion */}
                     <Grid item xs={12}>
                       <TextField fullWidth label="Occasion / Event Details" required

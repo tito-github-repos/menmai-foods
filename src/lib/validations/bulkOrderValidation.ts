@@ -193,28 +193,91 @@ function formatHour(hour: number): string {
   });
 }
 
-export function getAvailableTimeSlots(deliveryDate: string): string[] {
+export function getAvailableTimeSlots(
+  deliveryDate: string
+): string[] {
   if (!deliveryDate) return [];
 
-  // const selectedDate = parseDateInput(deliveryDate);
-  // if (isSundayDate(selectedDate)) return [];
-
   const selectedDate = parseDateInput(deliveryDate);
+
   if (isNaN(selectedDate.getTime())) return [];
 
-  // Block past dates
+  if (isSundayDate(selectedDate)) return [];
+
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (selectedDate < today) return [];
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  if (selectedDate < todayStart) return [];
 
   const slots: string[] = [];
 
-  for (let hour = WORK_START_HOUR; hour < WORK_END_HOUR; hour++) {
-    slots.push(`${formatHour(hour)} - ${formatHour(hour + 1)}`);
+  const isToday =
+    selectedDate.toDateString() === today.toDateString();
+
+  let earliestAllowedHour = WORK_START_HOUR;
+
+  if (isToday) {
+    const now = new Date();
+
+    const officeStart = new Date();
+    officeStart.setHours(WORK_START_HOUR, 0, 0, 0);
+
+    const effectiveStart =
+      now < officeStart ? officeStart : now;
+
+    // Minimum 3 hours preparation time
+    const leadTimeDate = new Date(
+      effectiveStart.getTime() + 3 * 60 * 60 * 1000
+    );
+
+    earliestAllowedHour = leadTimeDate.getHours();
+
+    if (leadTimeDate.getMinutes() > 0) {
+      earliestAllowedHour += 1;
+    }
+
+    if (earliestAllowedHour >= WORK_END_HOUR) {
+      return [];
+    }
+  }
+
+  for (
+    let hour = Math.max(WORK_START_HOUR, earliestAllowedHour);
+    hour < WORK_END_HOUR;
+    hour++
+  ) {
+    slots.push(
+      `${formatHour(hour)} - ${formatHour(hour + 1)}`
+    );
   }
 
   return slots;
 }
+
+// export function getAvailableTimeSlots(deliveryDate: string): string[] {
+//   if (!deliveryDate) return [];
+
+//   // const selectedDate = parseDateInput(deliveryDate);
+//   // if (isSundayDate(selectedDate)) return [];
+
+//   const selectedDate = parseDateInput(deliveryDate);
+//   if (isNaN(selectedDate.getTime())) return [];
+
+//   // Block past dates
+//   const today = new Date();
+//   today.setHours(0, 0, 0, 0);
+//   if (selectedDate < today) return [];
+
+//   const slots: string[] = [];
+
+//   for (let hour = WORK_START_HOUR; hour < WORK_END_HOUR; hour++) {
+//     slots.push(`${formatHour(hour)} - ${formatHour(hour + 1)}`);
+//   }
+
+//   return slots;
+// }
 
 // export function getAvailableTimeSlots(
 //   deliveryDate: string,
