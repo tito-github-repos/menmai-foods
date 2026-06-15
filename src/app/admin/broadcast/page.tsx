@@ -348,7 +348,7 @@ export default function BroadcastPage() {
               }}
             >
               <Typography variant="body2">
-                © 2024 Menmai Foods. All rights
+                © 2026 Menmai Foods. All rights
                 reserved.
               </Typography>
       
