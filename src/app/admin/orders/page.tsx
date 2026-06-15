@@ -547,7 +547,7 @@ export default function OrdersPage() {
 
       {/* ── FOOTER ── */}
       <Box sx={{ mt: 4, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2, color: "#777", fontSize: 13 }}>
-        <Typography variant="body2">© 2024 Menmai Foods. All rights reserved.</Typography>
+        <Typography variant="body2">© 2026 Menmai Foods. All rights reserved.</Typography>
         <Typography variant="body2">Made with ❤️ for better food experiences.</Typography>
       </Box>
     </Box>

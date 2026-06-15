@@ -623,7 +623,7 @@ export default function DashboardPage() {
         }}
       >
         <Typography variant="body2">
-          © 2024 Menmai Foods. All rights reserved.
+          © 2026 Menmai Foods. All rights reserved.
         </Typography>
         <Typography variant="body2">
           Made with ❤️ for better food experiences.
