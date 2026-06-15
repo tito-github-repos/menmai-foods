@@ -330,3 +330,9 @@ model WebhookLog {
   eventId   String   @unique
   createdAt DateTime @default(now())
 }
+
+
+model DeliveryPincode {
+  pincode  String  @id
+  isActive Boolean @default(true)
+}
