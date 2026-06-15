@@ -1753,9 +1753,19 @@ export default function ProductPage() {
                         }}
                       />
                       <Button
-                        onClick={() =>
-                          setPinMsg(pincode.length === 6 ? "valid" : "invalid")
-                        }
+                        onClick={async () => {
+                          if (pincode.length !== 6) {
+                            setPinMsg("invalid");
+                            return;
+                          }
+                          const res = await fetch("/api/check-pincode", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ pincode }),
+                          });
+                          const data = await res.json();
+                          setPinMsg(data.serviceable ? "valid" : "invalid");
+                        }}
                         variant="contained"
                         sx={{
                           borderRadius: "10px",
@@ -1792,7 +1802,7 @@ export default function ProductPage() {
                         mb={1}
                         fontFamily="'Sora', sans-serif"
                       >
-                        Enter a valid 6-digit pincode.
+                        Sorry, we don't deliver to this pincode yet.
                       </Typography>
                     )}
                   </>
