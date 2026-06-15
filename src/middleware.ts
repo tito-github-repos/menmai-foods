@@ -1,30 +1,22 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+// src/middleware.ts
 
-export default withAuth(
-  function middleware(req) {
-    const host = req.headers.get("host") || "";
-    const url = req.nextUrl.clone();
+import { NextRequest, NextResponse } from "next/server";
 
-    // admin.menmaifoods.com
-    if (host.startsWith("admin.")) {
-      if (!url.pathname.startsWith("/admin")) {
-        url.pathname = `/admin${url.pathname}`;
-        return NextResponse.rewrite(url);
-      }
+export function middleware(req: NextRequest) {
+  const host = req.headers.get("host") || "";
+  const url = req.nextUrl.clone();
+
+  // Handle admin subdomain only
+  if (host.startsWith("admin.")) {
+    if (!url.pathname.startsWith("/admin")) {
+      url.pathname = `/admin${url.pathname}`;
+      return NextResponse.rewrite(url);
     }
-
-    return NextResponse.next();
-  },
-  {
-    pages: {
-      signIn: "/admin",
-    },
   }
-);
+
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
