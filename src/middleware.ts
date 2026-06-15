@@ -1,22 +1,18 @@
-// src/middleware.ts
+import { withAuth } from "next-auth/middleware";
 
-import { NextRequest, NextResponse } from "next/server";
-
-export function middleware(req: NextRequest) {
-  const host = req.headers.get("host") || "";
-  const url = req.nextUrl.clone();
-
-  // Handle admin subdomain only
-  if (host.startsWith("admin.")) {
-    if (!url.pathname.startsWith("/admin")) {
-      url.pathname = `/admin${url.pathname}`;
-      return NextResponse.rewrite(url);
-    }
-  }
-
-  return NextResponse.next();
-}
+export const proxy = withAuth({
+  pages: {
+    signIn: "/admin",
+  },
+});
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/admin/dashboard/:path*",
+    "/admin/orders/:path*",
+    "/admin/bulk-orders/:path*",
+    "/admin/products/:path*",
+    "/admin/broadcast/:path*",
+    "/admin/customers/:path*",
+  ],
 };
