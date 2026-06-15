@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
-
-
 export async function POST(req: Request) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   try {
@@ -21,8 +19,8 @@ export async function POST(req: Request) {
 
     // ADMIN EMAIL
     const adminMail = await resend.emails.send({
-      from: "onboarding@resend.dev",
-      to: ["manisha@tito.org.in"],
+      from: "Menmai Foods <enquiry@menmaifoods.com>",
+      to: ["menmaifoodsmdu@gmail.com"],
       subject: "New Enquiry Received - Menmai Foods",
       html: `
         <h2>New Enquiry Received</h2>
@@ -44,7 +42,7 @@ export async function POST(req: Request) {
 
     // CUSTOMER ACKNOWLEDGEMENT EMAIL
     const customerMail = await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "Menmai Foods <enquiry@menmaifoods.com>",
       to: [email],
       subject: "Thank You for Contacting Menmai Foods",
       html: `
@@ -58,7 +56,7 @@ export async function POST(req: Request) {
 
         <p>
           If you have any further questions, please call or WhatsApp us at
-          <strong>9987738883</strong>.
+          <strong>9894777825</strong>.
         </p>
 
         <br/>
@@ -88,7 +86,7 @@ export async function POST(req: Request) {
         message: "Failed to send email",
         error,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
