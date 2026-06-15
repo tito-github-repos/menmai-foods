@@ -4,26 +4,42 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        // First: handle root → /admin login page
+        // admin.menmaifoods.com/ → shows /admin login page
         source: "/",
-        has: [
-          {
-            type: "host",
-            value: "admin.menmaifoods.com",
-          },
-        ],
+        has: [{ type: "host", value: "admin.menmaifoods.com" }],
         destination: "/admin",
       },
       {
-        // Second: handle all other paths → /admin/...
-        source: "/:path*",
-        has: [
-          {
-            type: "host",
-            value: "admin.menmaifoods.com",
-          },
-        ],
-        destination: "/admin/:path*",
+        // admin.menmaifoods.com/dashboard → /admin/dashboard
+        source: "/dashboard/:path*",
+        has: [{ type: "host", value: "admin.menmaifoods.com" }],
+        destination: "/admin/dashboard/:path*",
+      },
+      {
+        // admin.menmaifoods.com/orders → /admin/orders
+        source: "/orders/:path*",
+        has: [{ type: "host", value: "admin.menmaifoods.com" }],
+        destination: "/admin/orders/:path*",
+      },
+      {
+        source: "/bulk-orders/:path*",
+        has: [{ type: "host", value: "admin.menmaifoods.com" }],
+        destination: "/admin/bulk-orders/:path*",
+      },
+      {
+        source: "/products/:path*",
+        has: [{ type: "host", value: "admin.menmaifoods.com" }],
+        destination: "/admin/products/:path*",
+      },
+      {
+        source: "/broadcast/:path*",
+        has: [{ type: "host", value: "admin.menmaifoods.com" }],
+        destination: "/admin/broadcast/:path*",
+      },
+      {
+        source: "/customers/:path*",
+        has: [{ type: "host", value: "admin.menmaifoods.com" }],
+        destination: "/admin/customers/:path*",
       },
     ];
   },
