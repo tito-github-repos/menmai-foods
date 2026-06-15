@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        // First: handle root → /admin login page
         source: "/",
         has: [
           {
@@ -14,6 +15,7 @@ const nextConfig: NextConfig = {
         destination: "/admin",
       },
       {
+        // Second: handle all other paths → /admin/...
         source: "/:path*",
         has: [
           {
