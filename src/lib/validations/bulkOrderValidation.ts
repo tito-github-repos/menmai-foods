@@ -38,39 +38,6 @@ type DeliveryPincodeZone = {
   pincodes: string[];
 };
 
-export const DELIVERY_PINCODE_ZONES: Record<string, DeliveryPincodeZone> = {
-  WITHIN_5_KM: {
-    label: "Within 5 km",
-    charge: 0,
-    pincodes: ["625001", "625002", "625003", "625004", "625005"],
-  },
-  ABOVE_5_KM: {
-    label: "Above 5 km",
-    charge: 50,
-    pincodes: ["625006", "625007", "625008", "625009", "625010", "625011"],
-  },
-  OUTER_ZONE: {
-    label: "Outer delivery zone",
-    charge: 100,
-    pincodes: ["625012", "625014", "625016", "625017", "625018", "625020"],
-  },
-};
-
-const ALLOWED_MADURAI_PINCODES = Object.values(DELIVERY_PINCODE_ZONES).flatMap(
-  (zone) => zone.pincodes
-);
-
-export function getDeliveryZoneByPincode(pincode: string) {
-  const trimmed = pincode.trim();
-
-  return Object.values(DELIVERY_PINCODE_ZONES).find((zone) =>
-    zone.pincodes.includes(trimmed)
-  );
-}
-
-export function getDeliveryChargeByPincode(pincode: string): number {
-  return getDeliveryZoneByPincode(pincode)?.charge ?? 0;
-}
 
 function parseDateInput(value: string): Date {
   const [year, month, day] = value.split("-").map(Number);
@@ -202,13 +169,9 @@ export function validateAddress(value: string): string | undefined {
 
 export function validatePincode(value: string): string | undefined {
   const trimmed = value.trim();
-
   if (!trimmed) return "Pincode is required.";
   if (!/^\d{6}$/.test(trimmed)) return "Enter a valid 6-digit pincode.";
-  if (!ALLOWED_MADURAI_PINCODES.includes(trimmed)) {
-    return "Delivery is available only within our Madurai delivery zone.";
-  }
-
+  // DB check happens separately via API — not here
   return undefined;
 }
 
@@ -233,8 +196,16 @@ function formatHour(hour: number): string {
 export function getAvailableTimeSlots(deliveryDate: string): string[] {
   if (!deliveryDate) return [];
 
+  // const selectedDate = parseDateInput(deliveryDate);
+  // if (isSundayDate(selectedDate)) return [];
+
   const selectedDate = parseDateInput(deliveryDate);
-  if (isSundayDate(selectedDate)) return [];
+  if (isNaN(selectedDate.getTime())) return [];
+
+  // Block past dates
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (selectedDate < today) return [];
 
   const slots: string[] = [];
 
