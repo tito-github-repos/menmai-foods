@@ -3,15 +3,23 @@ import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   const host = req.headers.get("host") || "";
-  const isAdminSubdomain = host.startsWith("admin.");
-  const path = req.nextUrl.pathname;
+  const url = req.nextUrl.clone();
 
-  // Block menmaifoods.com/admin → redirect to customer home
-  if (!isAdminSubdomain && path.startsWith("/admin")) {
-    return NextResponse.redirect(new URL("/", req.url));
+  // Only for admin subdomain
+  if (host === "admin.menmaifoods.com") {
+    if (!url.pathname.startsWith("/admin")) {
+      url.pathname =
+        url.pathname === "/"
+          ? "/admin"
+          : `/admin${url.pathname}`;
+
+      return NextResponse.rewrite(url);
+    }
   }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/((?!api|_next|favicon.ico).*)"],
 };
