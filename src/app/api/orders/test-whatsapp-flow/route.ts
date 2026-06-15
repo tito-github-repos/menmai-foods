@@ -3,98 +3,77 @@ import { prisma } from "@/lib/prisma";
 import { sendOrderConfirmedWorkflow } from "@/lib/orders/whatsapp-workflow";
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as {
-    customerPhone?: string;
-  };
+  try {
+    const body = await request.json();
 
-  if (!body.customerPhone) {
+    const { orderId } = body;
+
+    if (!orderId) {
+      return NextResponse.json({ error: "Missing orderId" }, { status: 400 });
+    }
+
+    // 🔎 Fetch REAL order
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        Customer: true,
+        OrderItem: true,
+        CustomerAddress: true,
+      },
+    });
+
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // 🚫 Prevent duplicate WhatsApp sends
+    const existingWhatsApp = await prisma.whatsAppLog.findFirst({
+      where: {
+        orderId,
+        eventType: "ORDER_CONFIRMED",
+        status: "SENT",
+      },
+    });
+
+    if (existingWhatsApp) {
+      return NextResponse.json({
+        ok: true,
+        message: "WhatsApp already sent for this order",
+      });
+    }
+
+    // 📲 Trigger workflow (REAL DATA ONLY)
+    await sendOrderConfirmedWorkflow(orderId);
+
+    // 📝 Log WhatsApp event
+    await prisma.whatsAppLog.create({
+      data: {
+        orderId,
+        phone: order.Customer.phone,
+        direction: "OUTBOUND",
+        eventType: "ORDER_CONFIRMED",
+        status: "SENT",
+        payload: {
+          orderNumber: order.orderNumber,
+          totalAmount: order.totalAmount,
+        },
+      },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      message: "WhatsApp workflow triggered successfully",
+      orderId: order.id,
+    });
+  } catch (error) {
+    console.error("WhatsApp test error:", error);
+
     return NextResponse.json(
       {
-        error: "Missing `customerPhone`",
+        ok: false,
+        error: "Failed to trigger WhatsApp workflow",
       },
-      {
-        status: 400,
-      },
+      { status: 500 },
     );
   }
-
-  const customer = await prisma.customer.upsert({
-    where: {
-      phone: body.customerPhone,
-    },
-    update: {
-      fullName: "Sandbox Customer",
-      isPhoneVerified: true,
-    },
-    create: {
-      fullName: "Sandbox Customer",
-      phone: body.customerPhone,
-      isPhoneVerified: true,
-      updatedAt: new Date(),
-    },
-  });
-
-  const address = await prisma.customerAddress.create({
-    data: {
-      customerId: customer.id,
-      fullAddress: "Sandbox Address, Menmai Foods Test Area",
-      city: "Chennai",
-      pincode: "600001",
-      isDefault: true,
-      updatedAt: new Date(),
-    },
-  });
-
-  const product = await prisma.product.upsert({
-    where: {
-      slug: "sandbox-menmai-meal",
-    },
-    update: {
-      stockQuantity: 100,
-      isActive: true,
-    },
-    create: {
-      name: "Sandbox Menmai Meal",
-      slug: "sandbox-menmai-meal",
-      price: 299,
-      stockQuantity: 100,
-      isActive: true,
-    },
-  });
-
-  const orderNumber = `MENMAI-${Date.now()}`;
-
-  const order = await prisma.order.create({
-    data: {
-      orderNumber,
-      customerId: customer.id,
-      addressId: address.id,
-      subtotal: 299,
-      deliveryCharge: 0,
-      totalAmount: 299,
-      paymentStatus: "PAID",
-      orderStatus: "PENDING",
-      updatedAt: new Date(),
-      OrderItem: {
-        create: [
-          {
-            productId: product.id,
-            productName: product.name,
-            quantity: 1,
-            unitPrice: 299,
-            totalPrice: 299,
-          },
-        ],
-      },
-    },
-  });
-
-  const workflow = await sendOrderConfirmedWorkflow(order.id);
-
-  return NextResponse.json({
-    ok: true,
-    orderId: order.id,
-    orderNumber: order.orderNumber,
-    workflow,
-  });
 }

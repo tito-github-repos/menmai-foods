@@ -78,50 +78,28 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // 7. Send OTP via SMS
+  // 7. Send OTP via WhatsApp only
   try {
-    await fetch("https://www.fast2sms.com/dev/bulkV2", {
-      method: "POST",
-      headers: {
-        authorization: process.env.FAST2SMS_API_KEY!,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        variables_values: otp,
-        route: "otp",
-        numbers: mobile,
-      }),
-    });
+    await sendTextMessage(
+      `91${mobile}`,
+      `Menmai Foods Verification\n\nYour OTP is: ${otp}\n\nThis OTP is valid for 5 minutes.\n\nDo not share this OTP with anyone.`,
+    );
   } catch (error) {
-    console.error("SMS Error:", error);
-
+    console.error("WhatsApp OTP Send Error:", error);
     return NextResponse.json(
       {
-        message: "Failed to send OTP",
+        message: "Failed to send OTP via WhatsApp",
+        
       },
       { status: 500 },
     );
   }
 
-  /*
-  // WhatsApp OTP (optional)
-
-  await sendTextMessage(
-    `91${mobile}`,
-    `Menmai Foods Verification
-
-Your OTP is: ${otp}
-
-This OTP is valid for 5 minutes.
-
-Do not share this OTP with anyone.`
-  );
-  */
-
   return NextResponse.json({
     success: true,
+    message: "OTP sent via WhatsApp",
     resendCount: currentCount + 1,
     remainingAttempts: 5 - (currentCount + 1),
-    resendCooldown: 30, // 30 seconds cooldown after each resend
+    resendCooldown: 30,
   });
 }

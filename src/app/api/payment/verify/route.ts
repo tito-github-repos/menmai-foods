@@ -3,6 +3,7 @@ import crypto from "crypto";
 
 import { prisma } from "@/lib/db";
 import { verifyToken, unauthorized } from "@/lib/auth";
+import { sendOrderConfirmedWorkflow } from "@/lib/orders/whatsapp-workflow";
 
 export async function POST(req: NextRequest) {
   try {
@@ -80,7 +81,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 🔴 BLOCK EXPIRED TIME WINDOW
-    if (!payment.Order.orderExpiresAt || payment.Order.orderExpiresAt < new Date()) {
+    if (
+      !payment.Order.orderExpiresAt ||
+      payment.Order.orderExpiresAt < new Date()
+    ) {
       return NextResponse.json(
         { message: "Order expired. Please create a new order." },
         { status: 400 },
@@ -121,44 +125,56 @@ export async function POST(req: NextRequest) {
       });
     });
 
-    // // Update payment table
-    // await prisma.payment.update({
-    //   where: {
-    //     orderId,
-    //   },
-    //   data: {
-    //     razorpayPaymentId: razorpay_payment_id,
-    //     razorpaySignature: razorpay_signature,
-    //     paymentStatus: "PAID",
-    //   },
-    // });
+    // 🔥 Fetch fresh order with REAL data
+    const confirmedOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        Customer: true,
+        OrderItem: true,
+        CustomerAddress: true,
+      },
+    });
 
-    // // Update order table
-    // await prisma.order.update({
-    //   where: {
-    //     id: orderId,
-    //   },
-    //   data: {
-    //     paymentStatus: "PAID",
-    //     orderStatus: "CONFIRMED",
-    //   },
-    // });
+    if (!confirmedOrder) {
+      return NextResponse.json(
+        { message: "Order not found after payment" },
+        { status: 500 },
+      );
+    }
 
-    // // Clear customer cart
-    // const order = await prisma.order.findUnique({
-    //   where: { id: orderId },
-    //   select: {
-    //     customerId: true,
-    //   },
-    // });
+    // 🔒 Prevent duplicate WhatsApp notifications
+    const existingWhatsApp = await prisma.whatsAppLog.findFirst({
+      where: {
+        orderId,
+        eventType: "ORDER_CONFIRMED",
+        status: "SENT",
+      },
+    });
 
-    // if (!order) return;
+    if (existingWhatsApp) {
+      return NextResponse.json({
+        success: true,
+        message: "Payment verified (WhatsApp already sent)",
+      });
+    }
 
-    // await prisma.cartItem.deleteMany({
-    //   where: {
-    //     customerId: order.customerId,
-    //   },
-    // });
+    // 📲 SEND WHATSAPP NOTIFICATIONS
+    await sendOrderConfirmedWorkflow(orderId);
+
+    // 📝 LOG WHATSAPP EVENT
+    await prisma.whatsAppLog.create({
+      data: {
+        orderId,
+        phone: confirmedOrder.Customer.phone,
+        direction: "OUTBOUND",
+        eventType: "ORDER_CONFIRMED",
+        status: "SENT",
+        payload: {
+          orderNumber: confirmedOrder.orderNumber,
+          totalAmount: confirmedOrder.totalAmount,
+        },
+      },
+    });
 
     return NextResponse.json({
       success: true,
