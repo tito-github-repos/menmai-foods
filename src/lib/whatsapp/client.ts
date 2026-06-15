@@ -26,10 +26,30 @@ function getAccessToken() {
   return accessToken;
 }
 
+function formatPhoneNumber(phone: string) {
+  if (!phone) return phone;
+
+  let cleaned = phone.replace(/\D/g, "");
+
+  // India fallback (10-digit → add country code)
+  if (cleaned.length === 10) {
+    cleaned = "91" + cleaned;
+  }
+
+  return cleaned;
+}
+
 export async function sendWhatsAppMessage(
   payload: WhatsAppSendMessageRequest,
 ): Promise<WhatsAppSendMessageResponse> {
-  const response = await fetch(getWhatsAppUrl(), {
+  const url = getWhatsAppUrl();
+  console.log("WhatsApp Request:", {
+    url,
+    to: payload.to,
+    type: payload.type,
+  });
+
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${getAccessToken()}`,
@@ -39,6 +59,12 @@ export async function sendWhatsAppMessage(
   });
 
   const data = (await response.json()) as WhatsAppSendMessageResponse;
+
+  console.log("WhatsApp Response:", {
+    status: response.status,
+    messages: data.messages,
+    error: data.error,
+  });
 
   if (!response.ok) {
     throw new Error(
@@ -52,7 +78,7 @@ export async function sendWhatsAppMessage(
 export async function sendTextMessage(to: string, body: string) {
   return sendWhatsAppMessage({
     messaging_product: "whatsapp",
-    to,
+    to: formatPhoneNumber(to),
     type: "text",
     text: {
       preview_url: false,
@@ -70,7 +96,7 @@ export async function sendButtonMessage(args: {
 }) {
   return sendWhatsAppMessage({
     messaging_product: "whatsapp",
-    to: args.to,
+    to: formatPhoneNumber(args.to),
     type: "interactive",
     interactive: {
       type: "button",

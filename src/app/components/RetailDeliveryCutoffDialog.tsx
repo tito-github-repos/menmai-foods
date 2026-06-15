@@ -1,3 +1,6 @@
+"use client";
+
+import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -5,24 +8,26 @@ import {
   DialogActions,
   Button,
   Typography,
-  Divider,
   Box,
   useMediaQuery,
+  IconButton,
+  Divider,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
-import { useRouter } from "next/navigation";
-import IconButton from "@mui/material/IconButton";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 
 type Props = {
   open: boolean;
   onClose: () => void;
+  onContinue: () => void;
 };
 
-export default function BulkOrderLimitDialog({ open, onClose }: Props) {
-  const router = useRouter();
-
+export default function RetailDeliveryCutoffDialog({
+  open,
+  onClose,
+  onContinue,
+}: Props) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -31,10 +36,10 @@ export default function BulkOrderLimitDialog({ open, onClose }: Props) {
       open={open}
       onClose={(_, reason) => {
         if (reason === "backdropClick" || reason === "escapeKeyDown") return;
-       onClose();
+        onClose();
       }}
-      maxWidth="xs"
       fullWidth
+      maxWidth="xs"
       PaperProps={{
         sx: {
           mx: isMobile ? 2 : "auto",
@@ -64,7 +69,7 @@ export default function BulkOrderLimitDialog({ open, onClose }: Props) {
               justifyContent: "center",
             }}
           >
-            <Inventory2OutlinedIcon sx={{ color: "#fff", fontSize: 22 }} />
+            <LocalShippingOutlinedIcon sx={{ color: "#fff", fontSize: 22 }} />
           </Box>
 
           <Typography
@@ -74,25 +79,30 @@ export default function BulkOrderLimitDialog({ open, onClose }: Props) {
               lineHeight: 1.2,
             }}
           >
-            Need a Larger Quantity?
+            {" "}
+            Delivery Information
           </Typography>
         </Box>
 
         {/* Close Button */}
         <IconButton onClick={onClose}>
-          <CloseIcon fontSize="small"  />
+          <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
 
       <Divider />
 
       <DialogContent sx={{ px: isMobile ? 2 : 3, pt: 2 }}>
-        <Typography sx={{ lineHeight: 1.7, fontSize: 14 }}>
-          For larger quantities, please place a Bulk Order. Our team will assist
-          you with delivery scheduling, special requirements, and bulk quantity
-          requests.
+        <Typography sx={{ fontSize: 14, lineHeight: 1.6 }}>
+          Orders placed after <b>7:00 PM</b> will be delivered on the next day
+          morning.
+          <br />
+          <br />
+          Do you want to continue checkout?
         </Typography>
       </DialogContent>
+
+      <Divider />
 
       <DialogActions
         sx={{
@@ -103,36 +113,26 @@ export default function BulkOrderLimitDialog({ open, onClose }: Props) {
         }}
       >
         <Button
-          fullWidth={isMobile}
           onClick={onClose}
+          color="error"
           variant="outlined"
-          sx={{
-            borderRadius: "10px",
-            textTransform: "none",
-            fontWeight: 700,
-            borderColor: "#e2e8e6",
-            color: "text.primary",
-            "&:hover": { borderColor: "#ccc" },
-          }}
+          fullWidth={isMobile}
         >
-          Continue Retail Order
+          No, Cancel
         </Button>
 
         <Button
-          fullWidth={isMobile}
+          onClick={onContinue}
           variant="contained"
-          onClick={() => router.push("/bulkorder")}
+          fullWidth={isMobile}
           sx={{
-            borderRadius: "10px",
-            textTransform: "none",
-            fontWeight: 700,
             bgcolor: "var(--primary-teal-dark)",
             "&:hover": {
               bgcolor: "var(--primary-teal-mid)",
             },
           }}
         >
-          Go to Bulk Order
+          Continue
         </Button>
       </DialogActions>
     </Dialog>
