@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Box,
   Container,
@@ -89,21 +89,9 @@ const trustBadges = [
   },
 ];
 
-const PINCODE_MIN = 625001;
-const PINCODE_MAX = 625025;
-
 const pincodeSchema = Yup.string()
   .required("Please enter your pincode.")
-  .matches(/^\d{6}$/, "Pincode must be exactly 6 digits.")
-  .test(
-    "madurai-range",
-    "Sorry! Currently we deliver only within Madurai city limits.",
-    (value) => {
-      if (!value || value.length !== 6) return true;
-      const numeric = Number(value);
-      return numeric >= PINCODE_MIN && numeric <= PINCODE_MAX;
-    },
-  );
+  .matches(/^\d{6}$/, "Pincode must be exactly 6 digits.");
 
 export default function CartCheckout() {
   const dispatch = useAppDispatch();
@@ -125,9 +113,12 @@ export default function CartCheckout() {
     saveAddress: false,
   });
 
+  const [loading, setLoading] = useState(false);
+
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
 
   const [deliveryPopupOpen, setDeliveryPopupOpen] = useState(false);
+  const [pincodeLoading, setPincodeLoading] = useState(false);
 
   const updateQty = (productId: number, delta: number) => {
     const item = cartItems.find((item) => item.productId === productId);
@@ -155,56 +146,74 @@ export default function CartCheckout() {
     0,
   );
 
-  const validatePincode = async (value: string, force = false) => {
-    try {
-      await pincodeSchema.validate(value);
-      setPincodeStatus("success");
-      setPincodeError("");
-    } catch (err) {
-      if (err instanceof Yup.ValidationError) {
-        if (!force && value.length > 0 && value.length < 6) {
-          // Still typing — stay silent
-          setPincodeStatus("idle");
-          setPincodeError("");
-        } else {
-          // Button click OR empty OR full 6 digits — show error
-          setPincodeStatus("error");
-          setPincodeError(err.message);
-        }
-      }
-    }
-  };
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handlePincodeChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
 
-    // Block non-numeric and more than 6 digits
     if (!/^\d*$/.test(value) || value.length > 6) return;
 
-    // Update form state
     setForm((prev) => ({ ...prev, pincode: value }));
 
-    // Clear to idle when field is emptied
-    if (value.length === 0) {
-      setPincodeStatus("idle");
-      setPincodeError("");
-      return;
-    }
+    setPincodeStatus("idle");
+    setPincodeError("");
 
-    // Validate on every keystroke
-    await validatePincode(value);
+    if (value.length !== 6) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await checkPincodeAPI(value);
+
+        if (res.serviceable) {
+          setPincodeStatus("success");
+          setPincodeError("");
+        } else {
+          setPincodeStatus("error");
+          setPincodeError(res.message);
+        }
+      } catch (err: any) {
+        setPincodeStatus("error");
+        setPincodeError(err.message);
+      }
+    }, 400);
   };
 
   const handleCheckPincode = async () => {
-    await validatePincode(form.pincode, true);
+    if (!form.pincode || form.pincode.length !== 6) {
+      setPincodeStatus("error");
+      setPincodeError("Please enter a valid 6-digit pincode.");
+      return;
+    }
+
+    try {
+      setPincodeLoading(true);
+      setPincodeStatus("idle");
+
+      const res = await checkPincodeAPI(form.pincode);
+
+      if (res.serviceable) {
+        setPincodeStatus("success");
+        setPincodeError("");
+      } else {
+        setPincodeStatus("error");
+        setPincodeError(res.message);
+      }
+    } catch (err: any) {
+      setPincodeStatus("error");
+      setPincodeError(err.message);
+    } finally {
+      setPincodeLoading(false);
+    }
   };
 
   const handleProceedToCheckout = async () => {
     if (cartItems.length === 0) return;
 
     try {
+      setLoading(true);
+
       const response = await fetch("/api/server-time");
 
       if (!response.ok) {
@@ -224,7 +233,27 @@ export default function CartCheckout() {
 
       // fallback
       setOpenOtp(true);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const checkPincodeAPI = async (pincode: string) => {
+    const res = await fetch("/api/check-pincode", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pincode }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to check pincode");
+    }
+
+    return data;
   };
 
   return (
@@ -448,6 +477,7 @@ export default function CartCheckout() {
                       <Button
                         variant="contained"
                         onClick={handleCheckPincode}
+                        disabled={pincodeLoading}
                         sx={{
                           bgcolor: "var(--primary-teal-dark)",
                           px: 3,
@@ -458,13 +488,54 @@ export default function CartCheckout() {
                           py: { xs: 1.4, sm: 1.7 },
                         }}
                       >
-                        Check Now
+                        {pincodeLoading ? "Checking..." : "Check Now"}
                       </Button>
                     </Box>
                   </Box>
                 </Grid>
               </Grid>
             </Paper>
+
+            {/* Delivery Policy Info - Shows only when cart is empty */}
+            {cartItems.length === 0 && (
+              <Paper
+                elevation={0}
+                sx={{
+                  borderRadius: 3,
+                  p: 2.5,
+                  mb: 4,
+                  bgcolor: "#fdeded",
+                  border: "1px solid #d32f2f",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 2,
+                }}
+              >
+                <LocalShippingOutlinedIcon
+                  sx={{
+                    color: "#d32f2f",
+                    fontSize: 28,
+                    flexShrink: 0,
+                    mt: 0.3,
+                  }}
+                />
+
+                <Box>
+                  <Typography
+                    fontWeight={700}
+                    fontSize={{ xs: 13, md: 14 }}
+                    color="#5f2120"
+                    mb={0.5}
+                  >
+                    Free delivery up to 5 km Nagamalaipudukottai
+                  </Typography>
+
+                  <Typography fontSize={{ xs: 12, md: 13 }} color="#5f2120">
+                    ₹45 charge for locations beyond 5 km, collected at delivery
+                  </Typography>
+                </Box>
+              </Paper>
+            )}
 
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
@@ -744,44 +815,63 @@ export default function CartCheckout() {
                         ))}
                       </Stack>
 
-                      {/* Free Delivery Banner */}
-                      <Box
-                        sx={{
-                          mt: 2.5,
-                          bgcolor: "#F0FFF4",
-                          border: "1px solid #C8E6C9",
-                          borderRadius: 2.5,
-                          px: 2,
-                          py: 1.5,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1.5,
-                        }}
-                      >
-                        <LocalShippingOutlinedIcon
+                      {/* Savings Banner */}
+                      {cartItems.length > 0 && (
+                        <Box
                           sx={{
-                            color: "var(--primary-teal-dark)",
-                            fontSize: 26,
+                            bgcolor: "#F0FFF4",
+                            border: "1px solid #C8E6C9",
+                            borderRadius: 2.5,
+                            px: 2,
+                            py: 1.5,
+                            mt: 2,
+                            mb: 2,
+                            textAlign: "center",
                           }}
-                        />
-
-                        <Box>
-                          <Typography
-                            fontWeight={700}
-                            fontSize={13}
-                            color="var(--primary-teal-dark)"
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 1,
+                              mb: 0.3,
+                            }}
                           >
-                            Free Delivery
-                          </Typography>
+                            <LocalOfferOutlinedIcon
+                              sx={{
+                                color: "var(--primary-teal-dark)",
+                                fontSize: 22,
+                              }}
+                            />
+
+                            <Typography
+                              fontSize={13}
+                              sx={{ color: "var(--primary-teal-dark)" }}
+                            >
+                              You saved{" "}
+                              <Box component="span" sx={{ fontWeight: 700 }}>
+                                ₹
+                                {cartItems.reduce(
+                                  (total, item) =>
+                                    total +
+                                    (item.mrp - item.price) * item.quantity,
+                                  0,
+                                )}
+                                .00
+                              </Box>{" "}
+                              on this order
+                            </Typography>
+                          </Box>
 
                           <Typography
                             fontSize={12}
-                            color="var(--primary-teal-dark)"
+                            sx={{ color: "var(--primay-teal-dark)" }}
                           >
-                            For the above order
+                            Great choice!
                           </Typography>
                         </Box>
-                      </Box>
+                      )}
                     </>
                   )}
                 </Paper>
@@ -859,9 +949,9 @@ export default function CartCheckout() {
                       <Typography
                         fontSize={14}
                         fontWeight={700}
-                        color="#2E7D32"
+                        color="text.secondary"
                       >
-                        FREE
+                        Calculated at delivery
                       </Typography>
                     </Box>
                     <Divider sx={{ borderStyle: "dashed", mb: 1.5 }} />
@@ -884,61 +974,43 @@ export default function CartCheckout() {
                       </Typography>
                     </Box>
 
-                    {/* Savings Banner */}
+                    {/* Delivery Banner - Only shows if cart has items */}
                     {cartItems.length > 0 && (
                       <Box
                         sx={{
-                          bgcolor: "#F0FFF4",
-                          border: "1px solid #C8E6C9",
+                          mt: 2.5,
+                          bgcolor: "#fdeded",
+                          border: "1px solid #d32f2f",
                           borderRadius: 2.5,
                           px: 2,
                           py: 1.5,
-                          mt: 2,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
                           mb: 2,
-                          textAlign: "center",
                         }}
                       >
-                        <Box
+                        <LocalShippingOutlinedIcon
                           sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 1,
-                            mb: 0.3,
+                            color: "#d32f2f",
+                            fontSize: 26,
                           }}
-                        >
-                          <LocalOfferOutlinedIcon
-                            sx={{
-                              color: "var(--green)",
-                              fontSize: 22,
-                            }}
-                          />
+                        />
 
+                        <Box>
                           <Typography
+                            fontWeight={700}
                             fontSize={13}
-                            sx={{ color: "var(--green)" }}
+                            color="#5f2120"
                           >
-                            You saved{" "}
-                            <Box component="span" sx={{ fontWeight: 700 }}>
-                              ₹
-                              {cartItems.reduce(
-                                (total, item) =>
-                                  total +
-                                  (item.mrp - item.price) * item.quantity,
-                                0,
-                              )}
-                              .00
-                            </Box>{" "}
-                            on this order
+                            Free delivery up to 5 km Nagamalaipudukottai
+                          </Typography>
+
+                          <Typography fontSize={12} color="#5f2120">
+                            ₹45 charge for locations beyond 5 km, collected at
+                            delivery
                           </Typography>
                         </Box>
-
-                        <Typography
-                          fontSize={12}
-                          sx={{ color: "var(--green)" }}
-                        >
-                          Great choice!
-                        </Typography>
                       </Box>
                     )}
 
@@ -946,7 +1018,7 @@ export default function CartCheckout() {
                     <Button
                       fullWidth
                       variant="contained"
-                      disabled={cartItems.length === 0}
+                      disabled={cartItems.length === 0 || loading}
                       onClick={handleProceedToCheckout}
                       sx={{
                         bgcolor: "var(--primary-teal-dark)",
@@ -972,7 +1044,7 @@ export default function CartCheckout() {
                         },
                       }}
                     >
-                      Proceed to Checkout
+                      {loading ? "Processing..." : "Proceed to Checkout"}
                       <ArrowRightAltOutlinedIcon className="arrow-icon" />
                     </Button>
 
