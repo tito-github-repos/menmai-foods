@@ -113,6 +113,8 @@ export default function CartCheckout() {
     saveAddress: false,
   });
 
+  const [loading, setLoading] = useState(false);
+
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
 
   const [deliveryPopupOpen, setDeliveryPopupOpen] = useState(false);
@@ -210,6 +212,8 @@ export default function CartCheckout() {
     if (cartItems.length === 0) return;
 
     try {
+      setLoading(true);
+
       const response = await fetch("/api/server-time");
 
       if (!response.ok) {
@@ -229,6 +233,8 @@ export default function CartCheckout() {
 
       // fallback
       setOpenOtp(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1012,7 +1018,7 @@ export default function CartCheckout() {
                     <Button
                       fullWidth
                       variant="contained"
-                      disabled={cartItems.length === 0}
+                      disabled={cartItems.length === 0 || loading}
                       onClick={handleProceedToCheckout}
                       sx={{
                         bgcolor: "var(--primary-teal-dark)",
@@ -1038,7 +1044,7 @@ export default function CartCheckout() {
                         },
                       }}
                     >
-                      Proceed to Checkout
+                      {loading ? "Processing..." : "Proceed to Checkout"}
                       <ArrowRightAltOutlinedIcon className="arrow-icon" />
                     </Button>
 
