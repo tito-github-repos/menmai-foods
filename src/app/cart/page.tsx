@@ -38,6 +38,7 @@ import { removeFromCart, setQuantity } from "@/store/cartSlice";
 import CheckoutDialog from "./CheckoutDialog";
 import BulkOrderLimitDialog from "../components/BulkOrderLimitDialog";
 import { getProductLimit } from "@/constants/productLimits";
+import RetailDeliveryCutoffDialog from "../components/RetailDeliveryCutoffDialog";
 
 const theme = createTheme({
   palette: {
@@ -126,6 +127,8 @@ export default function CartCheckout() {
 
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
 
+  const [deliveryPopupOpen, setDeliveryPopupOpen] = useState(false);
+
   const updateQty = (productId: number, delta: number) => {
     const item = cartItems.find((item) => item.productId === productId);
     if (!item) return;
@@ -196,6 +199,32 @@ export default function CartCheckout() {
 
   const handleCheckPincode = async () => {
     await validatePincode(form.pincode, true);
+  };
+
+  const handleProceedToCheckout = async () => {
+    if (cartItems.length === 0) return;
+
+    try {
+      const response = await fetch("/api/server-time");
+
+      if (!response.ok) {
+        setOpenOtp(true);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.isAfterCutoff) {
+        setDeliveryPopupOpen(true);
+      } else {
+        setOpenOtp(true);
+      }
+    } catch (error) {
+      console.error("Failed to check delivery timing:", error);
+
+      // fallback
+      setOpenOtp(true);
+    }
   };
 
   return (
@@ -918,7 +947,7 @@ export default function CartCheckout() {
                       fullWidth
                       variant="contained"
                       disabled={cartItems.length === 0}
-                      onClick={() => setOpenOtp(true)}
+                      onClick={handleProceedToCheckout}
                       sx={{
                         bgcolor: "var(--primary-teal-dark)",
                         "&:hover": { bgcolor: "var(--primary-teal-mid)" },
@@ -1034,6 +1063,15 @@ export default function CartCheckout() {
       <BulkOrderLimitDialog
         open={bulkDialogOpen}
         onClose={() => setBulkDialogOpen(false)}
+      />
+
+      <RetailDeliveryCutoffDialog
+        open={deliveryPopupOpen}
+        onClose={() => setDeliveryPopupOpen(false)}
+        onContinue={() => {
+          setDeliveryPopupOpen(false);
+          setOpenOtp(true);
+        }}
       />
     </ThemeProvider>
   );

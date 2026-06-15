@@ -1,5 +1,6 @@
 import { prisma } from "../prisma";
 import { sendButtonMessage, sendTextMessage } from "../whatsapp/client";
+
 import {
   adminOrderButtons,
   buildAdminOrderMessage,
@@ -10,7 +11,15 @@ import {
   parseAdminOrderAction,
   type OrderMessageData,
 } from "../whatsapp/messages";
-import type { WhatsAppInboundMessage, WhatsAppStatusEvent } from "../whatsapp/types";
+
+import type {
+  WhatsAppInboundMessage,
+  WhatsAppStatusEvent,
+} from "../whatsapp/types";
+
+/* -----------------------------
+   CONFIG
+------------------------------ */
 
 function getAdminPhone() {
   const adminPhone = process.env.MENMAI_ADMIN_PHONE;
@@ -22,11 +31,13 @@ function getAdminPhone() {
   return adminPhone;
 }
 
+/* -----------------------------
+   FETCH ORDER (single source)
+------------------------------ */
+
 async function getOrderMessageData(orderId: number): Promise<OrderMessageData> {
   const order = await prisma.order.findUnique({
-    where: {
-      id: orderId,
-    },
+    where: { id: orderId },
     include: {
       Customer: true,
       CustomerAddress: true,
@@ -34,9 +45,7 @@ async function getOrderMessageData(orderId: number): Promise<OrderMessageData> {
     },
   });
 
-  if (!order) {
-    throw new Error(`Order not found: ${orderId}`);
-  }
+  if (!order) throw new Error(`Order not found: ${orderId}`);
 
   return {
     id: order.id,
@@ -52,6 +61,10 @@ async function getOrderMessageData(orderId: number): Promise<OrderMessageData> {
     })),
   };
 }
+
+/* -----------------------------
+   WHATSAPP LOGGING
+------------------------------ */
 
 async function logWhatsAppEvent(args: {
   orderId?: number;
@@ -70,72 +83,141 @@ async function logWhatsAppEvent(args: {
       direction: args.direction,
       eventType: args.eventType,
       status: args.status,
-      payload: args.payload === undefined ? undefined : JSON.parse(JSON.stringify(args.payload)),
+      payload:
+        args.payload === undefined
+          ? undefined
+          : JSON.parse(JSON.stringify(args.payload)),
     },
   });
 }
 
+/* =====================================================
+   1. ORDER CONFIRMED WORKFLOW (MAIN FLOW)
+===================================================== */
+
 export async function sendOrderConfirmedWorkflow(orderId: number) {
+  // 🔥 idempotency check (prevents duplicate sends)
+  const existing = await prisma.whatsAppLog.findFirst({
+    where: {
+      orderId,
+      eventType: "CUSTOMER_ORDER_CONFIRMED",
+      status: "SENT_TO_META",
+    },
+  });
+
+  if (existing) {
+    return {
+      skipped: true,
+      reason: "WhatsApp already sent",
+    };
+  }
+
   const order = await getOrderMessageData(orderId);
 
-  await prisma.order.update({
-    where: {
-      id: order.id,
-    },
-    data: {
-      orderStatus: "CONFIRMED",
-    },
-  });
+  // ⚠️ DO NOT block workflow if order status update fails
+  await prisma.order
+    .update({
+      where: { id: order.id },
+      data: {
+        orderStatus: "CONFIRMED",
+      },
+    })
+    .catch(() => {});
 
-  const customerResponse = await sendTextMessage(
-    order.customerPhone,
-    buildCustomerOrderConfirmedMessage(order),
-  );
+  /* ---------------- CUSTOMER MESSAGE ---------------- */
 
-  await logWhatsAppEvent({
-    orderId: order.id,
-    messageId: customerResponse.messages?.[0]?.id,
+  console.log("📲 CUSTOMER WHATSAPP DEBUG:", {
     phone: order.customerPhone,
-    direction: "OUTBOUND",
-    eventType: "CUSTOMER_ORDER_CONFIRMED",
-    status: "SENT_TO_META",
-    payload: customerResponse,
+    orderId: order.id,
   });
 
-  const adminResponse = await sendButtonMessage({
+  try {
+    const customerResponse = await sendTextMessage(
+      order.customerPhone,
+      buildCustomerOrderConfirmedMessage(order),
+    );
+
+    await logWhatsAppEvent({
+      orderId: order.id,
+      messageId: customerResponse.messages?.[0]?.id,
+      phone: order.customerPhone,
+      direction: "OUTBOUND",
+      eventType: "CUSTOMER_ORDER_CONFIRMED",
+      status: "SENT_TO_META",
+      payload: customerResponse,
+    });
+  } catch (err) {
+    console.log("❌ CUSTOMER WHATSAPP ERROR:", err);
+    await logWhatsAppEvent({
+      orderId: order.id,
+      phone: order.customerPhone,
+      direction: "OUTBOUND",
+      eventType: "CUSTOMER_ORDER_CONFIRMED",
+      status: "FAILED",
+      payload: {
+        error: String(err),
+        phone: order.customerPhone,
+        orderId: order.id,
+      },
+    });
+  }
+
+  /* ---------------- ADMIN MESSAGE (NON-BLOCKING) ---------------- */
+
+  sendButtonMessage({
     to: getAdminPhone(),
     header: "Menmai Foods",
     body: buildAdminOrderMessage(order),
     footer: "Update the order status",
     buttons: adminOrderButtons(order.id),
-  });
-
-  await logWhatsAppEvent({
-    orderId: order.id,
-    messageId: adminResponse.messages?.[0]?.id,
-    phone: getAdminPhone(),
-    direction: "OUTBOUND",
-    eventType: "ADMIN_NEW_ORDER",
-    status: "SENT_TO_META",
-    payload: adminResponse,
-  });
+  })
+    .then(async (adminResponse) => {
+      await logWhatsAppEvent({
+        orderId: order.id,
+        messageId: adminResponse.messages?.[0]?.id,
+        phone: getAdminPhone(),
+        direction: "OUTBOUND",
+        eventType: "ADMIN_NEW_ORDER",
+        status: "SENT_TO_META",
+        payload: adminResponse,
+      });
+    })
+    .catch(async (err) => {
+      await logWhatsAppEvent({
+        orderId: order.id,
+        phone: getAdminPhone(),
+        direction: "OUTBOUND",
+        eventType: "ADMIN_NEW_ORDER",
+        status: "FAILED",
+        payload: err,
+      });
+    });
 
   return {
     orderId: order.id,
-    customerMessageId: customerResponse.messages?.[0]?.id,
-    adminMessageId: adminResponse.messages?.[0]?.id,
+    status: "TRIGGERED",
   };
 }
 
-export async function handleInboundWhatsAppMessage(message: WhatsAppInboundMessage) {
+/* =====================================================
+   2. INBOUND WHATSAPP HANDLER
+===================================================== */
+
+export async function handleInboundWhatsAppMessage(
+  message: WhatsAppInboundMessage,
+) {
   const buttonId =
-    message.interactive?.button_reply?.id ?? message.button?.payload ?? undefined;
+    message.interactive?.button_reply?.id ??
+    message.button?.payload ??
+    undefined;
 
   await logWhatsAppEvent({
     messageId: message.id,
     phone: message.from,
     direction: "INBOUND",
-    eventType: buttonId ? "BUTTON_CLICK" : `MESSAGE_${message.type.toUpperCase()}`,
+    eventType: buttonId
+      ? "BUTTON_CLICK"
+      : `MESSAGE_${message.type.toUpperCase()}`,
     status: "RECEIVED",
     payload: message,
   });
@@ -143,7 +225,7 @@ export async function handleInboundWhatsAppMessage(message: WhatsAppInboundMessa
   if (!buttonId) {
     return {
       handled: false,
-      reason: "Inbound message was not an admin button click",
+      reason: "Not a button click",
     };
   }
 
@@ -152,7 +234,7 @@ export async function handleInboundWhatsAppMessage(message: WhatsAppInboundMessa
   if (!parsed) {
     return {
       handled: false,
-      reason: `Unknown button id: ${buttonId}`,
+      reason: "Unknown button action",
     };
   }
 
@@ -162,6 +244,10 @@ export async function handleInboundWhatsAppMessage(message: WhatsAppInboundMessa
 
   return markOrderDelivered(parsed.orderId, message.from, message.id);
 }
+
+/* =====================================================
+   3. STATUS WEBHOOK
+===================================================== */
 
 export async function handleWhatsAppStatusEvent(status: WhatsAppStatusEvent) {
   await logWhatsAppEvent({
@@ -175,9 +261,12 @@ export async function handleWhatsAppStatusEvent(status: WhatsAppStatusEvent) {
 
   return {
     handled: true,
-    status: status.status,
   };
 }
+
+/* =====================================================
+   4. OUT FOR DELIVERY
+===================================================== */
 
 async function markOrderOutForDelivery(
   orderId: number,
@@ -185,15 +274,12 @@ async function markOrderOutForDelivery(
   inboundMessageId: string,
 ) {
   await prisma.order.update({
-    where: {
-      id: orderId,
-    },
-    data: {
-      orderStatus: "SHIPPED",
-    },
+    where: { id: orderId },
+    data: { orderStatus: "SHIPPED" },
   });
 
   const order = await getOrderMessageData(orderId);
+
   const response = await sendTextMessage(
     order.customerPhone,
     buildCustomerOutForDeliveryMessage(order),
@@ -225,23 +311,23 @@ async function markOrderOutForDelivery(
   };
 }
 
+/* =====================================================
+   5. DELIVERED + REVIEW FLOW
+===================================================== */
+
 async function markOrderDelivered(
   orderId: number,
   adminPhone: string,
   inboundMessageId: string,
 ) {
   await prisma.order.update({
-    where: {
-      id: orderId,
-    },
-    data: {
-      orderStatus: "DELIVERED",
-    },
+    where: { id: orderId },
+    data: { orderStatus: "DELIVERED" },
   });
 
   const order = await getOrderMessageData(orderId);
 
-  const deliveredResponse = await sendTextMessage(
+  const response = await sendTextMessage(
     order.customerPhone,
     buildCustomerDeliveredMessage(order),
   );
@@ -257,12 +343,12 @@ async function markOrderDelivered(
 
   await logWhatsAppEvent({
     orderId,
-    messageId: deliveredResponse.messages?.[0]?.id,
+    messageId: response.messages?.[0]?.id,
     phone: order.customerPhone,
     direction: "OUTBOUND",
     eventType: "CUSTOMER_DELIVERED",
     status: "SENT_TO_META",
-    payload: deliveredResponse,
+    payload: response,
   });
 
   await scheduleReviewRequest(order.id);
@@ -274,14 +360,17 @@ async function markOrderDelivered(
   };
 }
 
+/* =====================================================
+   6. REVIEW SYSTEM
+===================================================== */
+
 async function scheduleReviewRequest(orderId: number) {
   const delayMinutes = Number(process.env.REVIEW_DELAY_MINUTES ?? "30");
+
   const scheduledAt = new Date(Date.now() + delayMinutes * 60 * 1000);
 
   await prisma.reviewRequest.upsert({
-    where: {
-      orderId,
-    },
+    where: { orderId },
     create: {
       orderId,
       scheduledAt,
@@ -299,19 +388,19 @@ async function scheduleReviewRequest(orderId: number) {
     direction: "OUTBOUND",
     eventType: "REVIEW_REQUEST_SCHEDULED",
     status: "SCHEDULED",
-    payload: {
-      scheduledAt,
-    },
+    payload: { scheduledAt },
   });
 }
+
+/* =====================================================
+   7. REVIEW CRON
+===================================================== */
 
 export async function sendDueReviewRequests() {
   const dueRequests = await prisma.reviewRequest.findMany({
     where: {
       status: "SCHEDULED",
-      scheduledAt: {
-        lte: new Date(),
-      },
+      scheduledAt: { lte: new Date() },
     },
     include: {
       Order: {
@@ -327,15 +416,14 @@ export async function sendDueReviewRequests() {
 
   for (const request of dueRequests) {
     const order = await getOrderMessageData(request.orderId);
+
     const response = await sendTextMessage(
       order.customerPhone,
       buildCustomerReviewRequestMessage(order),
     );
 
     await prisma.reviewRequest.update({
-      where: {
-        id: request.id,
-      },
+      where: { id: request.id },
       data: {
         status: "SENT",
         sentAt: new Date(),

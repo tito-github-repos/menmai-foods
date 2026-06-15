@@ -61,10 +61,15 @@ export function DeliverySection() {
   const [checked, setChecked] = useState(false);
   const [available, setAvailable] = useState(false);
 
-  const handleCheck = () => {
+  const handleCheck = async () => {
     if (!pincode || pincode.length < 6) return;
-    // Madurai pincodes start with 625
-    setAvailable(pincode.startsWith("625"));
+    const res = await fetch("/api/check-pincode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pincode }),
+    });
+    const data = await res.json();
+    setAvailable(data.serviceable);
     setChecked(true);
   };
 
