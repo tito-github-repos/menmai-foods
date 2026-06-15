@@ -128,21 +128,22 @@ model GoogleSheetSyncLog {
 }
 
 model OTPVerification {
-  id         Int      @id @default(autoincrement())
-  
-  phone      String   @unique
-  otpCode    String
-  verified   Boolean  @default(false)
+  id              Int       @id @default(autoincrement())
 
-  resendCount Int     @default(0)
-  lastSentAt  DateTime?
-  expiresAt   DateTime
+  phone           String    @unique
+  otpCode         String
+  verified        Boolean   @default(false)
 
-  customerId  Int?
-  Customer    Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  resendCount     Int       @default(0)
+  otpWindowStart  DateTime?
+  lastSentAt      DateTime?
+  expiresAt       DateTime
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  customerId      Int?
+  Customer        Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([phone])
   @@index([customerId])
