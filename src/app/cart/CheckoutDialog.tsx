@@ -24,6 +24,7 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import { useAppDispatch } from "@/store/hooks";
 import { clearCart } from "@/store/cartSlice";
+import HighlightOffOutlinedIcon from "@mui/icons-material/HighlightOffOutlined";
 
 interface Props {
   open: boolean;
@@ -134,6 +135,8 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
   const [confirmClose, setConfirmClose] = useState(false);
 
   const [serverError, setServerError] = useState("");
+
+  const [isPincodeServiceable, setIsPincodeServiceable] = useState(true);
 
   useEffect(() => {
     if (step === "address") {
@@ -250,6 +253,36 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
       setConfirmClose(false);
     }
   }, [open]);
+
+  const checkPincodeAPI = async (pincode: string) => {
+    const res = await fetch("/api/check-pincode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pincode }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.message);
+
+    return data;
+  };
+
+  useEffect(() => {
+    const check = async () => {
+      if (step !== "address") return;
+      if (!form.pincode || form.pincode.length !== 6) return;
+
+      try {
+        const res = await checkPincodeAPI(form.pincode);
+        setIsPincodeServiceable(res.serviceable);
+      } catch {
+        setIsPincodeServiceable(false);
+      }
+    };
+
+    check();
+  }, [form.pincode, step]);
 
   return (
     <>
@@ -755,10 +788,38 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
               {serverError}
             </Typography>
           )}
+
+          {step === "address" && !isPincodeServiceable && (
+            <>
+              <Box
+                sx={{
+                  mt: 3,
+                  bgcolor: "#fdeded",
+                  borderRadius: 2,
+                  py: 1.2,
+                  px: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 0.8,
+                }}
+              >
+                <HighlightOffOutlinedIcon
+                  sx={{ fontSize: 18, color: "#d32f2f" }}
+                />
+
+                <Typography fontSize={12} color="error.main">
+                  Sorry, we don't deliver to this pincode yet. We currently
+                  serve within 10 km of Madurai.
+                </Typography>
+              </Box>
+            </>
+          )}
+
           <Button
             fullWidth
             variant="contained"
-            disabled={loading}
+            disabled={loading || (step === "address" && !isPincodeServiceable)}
             sx={{
               mt: { xs: 2.5, sm: 3 },
               py: { xs: 1.4, sm: 1.7 },
@@ -858,6 +919,11 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                     }
                   }
                 } else if (step === "address") {
+                  if (!isPincodeServiceable) {
+                    setServerError("Delivery not available for this pincode");
+                    setPaymentInProgress(false);
+                    return;
+                  }
                   // Validate form
                   try {
                     await addressSchema.validate(form, { abortEarly: false });
