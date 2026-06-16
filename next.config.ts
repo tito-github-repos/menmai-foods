@@ -1,7 +1,22 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "admin.menmaifoods.com",
+      },
+      {
+        protocol: "https",
+        hostname: "menmaifoods.com",
+      },
+      {
+        protocol: "https",
+        hostname: "www.menmaifoods.com",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
