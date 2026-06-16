@@ -3,6 +3,7 @@
 import React, { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image"; // ✅ back to next/image
 
 import {
   Box,
@@ -22,7 +23,6 @@ import PeopleOutlineOutlinedIcon from "@mui/icons-material/PeopleOutlineOutlined
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 
-// ✅ Removed: import Image from "next/image";
 import { signOut } from "next-auth/react";
 
 export const drawerWidth = 220;
@@ -60,11 +60,6 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
     signOut({ callbackUrl });
   };
 
-  // ✅ Use absolute URL for sidebar-img so it works on subdomain too
-  const sidebarImgUrl = isAdminSubdomain
-    ? "https://menmaifoods.com/img/admin/sidebar-img.png"
-    : "/img/admin/sidebar-img.png";
-
   const drawerContent = (
     <Box
       sx={{
@@ -75,12 +70,12 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
         color: "#fff",
       }}
     >
-      {/* ✅ Use dynamic sidebarImgUrl */}
+      {/* ✅ Always use absolute URL — works on both localhost and subdomain */}
       <Box
         sx={{
           position: "absolute",
           inset: 0,
-          backgroundImage: `url('${sidebarImgUrl}')`,
+          backgroundImage: "url('https://menmaifoods.com/img/admin/sidebar-img.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -102,10 +97,10 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
           height: "100%",
         }}
       >
-        {/* ✅ Replaced next/image <Image> with plain <img> */}
+        {/* ✅ next/image with absolute URL */}
         <Box sx={{ py: 2, display: "flex", justifyContent: "center" }}>
-          <img
-            src="/logo.jpeg"
+          <Image
+            src="https://menmaifoods.com/logo.jpeg"
             alt="Menmai"
             width={150}
             height={150}
@@ -155,9 +150,7 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
               height: 50,
               borderRadius: "14px",
               background: "rgba(255,255,255,.08)",
-              "&:hover": {
-                background: "rgba(255,255,255,.15)",
-              },
+              "&:hover": { background: "rgba(255,255,255,.15)" },
             }}
           >
             Logout
