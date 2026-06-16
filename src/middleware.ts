@@ -7,7 +7,6 @@ export default withAuth(
     const host = req.headers.get("host") || "";
     const { pathname } = req.nextUrl;
     const url = req.nextUrl.clone();
-    const token = req.nextauth.token;
 
     const isAdminSubdomain = host.startsWith("admin.");
 
@@ -44,7 +43,10 @@ export default withAuth(
 
         const isAdminSubdomain = host.startsWith("admin.");
 
-        // The login page itself (/admin exactly) is always public
+        // Allow subdomain root "/" (rewrites to /admin login) — always public
+        if (isAdminSubdomain && pathname === "/") return true;
+
+        // Allow the login page itself — always public
         if (pathname === "/admin") return true;
 
         // Protect all other /admin/* routes — require admin role
@@ -57,7 +59,7 @@ export default withAuth(
       },
     },
     pages: {
-      signIn: "/admin", // unauthenticated users → login page
+      signIn: "/admin",
     },
   }
 );

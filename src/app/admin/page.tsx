@@ -50,7 +50,8 @@ export default function AdminLoginPage() {
     if (result?.error) {
       setError("Invalid username or password");
     } else {
-      router.push("/admin/dashboard");
+      const isAdminSubdomain = window.location.hostname.startsWith("admin.");
+      router.push(isAdminSubdomain ? "/dashboard" : "/admin/dashboard");
     }
   };
 
@@ -59,11 +60,9 @@ export default function AdminLoginPage() {
       sx={{
         minHeight: "100vh",
         bgcolor: "#f8f9fb",
-
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-
         px: 2,
       }}
     >
@@ -72,29 +71,15 @@ export default function AdminLoginPage() {
         sx={{
           width: "100%",
           maxWidth: 400,
-
-          p: {
-            xs: 3,
-            md: 4,
-          },
-
+          p: { xs: 3, md: 4 },
           borderRadius: "20px",
-
           background: "#fff",
-
           border: "1px solid #ececec",
-
           boxShadow: "0 15px 40px rgba(0,0,0,0.08)",
         }}
       >
         {/* Logo */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            mb: 1,
-          }}
-        >
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
           <Image
             src="/logo.jpeg"
             alt="Menmai Foods"
@@ -108,10 +93,7 @@ export default function AdminLoginPage() {
         <Typography
           align="center"
           sx={{
-            fontSize: {
-              xs: "1.6rem",
-              md: "1.9rem",
-            },
+            fontSize: { xs: "1.6rem", md: "1.9rem" },
             fontWeight: 700,
             color: "#5A1F00",
             mb: 1,
@@ -123,11 +105,7 @@ export default function AdminLoginPage() {
         {/* Subtitle */}
         <Typography
           align="center"
-          sx={{
-            color: "#6b7280",
-            fontSize: "0.95rem",
-            mb: 2,
-          }}
+          sx={{ color: "#6b7280", fontSize: "0.95rem", mb: 2 }}
         >
           Sign in to access Menmai Foods Admin Panel
         </Typography>
@@ -201,19 +179,12 @@ export default function AdminLoginPage() {
           sx={{
             height: 48,
             mt: 3,
-
             borderRadius: "12px",
-
             backgroundColor: "#5A1F00",
-
             fontSize: "0.95rem",
             fontWeight: 700,
-
             textTransform: "none",
-
-            "&:hover": {
-              backgroundColor: "#401500",
-            },
+            "&:hover": { backgroundColor: "#401500" },
           }}
         >
           {loading ? "Signing in…" : "Login"}
