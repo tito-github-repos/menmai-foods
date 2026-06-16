@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -25,31 +25,15 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import Image from "next/image";
 import { signOut } from "next-auth/react";
 
-export const drawerWidth = 220; 
+export const drawerWidth = 220;
 
 const menus = [
-  {
-    title: "Dashboard",
-    path: "/admin/dashboard",
-    icon: <DashboardOutlinedIcon />,
-  },
-  { title: "Retail Orders", path: "/admin/orders", icon: <ShoppingBagOutlinedIcon /> },
-  { title: "Bulk Orders", path: "/admin/bulk-orders", icon: <LocalShippingOutlinedIcon  /> },
-  {
-    title: "Products",
-    path: "/admin/products",
-    icon: <Inventory2OutlinedIcon />,
-  },
-  {
-    title: "Broadcast",
-    path: "/admin/broadcast",
-    icon: <CampaignOutlinedIcon />,
-  },
-  {
-    title: "Customers",
-    path: "/admin/customers",
-    icon: <PeopleOutlineOutlinedIcon />,
-  },
+  { title: "Dashboard",     path: "/admin/dashboard",   icon: <DashboardOutlinedIcon /> },
+  { title: "Retail Orders", path: "/admin/orders",      icon: <ShoppingBagOutlinedIcon /> },
+  { title: "Bulk Orders",   path: "/admin/bulk-orders", icon: <LocalShippingOutlinedIcon /> },
+  { title: "Products",      path: "/admin/products",    icon: <Inventory2OutlinedIcon /> },
+  { title: "Broadcast",     path: "/admin/broadcast",   icon: <CampaignOutlinedIcon /> },
+  { title: "Customers",     path: "/admin/customers",   icon: <PeopleOutlineOutlinedIcon /> },
 ];
 
 interface Props {
@@ -57,11 +41,25 @@ interface Props {
   handleDrawerToggle: () => void;
 }
 
-export default function AdminSidebar({
-  mobileOpen,
-  handleDrawerToggle,
-}: Props) {
+export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) {
   const pathname = usePathname();
+
+  const isAdminSubdomain = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.location.hostname.startsWith("admin.");
+  }, []);
+
+  // On admin subdomain pathname is "/dashboard", normalize to "/admin/dashboard"
+  const normalizedPathname = isAdminSubdomain && !pathname.startsWith("/admin")
+    ? `/admin${pathname}`
+    : pathname;
+
+  const handleLogout = () => {
+    const callbackUrl = isAdminSubdomain
+      ? "https://admin.menmaifoods.com/admin"
+      : "/admin";
+    signOut({ callbackUrl });
+  };
 
   const drawerContent = (
     <Box
@@ -99,6 +97,7 @@ export default function AdminSidebar({
           height: "100%",
         }}
       >
+        {/* Logo */}
         <Box sx={{ py: 2, display: "flex", justifyContent: "center" }}>
           <Image
             src="/logo.jpeg"
@@ -109,15 +108,18 @@ export default function AdminSidebar({
           />
         </Box>
 
+        {/* Menu Items */}
         <List sx={{ px: 2 }}>
           {menus.map((menu) => {
-            const active = pathname.startsWith(menu.path);
+            const active = normalizedPathname.startsWith(menu.path);
+
+            // On subdomain: /admin/dashboard → /dashboard
+            const href = isAdminSubdomain
+              ? menu.path.replace("/admin", "") || "/dashboard"
+              : menu.path;
+
             return (
-              <Link
-                key={menu.path}
-                href={menu.path}
-                style={{ textDecoration: "none" }}
-              >
+              <Link key={menu.path} href={href} style={{ textDecoration: "none" }}>
                 <ListItemButton
                   sx={{
                     height: 54,
@@ -140,16 +142,20 @@ export default function AdminSidebar({
           })}
         </List>
 
+        {/* Logout */}
         <Box sx={{ mt: "auto", p: 2 }}>
           <Button
             fullWidth
             startIcon={<LogoutOutlinedIcon />}
-            onClick={() => signOut({ callbackUrl: "/admin" })}
+            onClick={handleLogout}
             sx={{
               color: "#fff",
               height: 50,
               borderRadius: "14px",
               background: "rgba(255,255,255,.08)",
+              "&:hover": {
+                background: "rgba(255,255,255,.15)",
+              },
             }}
           >
             Logout
@@ -181,10 +187,10 @@ export default function AdminSidebar({
         open
         sx={{
           display: { xs: "none", lg: "block" },
-          width: 0, // ← KEEPS WRAPPER AT 0 WIDTH
+          width: 0,
           flexShrink: 0,
           "& .MuiDrawer-paper": {
-            width: drawerWidth, // ← 280px
+            width: drawerWidth,
             border: 0,
             position: "fixed",
             left: 0,
