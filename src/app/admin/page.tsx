@@ -1,18 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";  {/* ✅ back to next/image */}
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 import {
-  Box,
-  Paper,
-  Typography,
-  TextField,
-  Button,
-  InputAdornment,
-  Alert,
-  IconButton,
+  Box, Paper, Typography, TextField, Button,
+  InputAdornment, Alert, IconButton,
 } from "@mui/material";
 
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
@@ -79,16 +74,15 @@ export default function AdminLoginPage() {
       >
         {/* Logo */}
         <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
-          <img
-            src="/logo.jpeg"
+          <Image
+            src="https://menmaifoods.com/logo.jpeg" 
             alt="Menmai Foods"
             width={130}
             height={130}
-            style={{ borderRadius: "50%", objectFit: "cover" }}
+            style={{ borderRadius: "50%" }}
           />
         </Box>
 
-        {/* Title */}
         <Typography
           align="center"
           sx={{
@@ -101,7 +95,6 @@ export default function AdminLoginPage() {
           Admin Login
         </Typography>
 
-        {/* Subtitle */}
         <Typography
           align="center"
           sx={{ color: "#6b7280", fontSize: "0.95rem", mb: 2 }}
@@ -109,80 +102,45 @@ export default function AdminLoginPage() {
           Sign in to access Menmai Foods Admin Panel
         </Typography>
 
-        {/* Error alert */}
         {error && (
-          <Alert
-            severity="error"
-            sx={{ mb: 2, borderRadius: 2 }}
-            onClose={() => setError("")}
-          >
+          <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setError("")}>
             {error}
           </Alert>
         )}
 
-        {/* Username */}
         <TextField
-          fullWidth
-          size="small"
-          label="Username"
-          margin="normal"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          fullWidth size="small" label="Username" margin="normal"
+          value={username} onChange={(e) => setUsername(e.target.value)}
           InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <PersonOutlineIcon />
-              </InputAdornment>
-            ),
+            startAdornment: <InputAdornment position="start"><PersonOutlineIcon /></InputAdornment>,
           }}
         />
 
-        {/* Password */}
         <TextField
-          fullWidth
-          size="small"
-          label="Password"
-          margin="normal"
+          fullWidth size="small" label="Password" margin="normal"
           type={showPassword ? "text" : "password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <LockOutlinedIcon />
-              </InputAdornment>
-            ),
+            startAdornment: <InputAdornment position="start"><LockOutlinedIcon /></InputAdornment>,
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton
-                  onClick={() => setShowPassword(!showPassword)}
-                  edge="end"
-                  size="small"
-                >
-                  {showPassword
-                    ? <VisibilityOffIcon fontSize="small" />
-                    : <VisibilityIcon fontSize="small" />}
+                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
+                  {showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
                 </IconButton>
               </InputAdornment>
             ),
           }}
         />
 
-        {/* Login Button */}
         <Button
-          fullWidth
-          variant="contained"
-          onClick={handleLogin}
-          disabled={loading}
+          fullWidth variant="contained"
+          onClick={handleLogin} disabled={loading}
           sx={{
-            height: 48,
-            mt: 3,
-            borderRadius: "12px",
+            height: 48, mt: 3, borderRadius: "12px",
             backgroundColor: "#5A1F00",
-            fontSize: "0.95rem",
-            fontWeight: 700,
-            textTransform: "none",
+            fontSize: "0.95rem", fontWeight: 700, textTransform: "none",
             "&:hover": { backgroundColor: "#401500" },
           }}
         >
