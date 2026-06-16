@@ -22,7 +22,7 @@ import PeopleOutlineOutlinedIcon from "@mui/icons-material/PeopleOutlineOutlined
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 
-import Image from "next/image";
+// ✅ Removed: import Image from "next/image";
 import { signOut } from "next-auth/react";
 
 export const drawerWidth = 220;
@@ -49,7 +49,6 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
     return window.location.hostname.startsWith("admin.");
   }, []);
 
-  // On admin subdomain pathname is "/dashboard", normalize to "/admin/dashboard"
   const normalizedPathname = isAdminSubdomain && !pathname.startsWith("/admin")
     ? `/admin${pathname}`
     : pathname;
@@ -61,6 +60,11 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
     signOut({ callbackUrl });
   };
 
+  // ✅ Use absolute URL for sidebar-img so it works on subdomain too
+  const sidebarImgUrl = isAdminSubdomain
+    ? "https://menmaifoods.com/img/admin/sidebar-img.png"
+    : "/img/admin/sidebar-img.png";
+
   const drawerContent = (
     <Box
       sx={{
@@ -71,11 +75,12 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
         color: "#fff",
       }}
     >
+      {/* ✅ Use dynamic sidebarImgUrl */}
       <Box
         sx={{
           position: "absolute",
           inset: 0,
-          backgroundImage: "url('/img/admin/sidebar-img.png')",
+          backgroundImage: `url('${sidebarImgUrl}')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -97,23 +102,21 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
           height: "100%",
         }}
       >
-        {/* Logo */}
+        {/* ✅ Replaced next/image <Image> with plain <img> */}
         <Box sx={{ py: 2, display: "flex", justifyContent: "center" }}>
-          <Image
+          <img
             src="/logo.jpeg"
             alt="Menmai"
             width={150}
             height={150}
-            style={{ borderRadius: "50%", padding: 1 }}
+            style={{ borderRadius: "50%", objectFit: "cover" }}
           />
         </Box>
 
-        {/* Menu Items */}
         <List sx={{ px: 2 }}>
           {menus.map((menu) => {
             const active = normalizedPathname.startsWith(menu.path);
 
-            // On subdomain: /admin/dashboard → /dashboard
             const href = isAdminSubdomain
               ? menu.path.replace("/admin", "") || "/dashboard"
               : menu.path;
@@ -142,7 +145,6 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
           })}
         </List>
 
-        {/* Logout */}
         <Box sx={{ mt: "auto", p: 2 }}>
           <Button
             fullWidth

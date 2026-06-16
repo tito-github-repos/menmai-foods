@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -80,12 +79,12 @@ export default function AdminLoginPage() {
       >
         {/* Logo */}
         <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
-          <Image
+          <img
             src="/logo.jpeg"
             alt="Menmai Foods"
             width={130}
             height={130}
-            style={{ borderRadius: "50%" }}
+            style={{ borderRadius: "50%", objectFit: "cover" }}
           />
         </Box>
 
