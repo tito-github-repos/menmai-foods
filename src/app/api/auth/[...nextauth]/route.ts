@@ -27,16 +27,34 @@ export const authOptions: NextAuthOptions = {
 
         if (!isValid) return null;
 
-        return { id: String(admin.id), name: admin.username };
+        // ✅ Add role
+        return { id: String(admin.id), name: admin.username, role: "admin" };
       },
     }),
   ],
+
+  // ✅ Add these callbacks
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = (user as any).role;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as any).role = token.role;
+      }
+      return session;
+    },
+  },
+
   pages: {
-    signIn: "/admin", // your custom login page
+    signIn: "/admin",
   },
   session: {
     strategy: "jwt",
-    maxAge: 8 * 60 * 60, 
+    maxAge: 8 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
