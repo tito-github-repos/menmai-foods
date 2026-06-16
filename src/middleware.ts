@@ -9,16 +9,16 @@ export default withAuth(
     const url = req.nextUrl.clone();
 
     const isAdminSubdomain = host.startsWith("admin.");
+    // ✅ Also treat localhost as admin when accessing /admin routes
+    const isLocalhost = host.startsWith("localhost") || host.startsWith("127.0.0.1");
 
     // ── Admin subdomain rewriting ─────────────────────────────────────────
     if (isAdminSubdomain) {
-      // Rewrite root "/" → "/admin" (login page)
       if (pathname === "/") {
         url.pathname = "/admin";
         return NextResponse.rewrite(url);
       }
 
-      // Rewrite everything else: "/dashboard" → "/admin/dashboard"
       if (!pathname.startsWith("/admin")) {
         url.pathname = `/admin${pathname}`;
         return NextResponse.rewrite(url);
@@ -27,7 +27,12 @@ export default withAuth(
       return NextResponse.next();
     }
 
-    // ── Main domain: block direct access to /admin/* ──────────────────────
+    // ── Localhost: allow /admin/* directly (for development) ──────────────
+    if (isLocalhost) {
+      return NextResponse.next();
+    }
+
+    // ── Main domain (production): block direct access to /admin/* ─────────
     if (pathname.startsWith("/admin")) {
       url.pathname = "/";
       return NextResponse.redirect(url);
@@ -42,16 +47,20 @@ export default withAuth(
         const { pathname } = req.nextUrl;
 
         const isAdminSubdomain = host.startsWith("admin.");
+        const isLocalhost = host.startsWith("localhost") || host.startsWith("127.0.0.1");
 
-        // Allow subdomain root "/" (rewrites to /admin login) — always public
+        // Allow subdomain root "/" — always public
         if (isAdminSubdomain && pathname === "/") return true;
 
         // Allow the login page itself — always public
         if (pathname === "/admin") return true;
 
-        // Protect all other /admin/* routes — require admin role
-        if (isAdminSubdomain || pathname.startsWith("/admin/")) {
-          return !!token && token.role === "admin";
+        // Protect all /admin/* routes — require admin role
+        if (isAdminSubdomain || isLocalhost || pathname.startsWith("/admin/")) {
+          if (pathname.startsWith("/admin/")) {
+            return !!token && token.role === "admin";
+          }
+          return true;
         }
 
         // All customer routes are public
