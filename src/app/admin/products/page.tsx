@@ -401,23 +401,26 @@ export default function ProductsPage() {
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [loading, setLoading]         = useState(true);
 
-  useEffect(() => {
-    fetch("/api/admin/products")
-      .then((r) => r.json())
-      .then((data) => {
-        setProducts(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          data.map((p: any, i: number) => ({
-            ...p,
-            bulkIsActive: p.bulkIsActive ?? true,
-            minBulkQty:   p.minBulkQty   ?? 200,
-            color:        i % 2 === 0 ? "teal" : "maroon",
-          }))
-        );
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+ useEffect(() => {
+  fetch("/api/admin/products")
+    .then((r) => r.json())
+    .then((data) => {
+      setProducts(
+        data.map((p: any, i: number) => ({
+          ...p,
+          // ✅ Convert relative path to absolute URL for subdomain
+          imageUrl: p.imageUrl?.startsWith("/")
+            ? `https://menmaifoods.com${p.imageUrl}`
+            : p.imageUrl,
+          bulkIsActive: p.bulkIsActive ?? true,
+          minBulkQty:   p.minBulkQty   ?? 200,
+          color:        i % 2 === 0 ? "teal" : "maroon",
+        }))
+      );
+      setLoading(false);
+    })
+    .catch(() => setLoading(false));
+}, []);
 
   const handleSave = async (updated: Product) => {
     try {
