@@ -1,7 +1,8 @@
 export const MIN_BULK_QTY = 200;
 
-const WORK_START_HOUR = 9;
-const WORK_END_HOUR = 19;
+export const WORK_START_HOUR = 6;
+export const WORK_END_HOUR = 21; // 9 PM
+const PREP_HOURS = 3;
 
 export interface BulkOrderFormValues {
   name: string;
@@ -32,11 +33,11 @@ export interface FormErrors {
   qty?: Record<string, string>;
 }
 
-type DeliveryPincodeZone = {
-  label: string;
-  charge: number;
-  pincodes: string[];
-};
+// type DeliveryPincodeZone = {
+//   label: string;
+//   charge: number;
+//   pincodes: string[];
+// };
 
 
 function parseDateInput(value: string): Date {
@@ -47,6 +48,7 @@ function parseDateInput(value: string): Date {
 function isSundayDate(date: Date): boolean {
   return date.getDay() === 0;
 }
+
 
 function getNextWorkingStart(from: Date): Date {
   const next = new Date(from);
@@ -182,7 +184,7 @@ export function getLeadTimeHours(totalPieces: number): number {
   return 48;
 }
 
-function formatHour(hour: number): string {
+export function formatHour(hour: number): string {
   const date = new Date();
   date.setHours(hour, 0, 0, 0);
 
@@ -196,25 +198,67 @@ function formatHour(hour: number): string {
 export function getAvailableTimeSlots(deliveryDate: string): string[] {
   if (!deliveryDate) return [];
 
-  // const selectedDate = parseDateInput(deliveryDate);
-  // if (isSundayDate(selectedDate)) return [];
-
   const selectedDate = parseDateInput(deliveryDate);
   if (isNaN(selectedDate.getTime())) return [];
 
-  // Block past dates
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (selectedDate < today) return [];
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
+  if (selectedDate < todayMidnight) return [];
+  if (isSundayDate(selectedDate)) return [];
+
+  const isToday = selectedDate.toDateString() === new Date().toDateString();
+
+  let earliestSlotHour = WORK_START_HOUR;
+
+  if (isToday) {
+    const now = new Date();
+    const nowHour = now.getHours();
+    const nowMinutes = now.getMinutes();
+
+    const effectiveStartHour = Math.max(nowHour, WORK_START_HOUR);
+    const effectiveStartMinutes = nowHour < WORK_START_HOUR ? 0 : nowMinutes;
+
+    // Total minutes from midnight + 3h prep, then ceil to next whole hour
+    const prepDoneMinutes =
+      effectiveStartHour * 60 + effectiveStartMinutes + 3 * 60;
+    earliestSlotHour = Math.ceil(prepDoneMinutes / 60);
+
+    if (earliestSlotHour >= WORK_END_HOUR) return [];
+  }
 
   const slots: string[] = [];
-
-  for (let hour = WORK_START_HOUR; hour < WORK_END_HOUR; hour++) {
+  for (
+    let hour = Math.max(WORK_START_HOUR, earliestSlotHour);
+    hour < WORK_END_HOUR;
+    hour++
+  ) {
     slots.push(`${formatHour(hour)} - ${formatHour(hour + 1)}`);
   }
 
   return slots;
 }
+// export function getAvailableTimeSlots(deliveryDate: string): string[] {
+//   if (!deliveryDate) return [];
+
+//   // const selectedDate = parseDateInput(deliveryDate);
+//   // if (isSundayDate(selectedDate)) return [];
+
+//   const selectedDate = parseDateInput(deliveryDate);
+//   if (isNaN(selectedDate.getTime())) return [];
+
+//   // Block past dates
+//   const today = new Date();
+//   today.setHours(0, 0, 0, 0);
+//   if (selectedDate < today) return [];
+
+//   const slots: string[] = [];
+
+//   for (let hour = WORK_START_HOUR; hour < WORK_END_HOUR; hour++) {
+//     slots.push(`${formatHour(hour)} - ${formatHour(hour + 1)}`);
+//   }
+
+//   return slots;
+// }
 
 // export function getAvailableTimeSlots(
 //   deliveryDate: string,
@@ -272,13 +316,51 @@ export function validateProductQuantities(
   return errors;
 }
 
+// export function validateBulkOrderForm(
+//   form: BulkOrderFormValues,
+//   productRows: ProductRowForValidation[]
+// ): { errors: FormErrors; isValid: boolean } {
+//   const errors: FormErrors = {};
+
+//   const totalPieces = productRows.reduce((sum, row) => sum + (Number(row.qty) || 0), 0);
+
+//   errors.name = validateName(form.name);
+//   errors.phone = validatePhone(form.phone);
+//   errors.email = validateEmail(form.email);
+//   errors.deliveryDate = validateDeliveryDate(form.deliveryDate);
+//   errors.deliveryTime = validateDeliveryTime(form.deliveryTime);
+//   errors.occasion = validateOccasion(form.occasion);
+//   errors.address = validateAddress(form.address);
+//   errors.pincode = validatePincode(form.pincode);
+
+//   const availableSlots = getAvailableTimeSlots(form.deliveryDate)
+//   if (form.deliveryTime && !availableSlots.includes(form.deliveryTime)) {
+//     errors.deliveryTime = "Selected delivery time is not available for this quantity.";
+//   }
+
+//   const productsErr = validateProductsSelected(productRows);
+//   if (productsErr) errors.products = productsErr;
+
+//   const qtyErrors = validateProductQuantities(productRows);
+//   if (Object.keys(qtyErrors).length > 0) errors.qty = qtyErrors;
+
+//   Object.keys(errors).forEach((key) => {
+//     if (errors[key as keyof FormErrors] === undefined) {
+//       delete errors[key as keyof FormErrors];
+//     }
+//   });
+
+//   return {
+//     errors,
+//     isValid: Object.keys(errors).length === 0,
+//   };
+// }
+
 export function validateBulkOrderForm(
   form: BulkOrderFormValues,
   productRows: ProductRowForValidation[]
 ): { errors: FormErrors; isValid: boolean } {
   const errors: FormErrors = {};
-
-  const totalPieces = productRows.reduce((sum, row) => sum + (Number(row.qty) || 0), 0);
 
   errors.name = validateName(form.name);
   errors.phone = validatePhone(form.phone);
@@ -289,9 +371,13 @@ export function validateBulkOrderForm(
   errors.address = validateAddress(form.address);
   errors.pincode = validatePincode(form.pincode);
 
-  const availableSlots = getAvailableTimeSlots(form.deliveryDate)
-  if (form.deliveryTime && !availableSlots.includes(form.deliveryTime)) {
-    errors.deliveryTime = "Selected delivery time is not available for this quantity.";
+  // Cross-field: verify chosen slot is still valid for the chosen date
+  if (form.deliveryTime && !errors.deliveryDate) {
+    const availableSlots = getAvailableTimeSlots(form.deliveryDate);
+    if (!availableSlots.includes(form.deliveryTime)) {
+      errors.deliveryTime =
+        "Selected delivery time slot is no longer available. Please choose another.";
+    }
   }
 
   const productsErr = validateProductsSelected(productRows);
@@ -300,10 +386,8 @@ export function validateBulkOrderForm(
   const qtyErrors = validateProductQuantities(productRows);
   if (Object.keys(qtyErrors).length > 0) errors.qty = qtyErrors;
 
-  Object.keys(errors).forEach((key) => {
-    if (errors[key as keyof FormErrors] === undefined) {
-      delete errors[key as keyof FormErrors];
-    }
+  (Object.keys(errors) as (keyof FormErrors)[]).forEach((key) => {
+    if (errors[key] === undefined) delete errors[key];
   });
 
   return {

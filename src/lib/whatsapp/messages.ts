@@ -51,12 +51,35 @@ export function buildCustomerDeliveredMessage(order: OrderMessageData) {
   ].join("\n");
 }
 
-export function buildCustomerReviewRequestMessage(order: OrderMessageData) {
+// export function buildCustomerReviewRequestMessage(order: OrderMessageData) {
+//   return [
+//     `How was your Menmai Foods order?`,
+//     ``,
+//     `Order: ${order.orderNumber}`,
+//     `Please reply with your feedback. Your review helps us improve.`,
+//   ].join("\n");
+// }
+export function buildCustomerReviewRequestMessage(
+  order: OrderMessageData,
+  reviewToken: string,
+) {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.MENMAI_PUBLIC_BASE_URL ??
+    "http://localhost:3000";
+
+  const reviewUrl = `${baseUrl}/review/${reviewToken}`;
+
   return [
-    `How was your Menmai Foods order?`,
+    `Menmai Foods ⭐ Share Your Feedback`,
     ``,
-    `Order: ${order.orderNumber}`,
-    `Please reply with your feedback. Your review helps us improve.`,
+    `Hi ${order.customerName.split(" ")[0]}, thank you for your order!`,
+    ``,
+    `Tap the link below to leave your review (takes 30 seconds):`,
+    ``,
+    reviewUrl,
+    ``,
+    `— Team Menmai Foods 🙏`,
   ].join("\n");
 }
 
