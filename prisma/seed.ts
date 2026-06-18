@@ -12,6 +12,7 @@ async function main() {
     update: { password: hashed },
     create: {
       username: "admin",
+      email: "menmaifoodsmdu@gmail.com",
       password: hashed,
     },
   });
