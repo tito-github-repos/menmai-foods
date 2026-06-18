@@ -40,29 +40,29 @@ export default function ReviewPage() {
 
   useEffect(() => {
     // ── Uncomment for production, remove TEMP block ──
-    // fetch(`/api/reviews/validate?token=${token}`)
-    //   .then((r) => r.json())
-    //   .then((data) => {
-    //     if (data.valid) {
-    //       setOrderInfo({ customerName: data.customerName, items: data.items, orderId: data.orderId });
-    //       setState("ready");
-    //     } else if (data.reason === "already_reviewed") {
-    //       setState("already_reviewed");
-    //     } else {
-    //       setState("expired");
-    //     }
-    //   })
-    //   .catch(() => setState("error"));
+    fetch(`/api/reviews/validate?token=${token}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.valid) {
+          setOrderInfo({ customerName: data.customerName, items: data.items, orderId: data.orderId });
+          setState("ready");
+        } else if (data.reason === "already_reviewed") {
+          setState("already_reviewed");
+        } else {
+          setState("expired");
+        }
+      })
+      .catch(() => setState("error"));
 
     // ── TEMP UI TEST ──
-    setOrderInfo({
-      customerName: "Priya",
-      orderId: 1,
-      items: [
-        { productName: "Chapathi", quantity: 1, imageUrl: null },
-        { productName: "Poori", quantity: 1, imageUrl: null },
-      ],
-    });
+    // setOrderInfo({
+    //   customerName: "Priya",
+    //   orderId: 1,
+    //   items: [
+    //     { productName: "Chapathi", quantity: 1, imageUrl: null },
+    //     { productName: "Poori", quantity: 1, imageUrl: null },
+    //   ],
+    // });
     setState("ready");
   }, [token]);
 
