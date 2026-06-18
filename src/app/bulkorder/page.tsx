@@ -695,7 +695,84 @@ export default function BulkOrderPage() {
                     {productRows.length > 0 && (
                       <Grid item xs={12}>
                         <Box sx={{ borderRadius: "12px", border: "1.5px solid rgba(0,0,0,0.08)", overflow: "hidden" }}>
-                          <Table size="small">
+
+                          {/* ── Mobile card view ── */}
+                          <Box sx={{ display: { xs: "flex", sm: "none" }, flexDirection: "column" }}>
+                            {pricing.rows.map((row, idx) => (
+                              <Box key={row.name} sx={{
+                                p: 1.5,
+                                borderBottom: idx < pricing.rows.length - 1 ? "1px solid rgba(0,0,0,0.07)" : "none",
+                              }}>
+                                {/* Row 1: image + name + delete */}
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                                  {row.image ? (
+                                    <Box component="img" src={row.image} alt={row.name}
+                                      sx={{ width: 36, height: 36, borderRadius: "8px", objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
+                                    />
+                                  ) : (
+                                    <Box sx={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: "rgba(0,0,0,0.06)", flexShrink: 0 }} />
+                                  )}
+                                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--primary-maroon-dark)" }}>
+                                      {row.name}
+                                    </Typography>
+                                    {row.qtyNum >= MIN_BULK_QTY && (
+                                      <Typography sx={{ fontSize: "0.7rem", color: "var(--text)", opacity: 0.55 }}>
+                                        = {Math.ceil(row.qtyNum / row.pieces)} packets
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                  <IconButton size="small" onClick={() => handleRemoveProduct(row.name)}
+                                    sx={{ color: "rgba(0,0,0,0.35)", "&:hover": { color: "#c62828" }, flexShrink: 0 }}
+                                  >
+                                    <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                                  </IconButton>
+                                </Box>
+
+                                {/* Row 2: qty input + price + total */}
+                                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                                  <Box sx={{ flex: 1 }}>
+                                    <Typography sx={{ fontSize: "0.68rem", color: "var(--text)", opacity: 0.55, textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.4 }}>
+                                      Qty (min {MIN_BULK_QTY})
+                                    </Typography>
+                                    <TextField
+                                      size="small"
+                                      type="number"
+                                      placeholder="Qty"
+                                      value={row.qty}
+                                      onChange={(e) => handleQtyChange(row.name, e.target.value)}
+                                      error={Boolean(errors.qty?.[row.name])}
+                                      helperText={errors.qty?.[row.name] || " "}
+                                      inputProps={{ min: MIN_BULK_QTY }}
+                                      sx={{
+                                        width: "100%",
+                                        "& .MuiOutlinedInput-root": {
+                                          borderRadius: "8px", fontSize: "0.85rem",
+                                          "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
+                                          "&:hover fieldset": { borderColor: "var(--primary-teal-dark)" },
+                                          "&.Mui-focused fieldset": { borderColor: "var(--primary-teal-dark)" },
+                                        },
+                                        "& .MuiFormHelperText-root": { mx: 0, fontSize: "0.7rem" },
+                                      }}
+                                    />
+                                  </Box>
+                                  <Box sx={{ textAlign: "center", pt: 0.3 }}>
+                                    <Typography sx={{ fontSize: "0.68rem", color: "var(--text)", opacity: 0.55, textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.4 }}>Price/Pc</Typography>
+                                    <Typography sx={{ fontSize: "0.85rem", color: "var(--text)", fontWeight: 500 }}>₹ {row.unitPrice.toFixed(2)}</Typography>
+                                  </Box>
+                                  <Box sx={{ textAlign: "right", pt: 0.3 }}>
+                                    <Typography sx={{ fontSize: "0.68rem", color: "var(--text)", opacity: 0.55, textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.4 }}>Total</Typography>
+                                    <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--primary-maroon-dark)" }}>
+                                      {row.qtyNum >= MIN_BULK_QTY ? `₹ ${fmt(row.total)}` : "–"}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              </Box>
+                            ))}
+                          </Box>
+
+                          {/* ── Desktop table view ── */}
+                          <Table size="small" sx={{ display: { xs: "none", sm: "table" } }}>
                             <TableHead>
                               <TableRow>
                                 <TableCell sx={tableHeadCellSx}>Product</TableCell>
@@ -747,25 +824,17 @@ export default function BulkOrderPage() {
                                       sx={{
                                         width: 140,
                                         "& .MuiOutlinedInput-root": {
-                                          borderRadius: "8px",
-                                          fontSize: "0.85rem",
+                                          borderRadius: "8px", fontSize: "0.85rem",
                                           "& fieldset": { borderColor: "rgba(0,0,0,0.15)" },
                                           "&:hover fieldset": { borderColor: "var(--primary-teal-dark)" },
-                                          "&.Mui-focused fieldset": {
-                                            borderColor: "var(--primary-teal-dark)",
-                                          },
+                                          "&.Mui-focused fieldset": { borderColor: "var(--primary-teal-dark)" },
                                         },
-                                        "& .MuiFormHelperText-root": {
-                                          mx: 0,
-                                          fontSize: "0.72rem",
-                                        },
+                                        "& .MuiFormHelperText-root": { mx: 0, fontSize: "0.72rem" },
                                       }}
                                     />
                                   </TableCell>
                                   <TableCell sx={tableCellSx} align="right">
-                                    <Typography sx={{ fontSize: "0.85rem", color: "var(--text)" }}>
-                                      ₹ {row.unitPrice.toFixed(2)}
-                                    </Typography>
+                                    <Typography sx={{ fontSize: "0.85rem", color: "var(--text)" }}>₹ {row.unitPrice.toFixed(2)}</Typography>
                                     <Typography sx={{ fontSize: "0.7rem", color: "var(--text)", opacity: 0.5 }}>per piece</Typography>
                                   </TableCell>
                                   <TableCell sx={tableCellSx} align="right">
@@ -983,6 +1052,61 @@ export default function BulkOrderPage() {
                       </Grid>
                     )}
 
+                    {availableSlots.length === 0 &&
+                      form.deliveryDate &&
+                      !errors.deliveryDate && (
+                        <Grid item xs={12}>
+                          <Box
+                            sx={{
+                              p: "14px",
+                              borderRadius: "10px",
+                              border: "1px solid #FFD54F",
+                              backgroundColor: "#FFF8E1",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 2,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <Box>
+                              <Typography
+                                sx={{
+                                  fontWeight: 700,
+                                  fontSize: "0.9rem",
+                                }}
+                              >
+                                Need an urgent bulk order?
+                              </Typography>
+
+                              <Typography
+                                sx={{
+                                  fontSize: "0.82rem",
+                                  mt: 0.5,
+                                }}
+                              >
+                                Regular delivery slots are unavailable for the
+                                selected date. Please call our team and we'll try
+                                our best to accommodate your request.
+                              </Typography>
+                            </Box>
+
+                            <Button
+                              component="a"
+                              href={`tel:${BULK_ORDER_PHONE}`}
+                              variant="outlined"
+                              startIcon={<PhoneOutlinedIcon />}
+                              sx={{
+                                textTransform: "none",
+                                fontWeight: 700,
+                              }}
+                            >
+                              Call Us
+                            </Button>
+                          </Box>
+                        </Grid>
+                    )}
+
                     {/* Occasion */}
                     <Grid item xs={12}>
                       <TextField fullWidth label="Occasion / Event Details" required
@@ -1176,53 +1300,87 @@ export default function BulkOrderPage() {
                     </Box>
                   )}
 
-                  {/* Product pricing table */}
-                  {productRows.length > 0 ? (
-                    <Box sx={{ borderRadius: "12px", border: "1.5px solid rgba(0,0,0,0.07)", overflow: "hidden", mb: 2 }}>
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell sx={tableHeadCellSx}>Product</TableCell>
-                            <TableCell sx={tableHeadCellSx} align="center">Qty</TableCell>
-                            <TableCell sx={tableHeadCellSx} align="right">Price/Piece</TableCell>
-                            <TableCell sx={tableHeadCellSx} align="right">Total</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {pricing.rows.map((row) => (
-                            <TableRow key={row.name} sx={{ "&:last-child td": { border: 0 } }}>
-                              <TableCell sx={tableCellSx}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                  {row.image ? (
-                                    <Box component="img" src={row.image} alt={row.name}
-                                      sx={{ width: 30, height: 30, borderRadius: "6px", objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
-                                    />
-                                  ) : (
-                                    <Box sx={{ width: 30, height: 30, borderRadius: "6px", backgroundColor: "rgba(0,0,0,0.06)", flexShrink: 0 }} />
-                                  )}
-                                  <Typography sx={{ fontSize: "0.83rem", fontWeight: 600, color: "var(--primary-maroon-dark)" }}>{row.name}</Typography>
-                                </Box>
-                              </TableCell>
-                              <TableCell sx={tableCellSx} align="center">
-                                <Typography sx={{ fontSize: "0.83rem", color: "var(--text)" }}>
-                                  {row.qtyNum >= MIN_BULK_QTY ? row.qtyNum.toLocaleString("en-IN") : "–"}
-                                </Typography>
-                              </TableCell>
-                              <TableCell sx={tableCellSx} align="right">
-                                <Typography sx={{ fontSize: "0.83rem", color: "var(--text)" }}>
-                                  ₹ {row.unitPrice.toFixed(2)}
-                                </Typography>
-                              </TableCell>
-                              <TableCell sx={tableCellSx} align="right">
-                                <Typography sx={{ fontSize: "0.83rem", fontWeight: 600, color: "var(--primary-maroon-dark)" }}>
-                                  {row.qtyNum >= MIN_BULK_QTY ? `₹ ${fmt(row.total)}` : "–"}
-                                </Typography>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                  <Box sx={{ borderRadius: "12px", border: "1.5px solid rgba(0,0,0,0.07)", overflow: "hidden", mb: 2 }}>
+                    {/* Mobile card view */}
+                    <Box sx={{ display: { xs: "block", sm: "none" } }}>
+                      {pricing.rows.map((row, idx) => (
+                        <Box key={row.name} sx={{ p: 1.5, borderBottom: idx < pricing.rows.length - 1 ? "1px solid rgba(0,0,0,0.06)" : "none" }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                            {row.image ? (
+                              <Box component="img" src={row.image} alt={row.name}
+                                sx={{ width: 32, height: 32, borderRadius: "6px", objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
+                              />
+                            ) : (
+                              <Box sx={{ width: 32, height: 32, borderRadius: "6px", backgroundColor: "rgba(0,0,0,0.06)", flexShrink: 0 }} />
+                            )}
+                            <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--primary-maroon-dark)" }}>{row.name}</Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                            <Box>
+                              <Typography sx={{ fontSize: "0.68rem", color: "var(--text)", opacity: 0.55, textTransform: "uppercase", letterSpacing: "0.05em" }}>Qty</Typography>
+                              <Typography sx={{ fontSize: "0.82rem", color: "var(--text)", fontWeight: 500 }}>
+                                {row.qtyNum >= MIN_BULK_QTY ? row.qtyNum.toLocaleString("en-IN") : "–"}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ textAlign: "center" }}>
+                              <Typography sx={{ fontSize: "0.68rem", color: "var(--text)", opacity: 0.55, textTransform: "uppercase", letterSpacing: "0.05em" }}>Price/Piece</Typography>
+                              <Typography sx={{ fontSize: "0.82rem", color: "var(--text)", fontWeight: 500 }}>₹ {row.unitPrice.toFixed(2)}</Typography>
+                            </Box>
+                            <Box sx={{ textAlign: "right" }}>
+                              <Typography sx={{ fontSize: "0.68rem", color: "var(--text)", opacity: 0.55, textTransform: "uppercase", letterSpacing: "0.05em" }}>Total</Typography>
+                              <Typography sx={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--primary-maroon-dark)" }}>
+                                {row.qtyNum >= MIN_BULK_QTY ? `₹ ${fmt(row.total)}` : "–"}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
 
+                    {/* Desktop table view */}
+                    <Table size="small" sx={{ display: { xs: "none", sm: "table" } }}>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={tableHeadCellSx}>Product</TableCell>
+                          <TableCell sx={tableHeadCellSx} align="center">Qty</TableCell>
+                          <TableCell sx={tableHeadCellSx} align="right">Price/Piece</TableCell>
+                          <TableCell sx={tableHeadCellSx} align="right">Total</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {pricing.rows.map((row) => (
+                          <TableRow key={row.name} sx={{ "&:last-child td": { border: 0 } }}>
+                            <TableCell sx={tableCellSx}>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                {row.image ? (
+                                  <Box component="img" src={row.image} alt={row.name}
+                                    sx={{ width: 30, height: 30, borderRadius: "6px", objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
+                                  />
+                                ) : (
+                                  <Box sx={{ width: 30, height: 30, borderRadius: "6px", backgroundColor: "rgba(0,0,0,0.06)", flexShrink: 0 }} />
+                                )}
+                                <Typography sx={{ fontSize: "0.83rem", fontWeight: 600, color: "var(--primary-maroon-dark)" }}>{row.name}</Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell sx={tableCellSx} align="center">
+                              <Typography sx={{ fontSize: "0.83rem", color: "var(--text)" }}>
+                                {row.qtyNum >= MIN_BULK_QTY ? row.qtyNum.toLocaleString("en-IN") : "–"}
+                              </Typography>
+                            </TableCell>
+                            <TableCell sx={tableCellSx} align="right">
+                              <Typography sx={{ fontSize: "0.83rem", color: "var(--text)" }}>
+                                ₹ {row.unitPrice.toFixed(2)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell sx={tableCellSx} align="right">
+                              <Typography sx={{ fontSize: "0.83rem", fontWeight: 600, color: "var(--primary-maroon-dark)" }}>
+                                {row.qtyNum >= MIN_BULK_QTY ? `₹ ${fmt(row.total)}` : "–"}
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                       {/* Totals */}
                       <Box sx={{ px: 2, py: 1.5, borderTop: "1.5px solid rgba(0,0,0,0.07)", backgroundColor: "rgba(0,0,0,0.015)" }}>
                         {[
@@ -1249,8 +1407,6 @@ export default function BulkOrderPage() {
                         </Box>
                       </Box>
                     </Box>
-                  ) : null}
-
                   {/* Delivery charge info card — always visible */}
                   <Box sx={{
                     display: "flex",
@@ -1318,7 +1474,7 @@ export default function BulkOrderPage() {
 
                   {/* Action buttons after submit */}
                   {submitted && (
-                    <Box sx={{ display: "flex", gap: 1.5, mt: 1, flexWrap: "wrap" }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 1 }}>
                       <Button fullWidth variant="contained"
                         startIcon={<ShoppingCartOutlinedIcon />}
                         onClick={handleBulkOrderSubmit}
@@ -1337,21 +1493,54 @@ export default function BulkOrderPage() {
                             ? "Order Submitted"
                             : "Submit Bulk Order"}
                       </Button>
-                      <Button 
-                        variant="outlined" 
-                        startIcon={<FileDownloadOutlinedIcon />}
-                        onClick={handleDownloadQuote}
-                        disabled={!submittedOrderRef}
-                        sx={{ flex: 1, textTransform: "none", fontWeight: 600, fontSize: ".82rem", borderRadius: "10px", borderColor: "var(--primary-teal-dark)", color: "var(--primary-teal-dark)", py: 1, "&:hover": { backgroundColor: "color-mix(in srgb, var(--primary-teal-dark), transparent 92%)" } }}
-                      >
-                        Download Quote
-                      </Button>
-                      <Button variant="outlined" startIcon={<RefreshOutlinedIcon />} onClick={handleReset}
-                        sx={{ flex: 1, textTransform: "none", fontWeight: 600, fontSize: ".82rem", borderRadius: "10px", borderColor: "rgba(0,0,0,0.2)", color: "var(--text)", py: 1, "&:hover": { backgroundColor: "rgba(0,0,0,0.04)" } }}
-                      >
-                        Request Another Quote
-                      </Button>
-                    </Box>
+
+                      {/* Download + Reset in one row, always single line */}
+                      <Box sx={{ display: "flex", gap: 1.5 }}>
+                        <Button
+                          variant="outlined"
+                          startIcon={<FileDownloadOutlinedIcon />}
+                          onClick={handleDownloadQuote}
+                          disabled={!submittedOrderRef}
+                          sx={{
+                            flex: 1,
+                            textTransform: "none",
+                            fontWeight: 600,
+                            fontSize: { xs: ".78rem", sm: ".82rem" },
+                            borderRadius: "10px",
+                            borderColor: "var(--primary-teal-dark)",
+                            color: "var(--primary-teal-dark)",
+                            py: 1,
+                            whiteSpace: "nowrap",
+                            minWidth: 0,
+                            "&:hover": { backgroundColor: "color-mix(in srgb, var(--primary-teal-dark), transparent 92%)" },
+                            "& .MuiButton-startIcon": { mr: { xs: 0.5, sm: 1 } },
+                          }}
+                        >
+                          Download Quote
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          startIcon={<RefreshOutlinedIcon />}
+                          onClick={handleReset}
+                          sx={{
+                            flex: 1,
+                            textTransform: "none",
+                            fontWeight: 600,
+                            fontSize: { xs: ".78rem", sm: ".82rem" },
+                            borderRadius: "10px",
+                            borderColor: "rgba(0,0,0,0.2)",
+                            color: "var(--text)",
+                            py: 1,
+                            whiteSpace: "nowrap",
+                            minWidth: 0,
+                            "&:hover": { backgroundColor: "rgba(0,0,0,0.04)" },
+                            "& .MuiButton-startIcon": { mr: { xs: 0.5, sm: 1 } },
+                          }}
+                        >
+                          Another Quote
+                        </Button>
+                      </Box>
+</Box>
                   )}
 
                   {/* Why request a quote */}
@@ -1397,18 +1586,59 @@ export default function BulkOrderPage() {
 
             <Grid container spacing={2} justifyContent="center">
               {WHY_CHOOSE.map((item, idx) => (
-                <Grid item xs={6} sm={4} md={2} key={idx}>
+                <Grid item xs={12} sm={4} md={2} key={idx}>
                   <motion.div {...fadeUp(idx * 0.08)}>
-                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5, p: { xs: 2, md: 2.5 }, borderRadius: "16px", border: "1.5px solid rgba(0,0,0,0.06)", backgroundColor: "#fff", height: "100%", transition: "box-shadow 0.22s ease, transform 0.22s ease", "&:hover": { boxShadow: "0 8px 24px rgba(12,61,71,0.1)", transform: "translateY(-3px)" } }}>
-                      <Box sx={{ width: 54, height: 54, borderRadius: "50%", backgroundColor: "color-mix(in srgb, var(--primary-teal-dark), transparent 90%)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--primary-teal-dark)" }}>
+                    <Box sx={{
+                      display: "flex",
+                      flexDirection: { xs: "row", sm: "column" },
+                      alignItems: { xs: "flex-start", sm: "center" },
+                      gap: { xs: 1.5, sm: 1.5 },
+                      p: { xs: "14px 16px", md: 2.5 },
+                      borderRadius: "16px",
+                      border: "1.5px solid rgba(0,0,0,0.06)",
+                      backgroundColor: "#fff",
+                      height: "100%",
+                      transition: "box-shadow 0.22s ease, transform 0.22s ease",
+                      "&:hover": { boxShadow: "0 8px 24px rgba(12,61,71,0.1)", transform: "translateY(-3px)" },
+                    }}>
+                      {/* Icon */}
+                      <Box sx={{
+                        width: { xs: 44, sm: 54 },
+                        height: { xs: 44, sm: 54 },
+                        borderRadius: "50%",
+                        backgroundColor: "color-mix(in srgb, var(--primary-teal-dark), transparent 90%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--primary-teal-dark)",
+                        flexShrink: 0,
+                      }}>
                         {item.icon}
                       </Box>
-                      <Typography sx={{ fontWeight: 700, fontSize: ".82rem", color: "var(--primary-maroon-dark)", textAlign: "center", lineHeight: 1.3, fontFamily: "var(--font-heading)" }}>
-                        {item.title}
-                      </Typography>
-                      <Typography sx={{ fontSize: ".74rem", color: "var(--text)", textAlign: "center", lineHeight: 1.5, opacity: 0.7 }}>
-                        {item.desc}
-                      </Typography>
+
+                      {/* Text block — on mobile: title + desc stacked next to icon */}
+                      <Box sx={{ flex: 1 }}>
+                        <Typography sx={{
+                          fontWeight: 700,
+                          fontSize: ".84rem",
+                          color: "var(--primary-maroon-dark)",
+                          textAlign: { xs: "left", sm: "center" },
+                          lineHeight: 1.3,
+                          fontFamily: "var(--font-heading)",
+                          mb: 0.4,
+                        }}>
+                          {item.title}
+                        </Typography>
+                        <Typography sx={{
+                          fontSize: ".74rem",
+                          color: "var(--text)",
+                          textAlign: { xs: "left", sm: "center" },
+                          lineHeight: 1.5,
+                          opacity: 0.7,
+                        }}>
+                          {item.desc}
+                        </Typography>
+                      </Box>
                     </Box>
                   </motion.div>
                 </Grid>
