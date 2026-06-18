@@ -55,7 +55,7 @@ interface BulkOrder {
   id: number;
   fullName: string;
   phone: string;
-  items: string; // e.g. "Custom Bulk × 50"
+  items: string; // e.g. "Chapathi × 50, Poori × 30"
   totalAmount: number;
   status: string;
   address: string;
@@ -70,14 +70,14 @@ const ROWS_PER_PAGE = 5;
 // ─── Status chip helper ───────────────────────────────────────────────────────
 
 const statusStyles: Record<string, { bg: string; text: string }> = {
-  DELIVERED: { bg: "#DCFCE7", text: "#166534" },
-  CONFIRMED: { bg: "#DCFCE7", text: "#166534" },
-  PENDING: { bg: "#FEF3C7", text: "#B45309" },
-  QUOTED: { bg: "#FEF3C7", text: "#B45309" },
+  DELIVERED:  { bg: "#DCFCE7", text: "#166534" },
+  CONFIRMED:  { bg: "#DCFCE7", text: "#166534" },
+  PENDING:    { bg: "#FEF3C7", text: "#B45309" },
+  QUOTED:     { bg: "#FEF3C7", text: "#B45309" },
   PROCESSING: { bg: "#DBEAFE", text: "#1D4ED8" },
-  PREPARING: { bg: "#DBEAFE", text: "#1D4ED8" },
-  SHIPPED: { bg: "#EDE9FE", text: "#6D28D9" },
-  CANCELLED: { bg: "#FEE2E2", text: "#991B1B" },
+  PREPARING:  { bg: "#DBEAFE", text: "#1D4ED8" },
+  SHIPPED:    { bg: "#EDE9FE", text: "#6D28D9" },
+  CANCELLED:  { bg: "#FEE2E2", text: "#991B1B" },
 };
 
 function StatusChip({ status }: { status: string }) {
@@ -99,36 +99,89 @@ function StatusChip({ status }: { status: string }) {
   );
 }
 
+// ─── Item cell: bold name, normal quantity ────────────────────────────────────
+// Expects items like "Chapathi × 10, Poori × 6"
+
+function ItemsCell({ items }: { items: string }) {
+  return (
+    <>
+      {items.split(",").map((item, idx) => {
+        // Split on × (or plain x) to separate name from quantity
+        const parts = item.trim().split(/\s*[×x]\s*/);
+        const name = parts[0]?.trim() ?? item.trim();
+        const qty  = parts[1]?.trim();
+
+        return (
+          <Typography
+            key={idx}
+            component="div"
+            sx={{ fontSize: "0.9rem", color: "#334155", lineHeight: 1.9 }}
+          >
+            <Box component="span" sx={{ fontWeight: 700 }}>
+              {name}
+            </Box>
+            {qty && (
+              <Box
+                component="span"
+                sx={{ fontWeight: 400, color: "#64748B" }}
+              >
+                {" "}× {qty}
+              </Box>
+            )}
+          </Typography>
+        );
+      })}
+    </>
+  );
+}
+
+// ─── Shared table head cell style ─────────────────────────────────────────────
+
+const headCellSx = {
+  bgcolor: "#F9FAFB",
+  color: "#7B3F2E",          // brown — matches var(--primary-maroon-mid) family
+  fontWeight: 700,
+  fontSize: "0.8rem",
+  borderBottom: "1px solid #E5E7EB",
+  py: 2,
+};
+
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
 function EmptyState({ orderType }: { orderType: OrderType }) {
-  const colSpan = orderType === "retail" ? 8 : 7;
   return (
     <TableRow>
-      <TableCell colSpan={colSpan} sx={{ textAlign: "center", py: 6 }}>
+      <TableCell colSpan={7} sx={{ textAlign: "center", py: 6 }}>
         <Typography sx={{ color: "#9CA3AF", fontSize: "0.95rem" }}>
-          No {orderType === "retail" ? "retail" : "bulk"} orders placed today
-          yet.
+          No {orderType === "retail" ? "retail" : "bulk"} orders placed today yet.
         </Typography>
       </TableCell>
     </TableRow>
   );
 }
 
+// ─── Shared row body cell style ───────────────────────────────────────────────
+
+const bodyCellSx = {
+  py: 2.5,
+  borderBottom: "1px solid #F1F5F9",
+  verticalAlign: "top",
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const [orderType, setOrderType] = useState<OrderType>("retail");
   const [retailPage, setRetailPage] = useState(1);
-  const [bulkPage, setBulkPage] = useState(1);
+  const [bulkPage, setBulkPage]   = useState(1);
 
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats]               = useState<DashboardStats | null>(null);
   const [retailOrders, setRetailOrders] = useState<RetailOrder[]>([]);
-  const [bulkOrders, setBulkOrders] = useState<BulkOrder[]>([]);
-  const [retailTotal, setRetailTotal] = useState(0);
-  const [bulkTotal, setBulkTotal] = useState(0);
+  const [bulkOrders, setBulkOrders]     = useState<BulkOrder[]>([]);
+  const [retailTotal, setRetailTotal]   = useState(0);
+  const [bulkTotal, setBulkTotal]       = useState(0);
 
-  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingStats,  setLoadingStats]  = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
   // ── Fetch summary stats ──────────────────────────────────────────────────
@@ -150,7 +203,6 @@ export default function DashboardPage() {
   }, []);
 
   // ── Fetch paginated orders ───────────────────────────────────────────────
-  // Primitive deps only — avoids the useCallback → useEffect cascade render warning.
   useEffect(() => {
     let cancelled = false;
 
@@ -162,8 +214,7 @@ export default function DashboardPage() {
             `/api/admin/dashboard/retail-orders?page=${retailPage}&limit=${ROWS_PER_PAGE}`,
           );
           if (!res.ok) throw new Error("Failed to fetch retail orders");
-          const data: { orders: RetailOrder[]; total: number } =
-            await res.json();
+          const data: { orders: RetailOrder[]; total: number } = await res.json();
           if (!cancelled) {
             setRetailOrders(data.orders);
             setRetailTotal(data.total);
@@ -187,47 +238,45 @@ export default function DashboardPage() {
     }
 
     fetchOrders();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [orderType, retailPage, bulkPage]);
 
   // ── Summary card data ────────────────────────────────────────────────────
   const summaryCards = [
     {
-      title: "Today's Bulk Orders",
-      value: loadingStats ? "—" : String(stats?.todayBulkOrders ?? 0),
-      icon: <Inventory2OutlinedIcon />,
+      title:  "Today's Bulk Orders",
+      value:  loadingStats ? "—" : String(stats?.todayBulkOrders ?? 0),
+      icon:   <Inventory2OutlinedIcon />,
       iconBg: "var(--primary-maroon-mid)",
     },
     {
-      title: "Today's Retail Orders",
-      value: loadingStats ? "—" : String(stats?.todayRetailOrders ?? 0),
-      icon: <ShoppingCartOutlinedIcon />,
+      title:  "Today's Retail Orders",
+      value:  loadingStats ? "—" : String(stats?.todayRetailOrders ?? 0),
+      icon:   <ShoppingCartOutlinedIcon />,
       iconBg: "var(--primary-teal-mid)",
     },
     {
-      title: "Today's Revenue",
-      value: loadingStats
+      title:  "Today's Revenue",
+      value:  loadingStats
         ? "—"
         : `₹${(stats?.todayRevenue ?? 0).toLocaleString("en-IN")}`,
-      icon: <CurrencyRupeeOutlinedIcon />,
+      icon:   <CurrencyRupeeOutlinedIcon />,
       iconBg: "var(--primary-maroon-mid)",
     },
     {
-      title: "Total Customers",
-      value: loadingStats ? "—" : String(stats?.totalCustomers ?? 0),
-      icon: <GroupsOutlinedIcon />,
+      title:  "Total Customers",
+      value:  loadingStats ? "—" : String(stats?.totalCustomers ?? 0),
+      icon:   <GroupsOutlinedIcon />,
       iconBg: "var(--primary-teal-mid)",
     },
   ];
 
   // ── Pagination ───────────────────────────────────────────────────────────
-  const activePage = orderType === "retail" ? retailPage : bulkPage;
+  const activePage  = orderType === "retail" ? retailPage  : bulkPage;
   const activeTotal = orderType === "retail" ? retailTotal : bulkTotal;
-  const pageCount = Math.max(1, Math.ceil(activeTotal / ROWS_PER_PAGE));
-  const startRow = (activePage - 1) * ROWS_PER_PAGE + 1;
-  const endRow = Math.min(activePage * ROWS_PER_PAGE, activeTotal);
+  const pageCount   = Math.max(1, Math.ceil(activeTotal / ROWS_PER_PAGE));
+  const startRow    = (activePage - 1) * ROWS_PER_PAGE + 1;
+  const endRow      = Math.min(activePage * ROWS_PER_PAGE, activeTotal);
 
   function handlePageChange(_: React.ChangeEvent<unknown>, value: number) {
     if (orderType === "retail") setRetailPage(value);
@@ -278,18 +327,16 @@ export default function DashboardPage() {
             >
               <Box
                 sx={{
-                  width: { xs: 42, md: 50 },
-                  height: { xs: 42, md: 50 },
+                  width:   { xs: 42, md: 50 },
+                  height:  { xs: 42, md: 50 },
                   borderRadius: 3,
                   bgcolor: item.iconBg,
-                  color: "#fff",
+                  color:   "#fff",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
-                  "& .MuiSvgIcon-root": {
-                    fontSize: { xs: "1.2rem", md: "1.5rem" },
-                  },
+                  "& .MuiSvgIcon-root": { fontSize: { xs: "1.2rem", md: "1.5rem" } },
                 }}
               >
                 {item.icon}
@@ -310,11 +357,14 @@ export default function DashboardPage() {
                 </Typography>
                 <Typography
                   sx={{
-                    fontSize: { xs: "1.4rem", sm: "1.7rem", md: "2rem" },
+                    fontSize: "clamp(1.1rem, 2vw, 1.8rem)",
                     fontWeight: 700,
                     color: "#111827",
                     lineHeight: 1.1,
                     mt: 0.5,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {item.value}
@@ -407,38 +457,22 @@ export default function DashboardPage() {
                 zIndex: 2,
               }}
             >
-              <CircularProgress
-                size={32}
-                sx={{ color: "var(--primary-teal-mid)" }}
-              />
+              <CircularProgress size={32} sx={{ color: "var(--primary-teal-mid)" }} />
             </Box>
           )}
 
+          {/* ── Retail Table ── */}
           {orderType === "retail" ? (
-            <Table sx={{ minWidth: 900 }}>
-              <TableHead>
+            <Table sx={{ minWidth: 1000 }}>
+              <TableHead >
                 <TableRow>
-                  {[
-                    "ORDER ID",
-                    "CUSTOMER NAME",
-                    "MOBILE",
-                    "ITEMS",
-                    "AMOUNT",
-                    "ADDRESS",
-                    "STATUS",
-                    "TIME",
-                  ].map((col) => (
-                    <TableCell
-                      key={col}
-                      sx={{
-                        color: "var(--primary-maroon-mid)",
-                        fontWeight: 600,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {col}
-                    </TableCell>
-                  ))}
+                  {["ORDER", "CUSTOMER", "ITEMS", "ADDRESS", "STATUS", "AMOUNT"].map(
+                    (col) => (
+                      <TableCell key={col} sx={headCellSx}>
+                        {col}
+                      </TableCell>
+                    ),
+                  )}
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -446,43 +480,73 @@ export default function DashboardPage() {
                   <EmptyState orderType="retail" />
                 ) : (
                   retailOrders.map((order) => (
-                    <TableRow key={order.id} hover>
-                      <TableCell sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>
-                        {order.orderNumber}
+                    <TableRow
+                      key={order.id}
+                      hover
+                      sx={{ "& td": bodyCellSx }}
+                    >
+                      {/* ORDER */}
+                      <TableCell sx={{ minWidth: 180 }}>
+                        <Typography
+                          sx={{
+                            fontWeight: 700,
+                            color: "var(--primary-teal-mid)",
+                            fontSize: "0.95rem",
+                          }}
+                        >
+                          {order.orderNumber}
+                        </Typography>
+                        <Typography sx={{ fontSize: "0.8rem", color: "#94A3B8", mt: 0.5 }}>
+                          {new Date(order.orderedAt).toLocaleDateString("en-IN")}
+                        </Typography>
+                        <Typography sx={{ fontSize: "0.8rem", color: "#94A3B8" }}>
+                          {new Date(order.orderedAt).toLocaleTimeString("en-IN", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </Typography>
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap" }}>
-                        {order.customer.fullName}
+
+                      {/* CUSTOMER */}
+                      <TableCell sx={{ minWidth: 180 }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "#0F172A" }}>
+                          {order.customer.fullName}
+                        </Typography>
+                        <Typography sx={{ fontSize: "0.85rem", color: "#64748B", mt: 0.5 }}>
+                          📞 {order.customer.phone}
+                        </Typography>
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap" }}>
-                        {order.customer.phone}
+
+                      {/* ITEMS — bold name, normal quantity */}
+                      <TableCell sx={{ minWidth: 220 }}>
+                        <ItemsCell items={order.items} />
                       </TableCell>
-                      <TableCell sx={{ maxWidth: 200 }}>
-                        {order.items}
+
+                      {/* ADDRESS */}
+                      <TableCell sx={{ minWidth: 220 }}>
+                        <Typography
+                          sx={{
+                            fontSize: "0.9rem",
+                            color: "#475569",
+                            lineHeight: 1.6,
+                            whiteSpace: "normal",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {order.address}
+                        </Typography>
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>
-                        ₹{order.totalAmount.toLocaleString("en-IN")}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          maxWidth: 180,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                        title={order.address}
-                      >
-                        {order.address}
-                      </TableCell>
-                      <TableCell>
+
+                      {/* STATUS */}
+                      <TableCell sx={{ minWidth: 120 }}>
                         <StatusChip status={order.orderStatus} />
                       </TableCell>
-                      <TableCell
-                        sx={{ whiteSpace: "nowrap", color: "#6B7280" }}
-                      >
-                        {new Date(order.orderedAt).toLocaleTimeString("en-IN", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+
+                      {/* AMOUNT */}
+                      <TableCell sx={{ minWidth: 120 }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: "1.2rem", color: "#111827" }}>
+                          ₹{order.totalAmount.toLocaleString("en-IN")}
+                        </Typography>
                       </TableCell>
                     </TableRow>
                   ))
@@ -490,26 +554,20 @@ export default function DashboardPage() {
               </TableBody>
             </Table>
           ) : (
-            <Table sx={{ minWidth: 900 }}>
+            /* ── Bulk Table ── */
+            <Table sx={{ minWidth: 1000 }}>
               <TableHead>
                 <TableRow>
                   {[
-                    "ORDER ID",
-                    "CUSTOMER NAME",
-                    "MOBILE",
+                    "ORDER",
+                    "CUSTOMER",
                     "ITEMS",
-                    "AMOUNT",
+                    "ADDRESS",
                     "STATUS",
+                    "AMOUNT",
                     "DELIVERY DATE",
                   ].map((col) => (
-                    <TableCell
-                      key={col}
-                      sx={{
-                        color: "var(--primary-maroon-mid)",
-                        fontWeight: 600,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <TableCell key={col} sx={headCellSx}>
                       {col}
                     </TableCell>
                   ))}
@@ -520,44 +578,84 @@ export default function DashboardPage() {
                   <EmptyState orderType="bulk" />
                 ) : (
                   bulkOrders.map((order) => (
-                    <TableRow key={order.id} hover>
-                      <TableCell sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>
-                        {order.orderRef}
+                    <TableRow
+                      key={order.id}
+                      hover
+                      sx={{ "& td": bodyCellSx }}
+                    >
+                      {/* ORDER */}
+                      <TableCell sx={{ minWidth: 180 }}>
+                        <Typography
+                          sx={{
+                            fontWeight: 700,
+                            color: "var(--primary-teal-mid)",
+                            fontSize: "0.95rem",
+                          }}
+                        >
+                          {order.orderRef}
+                        </Typography>
+                        <Typography sx={{ fontSize: "0.8rem", color: "#94A3B8", mt: 0.5 }}>
+                          {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                        </Typography>
+                        <Typography sx={{ fontSize: "0.8rem", color: "#94A3B8" }}>
+                          {new Date(order.createdAt).toLocaleTimeString("en-IN", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </Typography>
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap" }}>
-                        {order.fullName}
+
+                      {/* CUSTOMER */}
+                      <TableCell sx={{ minWidth: 180 }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "#0F172A" }}>
+                          {order.fullName}
+                        </Typography>
+                        <Typography sx={{ fontSize: "0.85rem", color: "#64748B", mt: 0.5 }}>
+                          📞 {order.phone}
+                        </Typography>
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap" }}>
-                        {order.phone}
+
+                      {/* ITEMS — bold name, normal quantity */}
+                      <TableCell sx={{ minWidth: 220 }}>
+                        <ItemsCell items={order.items} />
                       </TableCell>
-                      <TableCell sx={{ maxWidth: 200 }}>
-                        {order.items}
+
+                      {/* ADDRESS */}
+                      <TableCell sx={{ minWidth: 220 }}>
+                        <Typography
+                          sx={{
+                            fontSize: "0.9rem",
+                            color: "#475569",
+                            lineHeight: 1.6,
+                            whiteSpace: "normal",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {order.address}
+                        </Typography>
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>
-                        ₹{order.totalAmount.toLocaleString("en-IN")}
-                      </TableCell>
-                      {/* ADDRESS column hidden — uncomment the TableCell below when ready
-                      <TableCell
-                        sx={{ maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                        title={order.address}
-                      >
-                        {order.address}
-                      </TableCell>
-                      */}
-                      <TableCell>
+
+                      {/* STATUS */}
+                      <TableCell sx={{ minWidth: 120 }}>
                         <StatusChip status={order.status} />
                       </TableCell>
-                      <TableCell
-                        sx={{ whiteSpace: "nowrap", color: "#6B7280" }}
-                      >
-                        {new Date(order.deliveryDate).toLocaleDateString(
-                          "en-IN",
-                          {
+
+                      {/* AMOUNT */}
+                      <TableCell sx={{ minWidth: 120 }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: "1.2rem", color: "#111827" }}>
+                          ₹{order.totalAmount.toLocaleString("en-IN")}
+                        </Typography>
+                      </TableCell>
+
+                      {/* DELIVERY DATE */}
+                      <TableCell sx={{ minWidth: 140 }}>
+                        <Typography sx={{ fontSize: "0.9rem", color: "#64748B" }}>
+                          {new Date(order.deliveryDate).toLocaleDateString("en-IN", {
                             day: "2-digit",
                             month: "short",
                             year: "numeric",
-                          },
-                        )}
+                          })}
+                        </Typography>
                       </TableCell>
                     </TableRow>
                   ))

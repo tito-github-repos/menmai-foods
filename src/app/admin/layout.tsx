@@ -15,11 +15,15 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
 
-  const isLoginPage = pathname === "/admin" || pathname === "/";
+ const isAuthPage =
+  pathname === "/admin" ||
+  pathname === "/" ||
+  pathname === "/admin/forgot-password" ||
+  pathname.startsWith("/admin/reset-password");
 
-  useInactivityLogout(isLoginPage ? undefined : 60);
+  useInactivityLogout(isAuthPage ? undefined : 60);
 
-  if (isLoginPage) return <>{children}</>;
+  if (isAuthPage) return <>{children}</>;
 
   return (
     <div className="admin-wrapper">

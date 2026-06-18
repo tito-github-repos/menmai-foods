@@ -1,7 +1,9 @@
+// FILE 4: app/admin/login/page.tsx  (or wherever your login page lives)
+
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";  {/* ✅ back to next/image */}
+import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -10,19 +12,19 @@ import {
   InputAdornment, Alert, IconButton,
 } from "@mui/material";
 
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import PersonOutlineIcon    from "@mui/icons-material/PersonOutline";
+import LockOutlinedIcon     from "@mui/icons-material/LockOutlined";
+import VisibilityIcon       from "@mui/icons-material/Visibility";
+import VisibilityOffIcon    from "@mui/icons-material/VisibilityOff";
 
 export default function AdminLoginPage() {
   const router = useRouter();
 
-  const [username, setUsername]         = useState("");
-  const [password, setPassword]         = useState("");
+  const [username,     setUsername]     = useState("");
+  const [password,     setPassword]     = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError]               = useState("");
-  const [loading, setLoading]           = useState(false);
+  const [error,        setError]        = useState("");
+  const [loading,      setLoading]      = useState(false);
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -75,7 +77,7 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
           <Image
-            src="https://menmaifoods.com/logo.jpeg" 
+            src="https://menmaifoods.com/logo.jpeg"
             alt="Menmai Foods"
             width={130}
             height={130}
@@ -85,12 +87,7 @@ export default function AdminLoginPage() {
 
         <Typography
           align="center"
-          sx={{
-            fontSize: { xs: "1.6rem", md: "1.9rem" },
-            fontWeight: 700,
-            color: "#5A1F00",
-            mb: 1,
-          }}
+          sx={{ fontSize: { xs: "1.6rem", md: "1.9rem" }, fontWeight: 700, color: "#5A1F00", mb: 1 }}
         >
           Admin Login
         </Typography>
@@ -112,7 +109,9 @@ export default function AdminLoginPage() {
           fullWidth size="small" label="Username" margin="normal"
           value={username} onChange={(e) => setUsername(e.target.value)}
           InputProps={{
-            startAdornment: <InputAdornment position="start"><PersonOutlineIcon /></InputAdornment>,
+            startAdornment: (
+              <InputAdornment position="start"><PersonOutlineIcon /></InputAdornment>
+            ),
           }}
         />
 
@@ -123,7 +122,9 @@ export default function AdminLoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           InputProps={{
-            startAdornment: <InputAdornment position="start"><LockOutlinedIcon /></InputAdornment>,
+            startAdornment: (
+              <InputAdornment position="start"><LockOutlinedIcon /></InputAdornment>
+            ),
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
@@ -134,11 +135,27 @@ export default function AdminLoginPage() {
           }}
         />
 
+        {/* ── Forgot password link ── */}
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 0.5 }}>
+          <Typography
+            onClick={() => router.push("/admin/forgot-password")}
+            sx={{
+              fontSize: "0.82rem",
+              color: "#5A1F00",
+              fontWeight: 600,
+              cursor: "pointer",
+              "&:hover": { textDecoration: "underline" },
+            }}
+          >
+            Forgot password?
+          </Typography>
+        </Box>
+
         <Button
           fullWidth variant="contained"
           onClick={handleLogin} disabled={loading}
           sx={{
-            height: 48, mt: 3, borderRadius: "12px",
+            height: 48, mt: 2.5, borderRadius: "12px",
             backgroundColor: "#5A1F00",
             fontSize: "0.95rem", fontWeight: 700, textTransform: "none",
             "&:hover": { backgroundColor: "#401500" },

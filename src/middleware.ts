@@ -52,8 +52,10 @@ export default withAuth(
         // Allow subdomain root "/" — always public
         if (isAdminSubdomain && pathname === "/") return true;
 
-        // Allow the login page itself — always public
+        // Allow the login page, forgot and reset password — always public
         if (pathname === "/admin") return true;
+        if (pathname === "/admin/forgot-password") return true;
+        if (pathname === "/admin/reset-password") return true;
 
         // Protect all /admin/* routes — require admin role
         if (isAdminSubdomain || isLocalhost || pathname.startsWith("/admin/")) {
