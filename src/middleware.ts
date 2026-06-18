@@ -9,10 +9,15 @@ export default withAuth(
     const url = req.nextUrl.clone();
 
     const isAdminSubdomain = host.startsWith("admin.");
-    // ✅ Also treat localhost as admin when accessing /admin routes
-    const isLocalhost = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+    const isLocalhost =
+      host.startsWith("localhost") ||
+      host.startsWith("127.0.0.1");
 
-    // ── Admin subdomain rewriting ─────────────────────────────────────────
+    // ─────────────────────────────────────────────
+    // Admin subdomain rewrite
+    // admin.menmaifoods.com/dashboard
+    // => /admin/dashboard
+    // ─────────────────────────────────────────────
     if (isAdminSubdomain) {
       if (pathname === "/") {
         url.pathname = "/admin";
@@ -27,12 +32,18 @@ export default withAuth(
       return NextResponse.next();
     }
 
-    // ── Localhost: allow /admin/* directly (for development) ──────────────
+    // ─────────────────────────────────────────────
+    // Local development
+    // localhost:3000/admin/*
+    // ─────────────────────────────────────────────
     if (isLocalhost) {
       return NextResponse.next();
     }
 
-    // ── Main domain (production): block direct access to /admin/* ─────────
+    // ─────────────────────────────────────────────
+    // Prevent public access to /admin/*
+    // from main production domain
+    // ─────────────────────────────────────────────
     if (pathname.startsWith("/admin")) {
       url.pathname = "/";
       return NextResponse.redirect(url);
@@ -47,28 +58,51 @@ export default withAuth(
         const { pathname } = req.nextUrl;
 
         const isAdminSubdomain = host.startsWith("admin.");
-        const isLocalhost = host.startsWith("localhost") || host.startsWith("127.0.0.1");
 
-        // Allow subdomain root "/" — always public
-        if (isAdminSubdomain && pathname === "/") return true;
+        // ─────────────────────────────────────────
+        // PUBLIC PAGES ON ADMIN SUBDOMAIN
+        // ─────────────────────────────────────────
 
-        // Allow the login page, forgot and reset password — always public
-        if (pathname === "/admin") return true;
-        if (pathname === "/admin/forgot-password") return true;
-        if (pathname === "/admin/reset-password") return true;
+        if (isAdminSubdomain) {
+          const publicRoutes = [
+            "/",
+            "/forgot-password",
+            "/reset-password",
+          ];
 
-        // Protect all /admin/* routes — require admin role
-        if (isAdminSubdomain || isLocalhost || pathname.startsWith("/admin/")) {
-          if (pathname.startsWith("/admin/")) {
-            return !!token && token.role === "admin";
+          if (publicRoutes.some((route) => pathname.startsWith(route))) {
+            return true;
           }
+
+          // Everything else requires admin login
+          return !!token && token.role === "admin";
+        }
+
+        // ─────────────────────────────────────────
+        // LOCALHOST PUBLIC ROUTES
+        // ─────────────────────────────────────────
+
+        if (
+          pathname === "/admin" ||
+          pathname === "/admin/forgot-password" ||
+          pathname.startsWith("/admin/reset-password")
+        ) {
           return true;
         }
 
-        // All customer routes are public
+        // ─────────────────────────────────────────
+        // PROTECT ALL OTHER ADMIN ROUTES
+        // ─────────────────────────────────────────
+
+        if (pathname.startsWith("/admin/")) {
+          return !!token && token.role === "admin";
+        }
+
+        // Customer website routes
         return true;
       },
     },
+
     pages: {
       signIn: "/admin",
     },
