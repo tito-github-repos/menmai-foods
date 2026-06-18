@@ -10,6 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
@@ -280,9 +281,7 @@ const InfoCard = ({
 
 export default function AboutPage() {
   return (
-    <Box
-    // sx={{ pb: 8 }}
-    >
+    <Box>
       <Box
         sx={{
           position: "relative",
@@ -291,8 +290,8 @@ export default function AboutPage() {
 
           /* Background image for mobile & tablet */
           backgroundImage: {
-            xs: "linear-gradient(rgba(247,246,243,0.90), rgba(247,246,243,0.90)), url('/img/about/bg.png')",
-            md: "url('/img/about/bg-desk.png')",
+            xs: "linear-gradient(rgba(247,246,243,0.90), rgba(247,246,243,0.90)), url('/img/about/bg.webp')",
+            md: "url('/img/about/bg-desk.webp')",
           },
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -341,9 +340,9 @@ export default function AboutPage() {
                         width: 35,
                         height: 32,
                         backgroundColor: "var(--green)",
-                        mask: "url('/plant.png') no-repeat center / contain",
+                        mask: "url('/plant.webp') no-repeat center / contain",
                         WebkitMask:
-                          "url('/plant.png') no-repeat center / contain",
+                          "url('/plant.webp') no-repeat center / contain",
                         opacity: 0.7,
                         zIndex: 100,
                       }}
@@ -473,7 +472,7 @@ export default function AboutPage() {
             {/* IMAGE SIDE */}
 
             <Grid item xs={12} md={6}>
-              <motion.div {...fadeRight(0.3)}>
+              {/* <motion.div {...fadeRight(0.3)}> */}
                 <Box
                   sx={{
                     position: "relative",
@@ -489,12 +488,28 @@ export default function AboutPage() {
                   }}
                 >
                   {/* IMAGE */}
-                  <Box
+                  {/* <Box
                     component="img"
-                    src="/img/about/about.jpeg"
+                    src="/img/about/about.webp"
                     alt="Our Story"
                     sx={{
                       width: "100%",
+                      display: "block",
+                      borderRadius: "24px",
+                    }}
+                  /> */}
+
+                  <Image
+                    src="/img/about/about.webp"
+                    alt="Our Story"
+                    width={600}
+                    height={600}
+                    loading="lazy"
+                    quality={85}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+                    style={{
+                      width: "100%",
+                      height: "auto",
                       display: "block",
                       borderRadius: "24px",
                     }}
@@ -514,10 +529,10 @@ export default function AboutPage() {
                   <Box
                     sx={{
                       position: "absolute",
-                      bottom: { xs: "-50px", md: "-40px" },
+                      bottom: { xs: "-40px", md: "-40px" },
                       left: { xs: 24, md: 36 },
-                      width: { xs: 100, md: 130 },
-                      height: { xs: 100, md: 130 },
+                      width: { xs: 90, md: 130 },
+                      height: { xs: 90, md: 130 },
                       borderRadius: "50%",
                       display: "flex",
                       alignItems: "center",
@@ -559,12 +574,12 @@ export default function AboutPage() {
                     </Box>
                   </Box>
                 </Box>
-              </motion.div>
+              {/* </motion.div> */}
             </Grid>
 
             {/* CONTENT SIDE */}
             <Grid item xs={12} md={6}>
-              <motion.div {...fadeLeft(0.1)}>
+              {/* <motion.div {...fadeLeft(0.1)}> */}
                 <Box
                   sx={{
                     display: "flex",
@@ -591,9 +606,9 @@ export default function AboutPage() {
                       width: 35,
                       height: 32,
                       backgroundColor: "var(--glt)",
-                      mask: "url('/plant.png') no-repeat center / contain",
+                      mask: "url('/plant.webp') no-repeat center / contain",
                       WebkitMask:
-                        "url('/plant.png') no-repeat center / contain",
+                        "url('/plant.webp') no-repeat center / contain",
                       opacity: 0.7,
                       zIndex: 100,
                     }}
@@ -666,7 +681,7 @@ export default function AboutPage() {
                     </Box>
                   ))}
                 </Box>
-              </motion.div>
+              {/* </motion.div> */}
             </Grid>
           </Grid>
         </Box>
@@ -686,7 +701,7 @@ export default function AboutPage() {
             borderRadius: "16px",
           }}
         >
-          <motion.div {...zoomIn(0.1)}>
+          {/* <motion.div {...zoomIn(0.1)}> */}
             <Grid container spacing={0} alignItems="stretch">
               {featureItems.map((feat, i) => (
                 <Grid
@@ -760,7 +775,7 @@ export default function AboutPage() {
                 </Grid>
               ))}
             </Grid>
-          </motion.div>
+          {/* </motion.div> */}
         </Box>
 
         {/* Vision Mission Section */}
@@ -774,7 +789,7 @@ export default function AboutPage() {
           {/* DESKTOP CENTER IMAGE */}
           <Box
             component="img"
-            src="/img/about/image.png"
+            src="/img/about/image.webp"
             alt="illustration"
             sx={{
               position: "absolute",
@@ -795,7 +810,7 @@ export default function AboutPage() {
           >
             {/* VISION */}
             <Grid item xs={12} md={6}>
-              <motion.div {...fadeRight(0.1)}>
+              {/* <motion.div {...fadeRight(0.1)}> */}
                 <Box
                   sx={{
                     pr: { md: 6 },
@@ -805,7 +820,7 @@ export default function AboutPage() {
                     title="Our Vision"
                     description="To become a trusted household name in ready-to-cook foods across Tamil Nadu and beyond."
                     quote='"A name every Tamil home trusts"'
-                    image="/img/about/vision.png"
+                    image="/img/about/vision.webp"
                     color={{
                       main: "var(--primary-teal-dark)",
                       quote: "var(--primary-teal-dark)",
@@ -814,7 +829,7 @@ export default function AboutPage() {
                     }}
                   />
                 </Box>
-              </motion.div>
+              {/* </motion.div> */}
             </Grid>
 
             {/* MOBILE/TABLET CENTER IMAGE */}
@@ -825,12 +840,11 @@ export default function AboutPage() {
                 display: { xs: "flex", md: "none" },
                 justifyContent: "center",
                 alignItems: "center",
-                // py: 1,
               }}
             >
               <Box
                 component="img"
-                src="/img/about/image1.png"
+                src="/img/about/image1.webp"
                 alt="illustration"
                 sx={{
                   width: {
@@ -845,7 +859,7 @@ export default function AboutPage() {
 
             {/* MISSION */}
             <Grid item xs={12} md={6}>
-              <motion.div {...fadeLeft(0.1)}>
+              {/* <motion.div {...fadeLeft(0.1)}> */}
                 <Box
                   sx={{
                     pl: { md: 6 },
@@ -855,7 +869,7 @@ export default function AboutPage() {
                     title="Our Mission"
                     description="To provide fresh, hygienic, and time-saving food solutions that fit seamlessly into everyday life."
                     quote='"Fresh food, everyday convenience"'
-                    image="/img/about/mission.png"
+                    image="/img/about/mission.webp"
                     color={{
                       main: "var(--primary-maroon-mid)",
                       quote: "var(--primary-maroon-mid)",
@@ -864,7 +878,7 @@ export default function AboutPage() {
                     }}
                   />
                 </Box>
-              </motion.div>
+              {/* </motion.div> */}
             </Grid>
           </Grid>
         </Box>
