@@ -8,13 +8,16 @@ export async function POST(req: NextRequest) {
     key_id: process.env.RAZORPAY_KEY_ID!,
     key_secret: process.env.RAZORPAY_KEY_SECRET!,
   });
+
   try {
+    // ✅ Verify authentication
     const auth = verifyToken(req);
 
     if (!auth) {
       return unauthorized();
     }
 
+    // ✅ Get orderId from request
     const { orderId } = await req.json();
 
     if (!orderId) {
@@ -24,7 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch order from DB
+    // ✅ Fetch order from database
     const order = await prisma.order.findUnique({
       where: {
         id: orderId,
@@ -38,7 +41,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 🔥 CHECK 1: order exists in expired state
+    // ✅ CHECK 1: Order exists in EXPIRED state
     if (order.orderStatus === "EXPIRED") {
       return NextResponse.json(
         {
@@ -49,7 +52,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 🔥 CHECK 2: time-based expiry validation (IMPORTANT)
+    // ✅ CHECK 2: Time-based expiry validation (24 hour limit)
     if (order.orderExpiresAt && new Date() > order.orderExpiresAt) {
       await prisma.order.update({
         where: { id: order.id },
@@ -68,36 +71,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ✅ CHECK 3: If already paid, return error
     const existingPayment = await prisma.payment.findUnique({
       where: { orderId: order.id },
     });
 
     if (existingPayment?.paymentStatus === "PAID") {
-  return NextResponse.json({
-    success: false,
-    message: "Payment already completed for this order",
-  });
-}
-
-    // 🔥 ADD THIS BLOCK (IMPORTANT)
-    if (
-      existingPayment?.razorpayOrderId 
-      // && existingPayment.paymentStatus === "PENDING"
-    ) {
-      return NextResponse.json({
-        success: true,
-        razorpayOrderId: existingPayment.razorpayOrderId,
-        amount: Math.round(order.totalAmount * 100),
-        currency: "INR",
-        orderNumber: order.orderNumber,
-        reused: true,
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Payment already completed for this order",
+        },
+        { status: 400 },
+      );
     }
 
-    // Amount in paise
+    // ✅ ALWAYS CREATE NEW RAZORPAY ORDER (no reuse)
     const amountInPaise = Math.round(order.totalAmount * 100);
 
-    // Create Razorpay Order
+    // Validate amount
+    if (!amountInPaise || amountInPaise <= 0 || isNaN(amountInPaise)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid order amount" },
+        { status: 400 },
+      );
+    }
+
+    // Create NEW Razorpay Order (fresh every time, never reuse)
     const razorpayOrder = await razorpay.orders.create({
       amount: amountInPaise,
       currency: "INR",
@@ -108,24 +108,25 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Create or Update Payment record
+    // ✅ Create or Update Payment record with NEW razorpayOrderId
     await prisma.payment.upsert({
       where: {
         orderId: order.id,
       },
       update: {
-        razorpayOrderId: razorpayOrder.id,
+        razorpayOrderId: razorpayOrder.id, // ← NEW order ID (not reused)
         amount: order.totalAmount,
         paymentStatus: "PENDING",
       },
       create: {
         orderId: order.id,
-        razorpayOrderId: razorpayOrder.id,
+        razorpayOrderId: razorpayOrder.id, // ← NEW order ID
         amount: order.totalAmount,
         paymentStatus: "PENDING",
       },
     });
 
+    // ✅ Return response with new Razorpay order
     return NextResponse.json({
       success: true,
       razorpayOrderId: razorpayOrder.id,
