@@ -14,7 +14,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Avatar,
   Chip,
   Card,
   CardContent,
@@ -82,14 +81,26 @@ const ORDER_STATUS_MAP: Record<string, { label: string; bg: string; color: strin
   ABANDONED: { label: "Abandoned",  bg: "#F5F5F5", color: "#616161" },
 };
 
-const PAYMENT_STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  PENDING:  { label: "Unpaid",    bg: "#FFF3E0", color: "#EF6C00" },
-  PAID:     { label: "Paid",      bg: "#E8F5E9", color: "#2E7D32" },
-  FAILED:   { label: "Failed",    bg: "#FFEBEE", color: "#C62828" },
-  REFUNDED: { label: "Refunded",  bg: "#E3F2FD", color: "#1565C0" },
+const ROWS_PER_PAGE = 10;
+
+// ─── Shared styles (mirroring dashboard) ─────────────────────────────────────
+
+const headCellSx = {
+  bgcolor: "#F9FAFB",
+  color: "#7B3F2E",
+  fontWeight: 700,
+  fontSize: "0.8rem",
+  letterSpacing: 0.5,
+  borderBottom: "1px solid #E5E7EB",
+  py: 2,
+  whiteSpace: "nowrap" as const,
 };
 
-const ROWS_PER_PAGE = 10;
+const bodyCellSx = {
+  py: 2.5,
+  verticalAlign: "top",
+  borderBottom: "1px solid #F1F5F9",
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -109,19 +120,35 @@ function OrderStatusChip({ status }: { status: string }) {
     <Chip
       size="small"
       label={s.label}
-      sx={{ bgcolor: s.bg, color: s.color, fontWeight: 600, fontSize: 11, whiteSpace: "nowrap" }}
+      sx={{ bgcolor: s.bg, color: s.color, fontWeight: 600, fontSize: 11 }}
     />
   );
 }
 
-function PaymentStatusChip({ status }: { status: string }) {
-  const s = PAYMENT_STATUS_MAP[status] ?? { label: status, bg: "#F5F5F5", color: "#666" };
+// Items cell: bold name, muted quantity — mirrors dashboard ItemsCell
+function ItemsCell({ items }: { items: string }) {
   return (
-    <Chip
-      size="small"
-      label={s.label}
-      sx={{ bgcolor: s.bg, color: s.color, fontWeight: 600, fontSize: 11, whiteSpace: "nowrap" }}
-    />
+    <>
+      {items.split(",").map((item, idx) => {
+        const parts = item.trim().split(/\s*[×x]\s*/);
+        const name  = parts[0]?.trim() ?? item.trim();
+        const qty   = parts[1]?.trim();
+        return (
+          <Typography
+            key={idx}
+            component="div"
+            sx={{ fontSize: "0.9rem", color: "#334155", lineHeight: 1.9 }}
+          >
+            <Box component="span" sx={{ fontWeight: 700 }}>{name}</Box>
+            {qty && (
+              <Box component="span" sx={{ fontWeight: 400, color: "#64748B" }}>
+                {" "}× {qty}
+              </Box>
+            )}
+          </Typography>
+        );
+      })}
+    </>
   );
 }
 
@@ -131,8 +158,9 @@ function SkeletonRows({ cols }: { cols: number }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <TableRow key={i}>
           {Array.from({ length: cols }).map((_, j) => (
-            <TableCell key={j}>
-              <Skeleton variant="text" width={j === 0 ? 80 : j === cols - 1 ? 60 : "80%"} />
+            <TableCell key={j} sx={bodyCellSx}>
+              <Skeleton variant="text" width={j === 0 ? 80 : "80%"} />
+              {j === 0 && <Skeleton variant="text" width={60} sx={{ mt: 0.5 }} />}
             </TableCell>
           ))}
         </TableRow>
@@ -156,7 +184,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
 
-  const menuOpen     = Boolean(anchorEl);
+  const menuOpen      = Boolean(anchorEl);
   const selectedLabel = DATE_FILTER_OPTIONS.find((o) => o.value === dateFilter)?.label ?? "All time";
 
   // ── Fetch ───────────────────────────────────────────────────────────────────
@@ -183,8 +211,9 @@ export default function OrdersPage() {
     return () => { cancelled = true; };
   }, [dateFilter]);
 
-  // ── Filter + paginate ───────────────────────────────────────────────────────
+  // ── Filter: PAID only + search ──────────────────────────────────────────────
   const filtered = orders.filter((o) => {
+    if (o.paymentStatus !== "PAID") return false;
     if (!search) return true;
     const q = search.toLowerCase();
     return (
@@ -198,8 +227,8 @@ export default function OrdersPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
   const paginated  = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE);
 
-  // ORDER ID | CUSTOMER | PHONE | ITEMS | AMOUNT | PAYMENT ID | ADDRESS | DATE | ORDER STATUS | PAYMENT STATUS
-  const COL_COUNT = 10;
+  // ORDER ID | CUSTOMER | ITEMS | AMOUNT | PAYMENT ID | ADDRESS | ORDER STATUS
+  const COL_COUNT = 7;
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -299,7 +328,7 @@ export default function OrdersPage() {
             {/* Count pill */}
             <Box sx={{ px: 1.5, py: 0.4, borderRadius: 20, bgcolor: "action.hover", border: "1px solid", borderColor: "divider" }}>
               <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                {loading ? "Loading…" : `${filtered.length} order${filtered.length !== 1 ? "s" : ""}`}
+                {loading ? "Loading…" : `${filtered.length} paid order${filtered.length !== 1 ? "s" : ""}`}
               </Typography>
             </Box>
           </Box>
@@ -330,25 +359,19 @@ export default function OrdersPage() {
         {/* ── DESKTOP TABLE ── */}
         {!mobile && (
           <TableContainer sx={{ overflowX: "auto" }}>
-            <Table sx={{ minWidth: 1400 }}>
+            <Table sx={{ minWidth: 1100 }}>
               <TableHead>
-                <TableRow sx={{ bgcolor: "#FAFAFA" }}>
+                <TableRow>
                   {[
-                    "ORDER ID",
-                    "DATE",
+                    "ORDER",
                     "CUSTOMER",
-                    "PHONE",
                     "ITEMS",
                     "AMOUNT",
                     "PAYMENT ID",
                     "ADDRESS",
                     "ORDER STATUS",
-                    "PAYMENT STATUS",
                   ].map((col) => (
-                    <TableCell
-                      key={col}
-                      sx={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.5, color: "text.secondary", whiteSpace: "nowrap" }}
-                    >
+                    <TableCell key={col} sx={headCellSx}>
                       {col}
                     </TableCell>
                   ))}
@@ -362,7 +385,7 @@ export default function OrdersPage() {
                   <TableRow>
                     <TableCell colSpan={COL_COUNT} align="center" sx={{ py: 6 }}>
                       <Typography color="text.secondary" fontSize={14}>
-                        No orders found for this period
+                        No paid orders found for this period
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -370,85 +393,72 @@ export default function OrdersPage() {
                   paginated.map((order) => (
                     <TableRow
                       key={order.id}
-                      sx={{ "&:hover": { bgcolor: "#FAFAFA" }, "&:last-child td": { border: 0 } }}
+                      hover
+                      sx={{ "&:hover": { bgcolor: "#FAFAFA" }, "& td": bodyCellSx }}
                     >
-                      {/* ORDER ID */}
-                      <TableCell>
-                        <Typography fontWeight={700} fontSize={13} whiteSpace="nowrap">
+                      {/* ORDER ID + DATE stacked */}
+                      <TableCell sx={{ minWidth: 160, ...bodyCellSx }}>
+                        <Typography
+                          fontWeight={700}
+                          fontSize="0.95rem"
+                          sx={{ color: "var(--primary-teal-mid, #0D9488)" }}
+                        >
                           {order.id}
                         </Typography>
-                      </TableCell>
-
-                      {/* DATE */}
-                      <TableCell>
-                        <Typography fontSize={12} color="text.secondary" whiteSpace="nowrap">
+                        <Typography fontSize="0.8rem" color="#94A3B8" mt={0.5}>
                           {formatDate(order.date)}
                         </Typography>
                       </TableCell>
 
-                      {/* CUSTOMER */}
-                      <TableCell>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Avatar sx={{ width: 32, height: 32, fontSize: 13, fontWeight: 600, bgcolor: "#FCE4EC", color: "#5D4037" }}>
-                            {order.customer.charAt(0)}
-                          </Avatar>
-                          <Typography fontSize={13} whiteSpace="nowrap">{order.customer}</Typography>
-                        </Box>
-                      </TableCell>
-
-                      {/* PHONE */}
-                      <TableCell>
-                        <Typography fontSize={13} color="text.secondary" whiteSpace="nowrap">
+                      {/* CUSTOMER: name + phone stacked, no icon */}
+                      <TableCell sx={{ minWidth: 180, ...bodyCellSx }}>
+                        <Typography fontWeight={700} fontSize="1rem" color="#0F172A">
+                          {order.customer}
+                        </Typography>
+                        <Typography fontSize="0.85rem" color="#64748B" mt={0.5}>
                           {order.phone}
                         </Typography>
                       </TableCell>
 
-                      {/* ITEMS */}
-                      <TableCell sx={{ maxWidth: 200 }}>
-                        <Typography fontSize={13} sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {order.items}
-                        </Typography>
+                      {/* ITEMS — bold name, muted quantity */}
+                      <TableCell sx={{ minWidth: 220, ...bodyCellSx }}>
+                        <ItemsCell items={order.items} />
                       </TableCell>
 
                       {/* AMOUNT */}
-                      <TableCell>
-                        <Typography fontSize={13} fontWeight={600} whiteSpace="nowrap">
+                      <TableCell sx={{ minWidth: 110, ...bodyCellSx }}>
+                        <Typography fontWeight={700} fontSize="1.1rem" color="#111827">
                           {order.amount}
                         </Typography>
                       </TableCell>
 
                       {/* PAYMENT ID */}
-                      <TableCell>
+                      <TableCell sx={{ minWidth: 180, ...bodyCellSx }}>
                         <Typography
                           fontSize={12}
                           fontFamily="monospace"
                           color={order.paymentId === "—" ? "text.disabled" : "text.primary"}
-                          whiteSpace="nowrap"
+                          sx={{ wordBreak: "break-all" }}
                         >
                           {order.paymentId}
                         </Typography>
                       </TableCell>
 
                       {/* ADDRESS */}
-                      <TableCell sx={{ maxWidth: 200 }}>
+                      <TableCell sx={{ minWidth: 200, ...bodyCellSx }}>
                         <Typography
-                          fontSize={12}
-                          color="text.secondary"
-                          title={order.address}
-                          sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                          fontSize="0.9rem"
+                          color="#475569"
+                          lineHeight={1.6}
+                          sx={{ whiteSpace: "normal", wordBreak: "break-word" }}
                         >
                           {order.address}
                         </Typography>
                       </TableCell>
 
                       {/* ORDER STATUS */}
-                      <TableCell>
+                      <TableCell sx={{ minWidth: 120, ...bodyCellSx }}>
                         <OrderStatusChip status={order.orderStatus} />
-                      </TableCell>
-
-                      {/* PAYMENT STATUS */}
-                      <TableCell>
-                        <PaymentStatusChip status={order.paymentStatus} />
                       </TableCell>
                     </TableRow>
                   ))
@@ -474,7 +484,7 @@ export default function OrdersPage() {
               ))
             ) : paginated.length === 0 ? (
               <Typography color="text.secondary" fontSize={14} textAlign="center" py={4}>
-                No orders found for this period
+                No paid orders found for this period
               </Typography>
             ) : (
               paginated.map((order) => (
@@ -482,40 +492,56 @@ export default function OrdersPage() {
                   <CardContent sx={{ pb: "12px !important" }}>
 
                     {/* Row 1: Order ID + Order Status */}
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
-                      <Typography fontWeight={700} fontSize={14}>{order.id}</Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 0.5 }}>
+                      <Typography
+                        fontWeight={700}
+                        fontSize="0.95rem"
+                        sx={{ color: "var(--primary-teal-mid, #0D9488)" }}
+                      >
+                        {order.id}
+                      </Typography>
                       <OrderStatusChip status={order.orderStatus} />
                     </Box>
 
-                    {/* Customer + phone */}
-                    <Typography fontSize={13} fontWeight={500}>{order.customer}</Typography>
-                    <Typography fontSize={12} color="text.secondary" mb={0.5}>{order.phone}</Typography>
+                    {/* Date */}
+                    <Typography fontSize="0.8rem" color="#94A3B8" mb={1}>
+                      {formatDate(order.date)}
+                    </Typography>
+
+                    {/* Customer + phone — no icon */}
+                    <Typography fontSize={13} fontWeight={700} color="#0F172A">{order.customer}</Typography>
+                    <Typography fontSize={12} color="#64748B" mb={0.5}>{order.phone}</Typography>
 
                     {/* Items */}
-                    <Typography fontSize={13} mb={0.5}>{order.items}</Typography>
+                    <Box mb={0.5}>
+                      <ItemsCell items={order.items} />
+                    </Box>
 
                     {/* Address */}
-                    <Typography fontSize={12} color="text.secondary" mb={1}>{order.address}</Typography>
+                    <Typography fontSize={12} color="#475569" lineHeight={1.6} mb={1}>
+                      {order.address}
+                    </Typography>
 
                     {/* Payment ID */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
-                      <Typography fontSize={11} color="text.secondary" fontWeight={600}>Payment ID:</Typography>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, mb: 1, flexWrap: "wrap" }}>
+                      <Typography fontSize={11} color="text.secondary" fontWeight={600} flexShrink={0}>
+                        Payment ID:
+                      </Typography>
                       <Typography
                         fontSize={11}
                         fontFamily="monospace"
                         color={order.paymentId === "—" ? "text.disabled" : "text.primary"}
+                        sx={{ wordBreak: "break-all" }}
                       >
                         {order.paymentId}
                       </Typography>
                     </Box>
 
-                    {/* Amount + date + payment status */}
+                    {/* Amount + date */}
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Typography fontSize={14} fontWeight={700}>{order.amount}</Typography>
-                        <PaymentStatusChip status={order.paymentStatus} />
-                      </Box>
-                      <Typography fontSize={12} color="text.secondary">{formatDate(order.date)}</Typography>
+                      <Typography fontSize={14} fontWeight={700} color="#111827">
+                        {order.amount}
+                      </Typography>
                     </Box>
                   </CardContent>
                 </Card>
@@ -525,10 +551,20 @@ export default function OrdersPage() {
         )}
 
         {/* ── PAGINATION ── */}
-        <Box sx={{ p: 2, borderTop: "1px solid #eee", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+        <Box
+          sx={{
+            p: 2,
+            borderTop: "1px solid #eee",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 1,
+          }}
+        >
           <Typography variant="body2" color="text.secondary">
             {filtered.length === 0
-              ? "No orders to show"
+              ? "No paid orders to show"
               : `Showing ${Math.min((page - 1) * ROWS_PER_PAGE + 1, filtered.length)}–${Math.min(page * ROWS_PER_PAGE, filtered.length)} of ${filtered.length}`}
           </Typography>
           <Pagination

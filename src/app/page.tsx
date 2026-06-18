@@ -457,8 +457,16 @@ export default function HomePage() {
   // };
 
 
- const handleBulkSubmit = async () => {
+const handleBulkSubmit = async () => {
   console.log("Submit clicked");
+
+  // Stop here if form is invalid
+  if (!validate()) {
+    console.log("Validation failed");
+    return;
+  }
+
+  console.log("Validation passed - calling API");
 
   try {
     const response = await fetch("/api/enquiry", {
@@ -482,7 +490,6 @@ export default function HomePage() {
         address: "",
         notes: "",
       });
-      
     } else {
       alert("Failed to send enquiry");
     }

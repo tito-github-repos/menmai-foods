@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ThemeRegistry from "./ThemeRegistry";
-import FloatingContact from "./components/FloatingContact";
 import Providers from "./providers";
 import LayoutWrapper from "./components/LayoutWrapper";
 
