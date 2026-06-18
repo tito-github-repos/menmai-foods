@@ -527,7 +527,7 @@ export default function CartCheckout() {
                     color="#5f2120"
                     mb={0.5}
                   >
-                    Free delivery up to 5 km Nagamalaipudukottai
+                    Free delivery up to 5 km from Nagamalaipudukottai
                   </Typography>
 
                   <Typography fontSize={{ xs: 12, md: 13 }} color="#5f2120">
@@ -1003,7 +1003,7 @@ export default function CartCheckout() {
                             fontSize={13}
                             color="#5f2120"
                           >
-                            Free delivery up to 5 km Nagamalaipudukottai
+                            Free delivery up to 5 km from Nagamalaipudukottai
                           </Typography>
 
                           <Typography fontSize={12} color="#5f2120">
