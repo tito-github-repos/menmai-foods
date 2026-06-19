@@ -515,7 +515,7 @@ export default function BulkOrderPage() {
           HERO
       ════════════════════════════════ */}
       <Box sx={{ position: "relative", overflow: "hidden", backgroundColor: "#f7f6f3", minHeight: { xs: "auto", md: 340 } }}>
-        <Box component="img" src="/img/bulkorder.png" alt="" aria-hidden="true"
+        <Box component="img" src="/img/bulkorder.webp" alt="" aria-hidden="true"
           sx={{ position: "absolute", top: 0, right: 0, width: { xs: "100%", md: "65%" }, height: "100%", objectFit: "cover", objectPosition: "center top", display: "block", zIndex: 0 }}
         />
         <Box sx={{ position: "absolute", top: 0, left: 0, width: { xs: "100%", md: "50%" }, height: "100%", background: { xs: "linear-gradient(to bottom, #f7f6f3 60%, transparent 100%)", md: "linear-gradient(to right, #f7f6f3 45%, rgba(247,246,243,0.85) 65%, rgba(247,246,243,0.3) 82%, transparent 100%)" }, zIndex: 1, pointerEvents: "none" }} />

@@ -198,7 +198,7 @@ export function DeliverySection() {
   {/* ── RIGHT: IMAGE ── */}
   <Box
     component="img"
-    src="/img/bg_delivery.png"
+    src="/img/bg_delivery.webp"
     alt="Madurai 10km delivery map"
     sx={{
       width: "100%",
