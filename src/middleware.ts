@@ -10,8 +10,7 @@ export default withAuth(
 
     const isAdminSubdomain = host.startsWith("admin.");
     const isLocalhost =
-      host.startsWith("localhost") ||
-      host.startsWith("127.0.0.1");
+      host.startsWith("localhost") || host.startsWith("127.0.0.1");
 
     // ─────────────────────────────────────────────
     // Admin subdomain rewrite
@@ -19,17 +18,25 @@ export default withAuth(
     // => /admin/dashboard
     // ─────────────────────────────────────────────
     if (isAdminSubdomain) {
+      // Prevent URLs like:
+      // admin.menmaifoods.com/admin/dashboard
+      // admin.menmaifoods.com/admin/orders
+      if (pathname.startsWith("/admin")) {
+        url.pathname = pathname.replace("/admin", "") || "/";
+       return NextResponse.redirect(url, 308);
+      }
+
+      // Login page
       if (pathname === "/") {
         url.pathname = "/admin";
         return NextResponse.rewrite(url);
       }
 
-      if (!pathname.startsWith("/admin")) {
-        url.pathname = `/admin${pathname}`;
-        return NextResponse.rewrite(url);
-      }
-
-      return NextResponse.next();
+      // Rewrite clean admin URLs
+      // /dashboard -> /admin/dashboard
+      // /orders -> /admin/orders
+      url.pathname = `/admin${pathname}`;
+      return NextResponse.rewrite(url);
     }
 
     // ─────────────────────────────────────────────
@@ -46,7 +53,7 @@ export default withAuth(
     // ─────────────────────────────────────────────
     if (pathname.startsWith("/admin")) {
       url.pathname = "/";
-      return NextResponse.redirect(url);
+     return NextResponse.redirect(url, 308);
     }
 
     return NextResponse.next();
@@ -76,18 +83,12 @@ export default withAuth(
         // So public-route matching must check BOTH shapes.
         // ─────────────────────────────────────────
         if (isAdminSubdomain) {
-          const publicRoutesUnprefixed = ["/", "/forgot-password", "/reset-password"];
-          const publicRoutesPrefixed = ["/admin", "/admin/forgot-password", "/admin/reset-password"];
+          const publicRoutes = ["/", "/forgot-password", "/reset-password"];
 
-          const isPublic =
-            publicRoutesUnprefixed.some((route) => {
-              if (route === "/") return pathname === "/";
-              return pathname === route || pathname.startsWith(route + "/");
-            }) ||
-            publicRoutesPrefixed.some((route) => {
-              return pathname === route || pathname.startsWith(route + "/");
-            });
-
+          const isPublic = publicRoutes.some((route) => {
+            if (route === "/") return pathname === "/";
+            return pathname === route || pathname.startsWith(route + "/");
+          });
           if (isPublic) return true;
 
           // Everything else (both /dashboard and /admin/dashboard shapes) requires login
@@ -122,11 +123,9 @@ export default withAuth(
     pages: {
       signIn: "/admin",
     },
-  }
+  },
 );
 
 export const config = {
-  matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };
