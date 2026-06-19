@@ -750,22 +750,22 @@ const productDetails: Record<string, any> = {
       {
         title: "Preheat Pan",
         desc: "Heat tawa on medium flame for 2 min.",
-        img: "/img/procedure/cpan_heat.png",
+        img: "/img/procedure/cpan_heat.webp",
       },
       {
         title: "Place Chapathi",
         desc: "Lay flat, cook until bubbles form.",
-        img: "/img/procedure/c_place.png",
+        img: "/img/procedure/c_place.webp",
       },
       {
         title: "Flip & Cook",
         desc: "Cook both sides evenly, ~30 sec each.",
-        img: "/img/procedure/c_flip.png",
+        img: "/img/procedure/c_flip.webp",
       },
       {
         title: "Serve Fresh",
         desc: "Serve hot with ghee or curry.",
-        img: "/img/procedure/c_serve.png",
+        img: "/img/procedure/c_serve.webp",
       },
     ],
     cookTip: "For extra softness, apply a little ghee or butter while serving.",

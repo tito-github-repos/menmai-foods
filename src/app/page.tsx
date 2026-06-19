@@ -27,9 +27,9 @@ import { getProductLimit } from "@/constants/productLimits";
    HERO BANNERS
 ───────────────────────────────────────── */
 const banners: string[] = [
-  "/img/herosection/prodhero1.png",
-  "/img/herosection/prodhero3.png",
-  "/img/herosection/prodhero2.png",
+  "/img/herosection/prodhero1.webp",
+  "/img/herosection/prodhero3.webp",
+  "/img/herosection/prodhero2.webp",
 ];
 
 const mobileBanners: string[] = [
@@ -1414,7 +1414,7 @@ const handleBulkSubmit = async () => {
           {/* ── Chapati image ── */}
           <Box
             component="img"
-            src="/img/dec_img.png"
+            src="/img/dec_img.webp"
             alt=""
             aria-hidden="true"
             sx={{
@@ -1620,7 +1620,7 @@ const handleBulkSubmit = async () => {
                   />
                   <Box
                     component="img"
-                    src="/img/bulk1.png"
+                    src="/img/bulk1.webp"
                     alt="Menmai bulk boxes"
                     sx={{
                       width: "100%",

@@ -387,7 +387,7 @@ export default function CertifiedQualitySection() {
       {/* Wheat — bottom left */}
       <Box
         component="img"
-        src="/img/certificates/wheat.png"
+        src="/img/certificates/wheat.webp"
         alt=""
         sx={{
           position: "absolute",
@@ -402,7 +402,7 @@ export default function CertifiedQualitySection() {
       {/* Chapathi bowl — right, vertically centered */}
       <Box
         component="img"
-        src="/img/dec_img.png"
+        src="/img/dec_img.webp"
         alt=""
         sx={{
           position: "absolute",
@@ -495,7 +495,7 @@ export default function CertifiedQualitySection() {
           >
             <Box
               component="img"
-              src="/img/certificates/fssai.png"
+              src="/img/certificates/fssai.webp"
               alt="FSSAI"
               sx={{ height: { xs: 34, md: 44 }, objectFit: "contain" }}
             />
@@ -530,7 +530,7 @@ export default function CertifiedQualitySection() {
           >
             <Box
               component="img"
-              src="/img/certificates/msme.png"
+              src="/img/certificates/msme.webp"
               alt="MSME"
               sx={{ height: { xs: 34, md: 44 }, objectFit: "contain" }}
             />
