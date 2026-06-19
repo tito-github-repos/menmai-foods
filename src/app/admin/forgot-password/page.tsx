@@ -101,7 +101,7 @@ export default function ForgotPasswordPage() {
             </Typography>
             <Button
               fullWidth variant="outlined"
-              onClick={() => router.push("/login")}
+              onClick={() => router.push("/admin")}
               sx={{
                 borderRadius: "12px", height: 46,
                 borderColor: "#5A1F00", color: "#5A1F00", fontWeight: 600,
@@ -162,7 +162,7 @@ export default function ForgotPasswordPage() {
 
             {/* Back to login */}
             <Box
-              onClick={() => router.push("/login")}
+              onClick={() => router.push("/admin")}
               sx={{
                 display: "flex", alignItems: "center", justifyContent: "center",
                 gap: 0.5, mt: 2.5, cursor: "pointer",

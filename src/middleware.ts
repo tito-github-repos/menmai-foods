@@ -57,25 +57,41 @@ export default withAuth(
         const host = req.headers.get("host") || "";
         const { pathname } = req.nextUrl;
 
+        // TEMP DEBUG — remove after confirming logs
+        console.log("AUTH_CHECK_V2", {
+          pathname,
+          host,
+          hasToken: !!token,
+          role: (token as any)?.role,
+        });
+
         const isAdminSubdomain = host.startsWith("admin.");
 
         // ─────────────────────────────────────────
         // PUBLIC PAGES ON ADMIN SUBDOMAIN
+        // authorized() sees the PRE-REWRITE path here
+        // e.g. admin.menmaifoods.com/dashboard -> pathname "/dashboard"
+        // BUT admin.menmaifoods.com/admin/dashboard -> pathname "/admin/dashboard"
+        // (typed directly, no rewrite happens, so it keeps the /admin prefix)
+        // So public-route matching must check BOTH shapes.
         // ─────────────────────────────────────────
-
         if (isAdminSubdomain) {
-          const publicRoutes = [
-            "/",
-            "/forgot-password",
-            "/reset-password",
-          ];
+          const publicRoutesUnprefixed = ["/", "/forgot-password", "/reset-password"];
+          const publicRoutesPrefixed = ["/admin", "/admin/forgot-password", "/admin/reset-password"];
 
-          if (publicRoutes.some((route) => pathname.startsWith(route))) {
-            return true;
-          }
+          const isPublic =
+            publicRoutesUnprefixed.some((route) => {
+              if (route === "/") return pathname === "/";
+              return pathname === route || pathname.startsWith(route + "/");
+            }) ||
+            publicRoutesPrefixed.some((route) => {
+              return pathname === route || pathname.startsWith(route + "/");
+            });
 
-          // Everything else requires admin login
-          return !!token && token.role === "admin";
+          if (isPublic) return true;
+
+          // Everything else (both /dashboard and /admin/dashboard shapes) requires login
+          return !!token && (token as any).role === "admin";
         }
 
         // ─────────────────────────────────────────
@@ -95,7 +111,7 @@ export default withAuth(
         // ─────────────────────────────────────────
 
         if (pathname.startsWith("/admin/")) {
-          return !!token && token.role === "admin";
+          return !!token && (token as any).role === "admin";
         }
 
         // Customer website routes
@@ -110,5 +126,7 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)",
+  ],
 };
