@@ -41,27 +41,6 @@ const fadeUp = (delay = 0) => ({
   viewport: { once: true },
 });
 
-const fadeRight = (delay = 0) => ({
-  initial: { opacity: 0, x: -40 },
-  whileInView: { opacity: 1, x: 0 },
-  transition: { duration: 0.7, delay },
-  viewport: { once: true },
-});
-
-const fadeLeft = (delay = 0) => ({
-  initial: { opacity: 0, x: 40 },
-  whileInView: { opacity: 1, x: 0 },
-  transition: { duration: 0.7, delay },
-  viewport: { once: true },
-});
-
-const zoomIn = (delay = 0) => ({
-  initial: { opacity: 0, scale: 0.9 },
-  whileInView: { opacity: 1, scale: 1 },
-  transition: { duration: 0.6, delay },
-  viewport: { once: true },
-});
-
 const featureItems = [
   {
     label: "Made from Quality wheat",
@@ -218,6 +197,7 @@ const InfoCard = ({
         component="img"
         src={image}
         alt={title}
+        loading="lazy"
         sx={{
           width: { xs: 90, sm: 130, md: 150 },
           height: { xs: 90, sm: 130, md: 150 },
@@ -287,17 +267,55 @@ export default function AboutPage() {
           position: "relative",
           overflow: "hidden",
           backgroundColor: "#f7f6f3",
-
-          /* Background image for mobile & tablet */
-          backgroundImage: {
-            xs: "linear-gradient(rgba(247,246,243,0.90), rgba(247,246,243,0.90)), url('/img/about/bg.webp')",
-            md: "url('/img/about/bg-desk.webp')",
-          },
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
         }}
       >
+        <Box sx={{ position: "absolute", inset: 0, zIndex: 0 }}>
+          {/* MOBILE IMAGE */}
+          <Box
+            sx={{
+              display: { xs: "block", md: "none" },
+              position: "absolute",
+              inset: 0,
+            }}
+          >
+            <Image
+              src="/img/about/bg.webp"
+              alt="mobile bg"
+              fill
+              priority
+              style={{ objectFit: "cover" }}
+            />
+          </Box>
+
+          {/* DESKTOP IMAGE */}
+          <Box
+            sx={{
+              display: { xs: "none", md: "block" },
+              position: "absolute",
+              inset: 0,
+            }}
+          >
+            <Image
+              src="/img/about/bg-desk.webp"
+              alt="desktop bg"
+              fill
+              priority
+              style={{ objectFit: "cover" }}
+            />
+          </Box>
+
+          {/* MOBILE ONLY OVERLAY */}
+          <Box
+            sx={{
+              display: { xs: "block", md: "none" },
+              position: "absolute",
+              inset: 0,
+              zIndex: 1,
+              background:
+                "linear-gradient(rgba(247,246,243,0.90), rgba(247,246,243,0.90))",
+            }}
+          />
+        </Box>
         <Container>
           <Grid container spacing={6} alignItems="center">
             {/* LEFT CONTENT */}
@@ -348,10 +366,7 @@ export default function AboutPage() {
                       }}
                     />
                   </Box>
-                </motion.div>
 
-                {/* HEADING */}
-                <motion.div {...fadeUp(0.2)}>
                   <Typography
                     sx={{
                       fontSize: { xs: "1.55rem", sm: "1.9rem", md: "2.6rem" },
@@ -371,9 +386,7 @@ export default function AboutPage() {
                       Home
                     </Box>{" "}
                   </Typography>
-                </motion.div>
 
-                <motion.div {...fadeUp(0.3)}>
                   <Box
                     sx={{
                       display: "flex",
@@ -410,10 +423,7 @@ export default function AboutPage() {
                       }}
                     />
                   </Box>
-                </motion.div>
 
-                {/* SUBTEXT */}
-                <motion.div {...fadeUp(0.4)}>
                   <Typography
                     sx={{
                       fontSize: { xs: ".9rem", sm: "1rem" },
@@ -427,9 +437,7 @@ export default function AboutPage() {
                     healthier, and more delicious with fresh, hygienic,
                     ready-to-eat food crafted for your family.
                   </Typography>
-                </motion.div>
 
-                <motion.div {...fadeUp(0.5)}>
                   {/* BUTTON */}
                   <Button
                     component={Link}
@@ -472,216 +480,196 @@ export default function AboutPage() {
             {/* IMAGE SIDE */}
 
             <Grid item xs={12} md={6}>
-              {/* <motion.div {...fadeRight(0.3)}> */}
+              <Box
+                sx={{
+                  position: "relative",
+                  borderRadius: "28px",
+                  overflow: "visible",
+                  pr: { xs: 2, md: 4 },
+                  pb: { xs: 5, md: 7 },
+
+                  /* Background frame */
+                  p: { xs: 1.2, md: 1.8 },
+                  background: "color-mix(in srgb, var(--glt), transparent 90%)",
+                }}
+              >
+                {/* IMAGE */}
+                <Image
+                  src="/img/about/about.webp"
+                  alt="Our Story"
+                  width={600}
+                  height={600}
+                  loading="lazy"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    display: "block",
+                    borderRadius: "24px",
+                  }}
+                />
+
+                {/* SOFT OVERLAY */}
                 <Box
                   sx={{
-                    position: "relative",
-                    borderRadius: "28px",
-                    overflow: "visible",
-                    pr: { xs: 2, md: 4 },
-                    pb: { xs: 5, md: 7 },
+                    position: "absolute",
+                    inset: { xs: 5, md: 8 },
+                    borderRadius: "24px",
+                    pointerEvents: "none",
+                  }}
+                />
 
-                    /* Background frame */
-                    p: { xs: 1.2, md: 1.8 },
-                    background:
-                      "color-mix(in srgb, var(--glt), transparent 90%)",
+                {/* QUALITY BADGE */}
+                <Box
+                  sx={{
+                    position: "absolute",
+                    bottom: { xs: "-40px", md: "-40px" },
+                    left: { xs: 24, md: 36 },
+                    width: { xs: 90, md: 130 },
+                    height: { xs: 90, md: 130 },
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow:
+                      "0 14px 34px rgba(0,0,0,0.22), inset 0 0 14px rgba(255,255,255,0.12)",
+                    backdropFilter: "blur(6px)",
+                    zIndex: 3,
+                    backgroundColor: "var(--primary-teal-dark)",
                   }}
                 >
-                  {/* IMAGE */}
-                  {/* <Box
-                    component="img"
-                    src="/img/about/about.webp"
-                    alt="Our Story"
-                    sx={{
-                      width: "100%",
-                      display: "block",
-                      borderRadius: "24px",
-                    }}
-                  /> */}
-
-                  <Image
-                    src="/img/about/about.webp"
-                    alt="Our Story"
-                    width={600}
-                    height={600}
-                    loading="lazy"
-                    quality={85}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
-                    style={{
-                      width: "100%",
-                      height: "auto",
-                      display: "block",
-                      borderRadius: "24px",
-                    }}
-                  />
-
-                  {/* SOFT OVERLAY */}
+                  {/* Inner Circle */}
                   <Box
                     sx={{
-                      position: "absolute",
-                      inset: { xs: 5, md: 8 },
-                      borderRadius: "24px",
-                      pointerEvents: "none",
-                    }}
-                  />
-
-                  {/* QUALITY BADGE */}
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      bottom: { xs: "-40px", md: "-40px" },
-                      left: { xs: 24, md: 36 },
-                      width: { xs: 90, md: 130 },
-                      height: { xs: 90, md: 130 },
+                      width: "87%",
+                      height: "87%",
                       borderRadius: "50%",
+                      border: "1.5px solid var(--glt)",
+                      background: "var(--primary-teal-dark)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      boxShadow:
-                        "0 14px 34px rgba(0,0,0,0.22), inset 0 0 14px rgba(255,255,255,0.12)",
-                      backdropFilter: "blur(6px)",
-                      zIndex: 3,
-                      backgroundColor: "var(--primary-teal-dark)",
+                      textAlign: "center",
+                      px: 1.5,
                     }}
                   >
-                    {/* Inner Circle */}
-                    <Box
+                    <Typography
                       sx={{
-                        width: "87%",
-                        height: "87%",
-                        borderRadius: "50%",
-                        border: "1.5px solid var(--glt)",
-                        background: "var(--primary-teal-dark)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        textAlign: "center",
-                        px: 1.5,
+                        color: "var(--glt)",
+                        fontSize: { xs: ".68rem", md: "1rem" },
+                        lineHeight: 1.35,
+                        letterSpacing: ".2px",
+                        fontFamily: "var(--font-heading)",
+                        fontWeight: 600,
                       }}
                     >
-                      <Typography
-                        sx={{
-                          color: "var(--glt)",
-                          fontSize: { xs: ".68rem", md: "1rem" },
-                          lineHeight: 1.35,
-                          letterSpacing: ".2px",
-                          fontFamily: "var(--font-heading)",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Quality <br /> You Can <br /> Trust
-                      </Typography>
-                    </Box>
+                      Quality <br /> You Can <br /> Trust
+                    </Typography>
                   </Box>
                 </Box>
-              {/* </motion.div> */}
+              </Box>
             </Grid>
 
             {/* CONTENT SIDE */}
             <Grid item xs={12} md={6}>
-              {/* <motion.div {...fadeLeft(0.1)}> */}
-                <Box
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  mb: 1,
+                }}
+              >
+                {/* TITLE */}
+                <Typography
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
+                    fontSize: { xs: "1.6rem", md: "2rem" },
+                    fontWeight: 700,
+                    fontFamily: "var(--font-heading)",
+                    color: "var(--primary-maroon-dark)",
                     mb: 1,
                   }}
                 >
-                  {/* TITLE */}
-                  <Typography
-                    sx={{
-                      fontSize: { xs: "1.6rem", md: "2rem" },
-                      fontWeight: 700,
-                      fontFamily: "var(--font-heading)",
-                      color: "var(--primary-maroon-dark)",
-                      mb: 1,
-                    }}
-                  >
-                    Our Story
-                  </Typography>
-
-                  <Box
-                    sx={{
-                      width: 35,
-                      height: 32,
-                      backgroundColor: "var(--glt)",
-                      mask: "url('/plant.webp') no-repeat center / contain",
-                      WebkitMask:
-                        "url('/plant.webp') no-repeat center / contain",
-                      opacity: 0.7,
-                      zIndex: 100,
-                    }}
-                  />
-                </Box>
-
-                {/* SUBTEXT */}
-                <Typography
-                  sx={{
-                    fontSize: ".95rem",
-                    color: "var(--text)",
-                    lineHeight: 1.7,
-                    mb: 3,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontWeight: 700,
-                      color: "var(--primary-maroon-dark)",
-                    }}
-                  >
-                    Menmai Foods
-                  </span>
-                  , based in Madurai, specializes in Ready-to-Heat and Eat
-                  Chapathi and Poori, designed to bring convenience and
-                  freshness to your everyday meals.
+                  Our Story
                 </Typography>
 
-                {/* POINTS */}
                 <Box
-                  sx={{ display: "flex", flexDirection: "column", gap: 2.2 }}
+                  sx={{
+                    width: 35,
+                    height: 32,
+                    backgroundColor: "var(--glt)",
+                    mask: "url('/plant.webp') no-repeat center / contain",
+                    WebkitMask: "url('/plant.webp') no-repeat center / contain",
+                    opacity: 0.7,
+                    zIndex: 100,
+                  }}
+                />
+              </Box>
+
+              {/* SUBTEXT */}
+              <Typography
+                sx={{
+                  fontSize: ".95rem",
+                  color: "var(--text)",
+                  lineHeight: 1.7,
+                  mb: 3,
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 700,
+                    color: "var(--primary-maroon-dark)",
+                  }}
                 >
-                  {storyPoints.map((item, index) => (
+                  Menmai Foods
+                </span>
+                , based in Madurai, specializes in Ready-to-Heat and Eat
+                Chapathi and Poori, designed to bring convenience and freshness
+                to your everyday meals.
+              </Typography>
+
+              {/* POINTS */}
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.2 }}>
+                {storyPoints.map((item, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      display: "flex",
+                      gap: 1.6,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    {/* ICON CIRCLE */}
                     <Box
-                      key={index}
                       sx={{
+                        minWidth: 38,
+                        width: 38,
+                        height: 38,
+                        borderRadius: "50%",
+                        background:
+                          "color-mix(in srgb, var(--primary-teal-dark), transparent 90%)",
                         display: "flex",
-                        gap: 1.6,
-                        alignItems: "flex-start",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--primary-teal-dark)",
                       }}
                     >
-                      {/* ICON CIRCLE */}
-                      <Box
-                        sx={{
-                          minWidth: 38,
-                          width: 38,
-                          height: 38,
-                          borderRadius: "50%",
-                          background:
-                            "color-mix(in srgb, var(--primary-teal-dark), transparent 90%)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "var(--primary-teal-dark)",
-                        }}
-                      >
-                        {item.icon}
-                      </Box>
-
-                      {/* TEXT */}
-                      <Typography
-                        sx={{
-                          fontSize: ".92rem",
-                          color: "var(--text)",
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        {item.text}
-                      </Typography>
+                      {item.icon}
                     </Box>
-                  ))}
-                </Box>
-              {/* </motion.div> */}
+
+                    {/* TEXT */}
+                    <Typography
+                      sx={{
+                        fontSize: ".92rem",
+                        color: "var(--text)",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {item.text}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
             </Grid>
           </Grid>
         </Box>
@@ -701,81 +689,79 @@ export default function AboutPage() {
             borderRadius: "16px",
           }}
         >
-          {/* <motion.div {...zoomIn(0.1)}> */}
-            <Grid container spacing={0} alignItems="stretch">
-              {featureItems.map((feat, i) => (
-                <Grid
-                  item
-                  xs={6}
-                  sm={4}
-                  md={true}
-                  key={i}
+          <Grid container spacing={0} alignItems="stretch">
+            {featureItems.map((feat, i) => (
+              <Grid
+                item
+                xs={6}
+                sm={4}
+                md={true}
+                key={i}
+                sx={{
+                  flexBasis: { md: "20%" },
+                  maxWidth: { md: "20%" },
+                  display: "flex",
+                  justifyContent: "center",
+                  borderRight: {
+                    xs:
+                      i % 2 === 0 && i !== featureItems.length - 1
+                        ? "1px solid rgba(255,255,255,0.15)"
+                        : "none",
+
+                    sm:
+                      i % 3 !== 2 && i !== featureItems.length - 1
+                        ? "1px solid rgba(255,255,255,0.15)"
+                        : "none",
+
+                    md:
+                      i < featureItems.length - 1
+                        ? "1px solid rgba(255,255,255,0.15)"
+                        : "none",
+                  },
+                }}
+              >
+                <Box
                   sx={{
-                    flexBasis: { md: "20%" },
-                    maxWidth: { md: "20%" },
                     display: "flex",
+                    alignItems: "center",
                     justifyContent: "center",
-                    borderRight: {
-                      xs:
-                        i % 2 === 0 && i !== featureItems.length - 1
-                          ? "1px solid rgba(255,255,255,0.15)"
-                          : "none",
-
-                      sm:
-                        i % 3 !== 2 && i !== featureItems.length - 1
-                          ? "1px solid rgba(255,255,255,0.15)"
-                          : "none",
-
-                      md:
-                        i < featureItems.length - 1
-                          ? "1px solid rgba(255,255,255,0.15)"
-                          : "none",
-                    },
+                    gap: 1.5,
+                    width: "100%",
+                    px: { xs: 1.5, md: 2 },
+                    py: { xs: 1.5, md: 1.2 },
                   }}
                 >
                   <Box
                     sx={{
+                      minWidth: 48,
+                      width: 48,
+                      height: 48,
+                      borderRadius: "50%",
+                      border: "1.5px solid var(--glt)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: 1.5,
-                      width: "100%",
-                      px: { xs: 1.5, md: 2 },
-                      py: { xs: 1.5, md: 1.2 },
+                      flexShrink: 0,
                     }}
                   >
-                    <Box
-                      sx={{
-                        minWidth: 48,
-                        width: 48,
-                        height: 48,
-                        borderRadius: "50%",
-                        border: "1.5px solid var(--glt)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {feat.icon}
-                    </Box>
-
-                    <Typography
-                      sx={{
-                        fontSize: ".8rem",
-                        fontWeight: 500,
-                        color: "var(--white)",
-                        lineHeight: 1.45,
-                        width: { xs: 64, md: 80 },
-                      }}
-                    >
-                      {feat.label}
-                    </Typography>
+                    {feat.icon}
                   </Box>
-                </Grid>
-              ))}
-            </Grid>
-          {/* </motion.div> */}
+
+                  <Typography
+                    sx={{
+                      fontSize: ".8rem",
+                      fontWeight: 500,
+                      color: "var(--white)",
+                      lineHeight: 1.45,
+                      width: { xs: 64, md: 80 },
+                    }}
+                  >
+                    {feat.label}
+                  </Typography>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
         </Box>
 
         {/* Vision Mission Section */}
@@ -810,26 +796,24 @@ export default function AboutPage() {
           >
             {/* VISION */}
             <Grid item xs={12} md={6}>
-              {/* <motion.div {...fadeRight(0.1)}> */}
-                <Box
-                  sx={{
-                    pr: { md: 6 },
+              <Box
+                sx={{
+                  pr: { md: 6 },
+                }}
+              >
+                <InfoCard
+                  title="Our Vision"
+                  description="To become a trusted household name in ready-to-cook foods across Tamil Nadu and beyond."
+                  quote='"A name every Tamil home trusts"'
+                  image="/img/about/vision.webp"
+                  color={{
+                    main: "var(--primary-teal-dark)",
+                    quote: "var(--primary-teal-dark)",
+                    divider:
+                      "color-mix(in srgb, var(--primary-teal-dark), transparent 50%)",
                   }}
-                >
-                  <InfoCard
-                    title="Our Vision"
-                    description="To become a trusted household name in ready-to-cook foods across Tamil Nadu and beyond."
-                    quote='"A name every Tamil home trusts"'
-                    image="/img/about/vision.webp"
-                    color={{
-                      main: "var(--primary-teal-dark)",
-                      quote: "var(--primary-teal-dark)",
-                      divider:
-                        "color-mix(in srgb, var(--primary-teal-dark), transparent 50%)",
-                    }}
-                  />
-                </Box>
-              {/* </motion.div> */}
+                />
+              </Box>
             </Grid>
 
             {/* MOBILE/TABLET CENTER IMAGE */}
@@ -859,26 +843,24 @@ export default function AboutPage() {
 
             {/* MISSION */}
             <Grid item xs={12} md={6}>
-              {/* <motion.div {...fadeLeft(0.1)}> */}
-                <Box
-                  sx={{
-                    pl: { md: 6 },
+              <Box
+                sx={{
+                  pl: { md: 6 },
+                }}
+              >
+                <InfoCard
+                  title="Our Mission"
+                  description="To provide fresh, hygienic, and time-saving food solutions that fit seamlessly into everyday life."
+                  quote='"Fresh food, everyday convenience"'
+                  image="/img/about/mission.webp"
+                  color={{
+                    main: "var(--primary-maroon-mid)",
+                    quote: "var(--primary-maroon-mid)",
+                    divider:
+                      "color-mix(in srgb, var(--primary-maroon-dark), transparent 50%)",
                   }}
-                >
-                  <InfoCard
-                    title="Our Mission"
-                    description="To provide fresh, hygienic, and time-saving food solutions that fit seamlessly into everyday life."
-                    quote='"Fresh food, everyday convenience"'
-                    image="/img/about/mission.webp"
-                    color={{
-                      main: "var(--primary-maroon-mid)",
-                      quote: "var(--primary-maroon-mid)",
-                      divider:
-                        "color-mix(in srgb, var(--primary-maroon-dark), transparent 50%)",
-                    }}
-                  />
-                </Box>
-              {/* </motion.div> */}
+                />
+              </Box>
             </Grid>
           </Grid>
         </Box>
