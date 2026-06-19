@@ -24,7 +24,7 @@ export default function Footer() {
         <Grid container spacing={4}>
           <Grid item xs={12} sm={7} md={5}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-              <Image src="/logo.jpeg" alt="Logo" width={100} height={70} />
+              <Image src="/logow.webp" alt="Logo" width={100} height={70} />
             </Box>
 
             <Typography variant="body2" sx={{ color: "var(--gray)" }}>
@@ -36,6 +36,7 @@ export default function Footer() {
               <Link
                 href="https://facebook.com"
                 target="_blank"
+                aria-label="Visit our Facebook page"
                 className="contact-card"
               >
                 <FacebookIcon sx={{ color: "var(--glt)" }} />
@@ -43,6 +44,7 @@ export default function Footer() {
               <Link
                 href="https://instagram.com"
                 target="_blank"
+                aria-label="Visit our Instagram page"
                 className="contact-card"
               >
                 <InstagramIcon sx={{ color: "var(--glt)" }} />
@@ -195,7 +197,7 @@ export default function Footer() {
             left: 0,
             width: "100%",
             height: "170px",
-            backgroundImage: "url('/footer.png')",
+            backgroundImage: "url('/footer.webp')",
             backgroundRepeat: "repeat-x",
             backgroundPosition: "bottom",
             backgroundSize: "contain",
