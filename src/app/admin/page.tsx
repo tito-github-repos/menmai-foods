@@ -1,4 +1,4 @@
-// FILE 4: app/admin/login/page.tsx  (or wherever your login page lives)
+// FILE 4: app/admin/page.tsx  (or wherever your login page lives)
 
 "use client";
 
@@ -77,7 +77,7 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
           <Image
-            src="https://menmaifoods.com/logo.jpeg"
+            src="/logow.webp"
             alt="Menmai Foods"
             width={130}
             height={130}

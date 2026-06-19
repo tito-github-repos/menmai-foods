@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       },
     });
 
-    const resetLink = `${BASE_URL}/reset-password?token=${token}`;
+    const resetLink = `${BASE_URL}/admin/reset-password?token=${token}`;
 
     await resend.emails.send({
       from:    "Menmai Foods <noreply@menmaifoods.com>",
