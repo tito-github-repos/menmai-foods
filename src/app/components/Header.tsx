@@ -58,7 +58,7 @@ export default function Header() {
   };
 
   const cartCount = useAppSelector((state) =>
-    state.cart.items.reduce((total, item) => total + item.quantity, 0)
+    state.cart.items.reduce((total, item) => total + item.quantity, 0),
   );
   const handleDrawerClose = () => {
     setDrawerOpen(false);
@@ -105,7 +105,7 @@ export default function Header() {
             >
               <Box sx={{ display: "flex", alignItems: "center" }}>
                 <Image
-                  src="/logo.jpeg"
+                  src="/logow.webp"
                   alt="Menmai Foods"
                   width={180}
                   height={80}
@@ -178,6 +178,7 @@ export default function Header() {
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <CartIcon cartCount={cartCount} />
                 <IconButton
+                  aria-label="Open Menu"
                   onClick={handleDrawerOpen}
                   sx={{
                     transition: "transform 0.3s ease",
@@ -220,7 +221,7 @@ export default function Header() {
             }}
           >
             Menu
-            <IconButton onClick={handleDrawerClose}>
+            <IconButton aria-label="Close Menu" onClick={handleDrawerClose}>
               <CloseIcon sx={{ color: "var(--primary-teal-dark)" }} />
             </IconButton>
           </Box>
@@ -301,6 +302,7 @@ function CartIcon({ cartCount }: { cartCount: number }) {
     <IconButton
       component={Link}
       href="/cart"
+      aria-label="Shopping Cart"
       sx={{
         transition: "transform 0.3s ease",
         color: "var(--primary-maroon-dark)",

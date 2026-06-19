@@ -294,8 +294,8 @@ export default function CartCheckout() {
                     width: 35,
                     height: 32,
                     backgroundColor: "var(--green)",
-                    mask: "url('/plant.png') no-repeat center / contain",
-                    WebkitMask: "url('/plant.png') no-repeat center / contain",
+                    mask: "url('/plant.webp') no-repeat center / contain",
+                    WebkitMask: "url('/plant.webp') no-repeat center / contain",
                     opacity: 0.7,
                     zIndex: 100,
                   }}
@@ -684,6 +684,7 @@ export default function CartCheckout() {
                                 component="img"
                                 src={item.img}
                                 alt={item.name}
+                                loading="lazy"
                                 sx={{
                                   width: 80,
                                   height: 80,
