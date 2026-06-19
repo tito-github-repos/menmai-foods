@@ -3,10 +3,10 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 
-import { Box, Typography, IconButton, Avatar, Badge } from "@mui/material";
+import { Box, Typography, IconButton, Avatar } from "@mui/material";
 
 import MenuIcon from "@mui/icons-material/Menu";
-import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
+import { useSession } from "next-auth/react";
 
 interface Props {
   handleDrawerToggle: () => void;
@@ -14,6 +14,12 @@ interface Props {
 
 export default function AdminHeader({ handleDrawerToggle }: Props) {
   const pathname = usePathname();
+
+  const { data: session } = useSession();
+  console.log("SESSION:", session);
+
+
+  const userName = session?.user?.name || "Admin";
 
   let title = "Dashboard";
   let subtitle = "Overview";
@@ -127,14 +133,14 @@ export default function AdminHeader({ handleDrawerToggle }: Props) {
         </IconButton> */}
 
         <Avatar
-          sx={{
-            bgcolor: "#00695c",
-            width: 42,
-            height: 42,
-          }}
-        >
-          A
-        </Avatar>
+  sx={{
+    bgcolor: "#00695c",
+    width: 42,
+    height: 42,
+  }}
+>
+  {userName.charAt(0).toUpperCase()}
+</Avatar>
 
         <Box
           sx={{
@@ -144,7 +150,9 @@ export default function AdminHeader({ handleDrawerToggle }: Props) {
             },
           }}
         >
-          <Typography fontWeight={700}>Admin</Typography>
+          <Typography fontWeight={700}>
+  {userName}
+</Typography>
 
           <Typography variant="caption" color="text.secondary">
             Administrator
