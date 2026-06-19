@@ -111,7 +111,7 @@ export default function ResetPasswordPage() {
         {/* Logo */}
         <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
           <Image
-            src="https://menmaifoods.com/logo.jpeg"
+            src="/logow.webp"
             alt="Menmai Foods"
             width={100}
             height={100}

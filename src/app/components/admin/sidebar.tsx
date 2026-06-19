@@ -100,7 +100,7 @@ export default function AdminSidebar({ mobileOpen, handleDrawerToggle }: Props) 
         {/* ✅ next/image with absolute URL */}
         <Box sx={{ py: 2, display: "flex", justifyContent: "center" }}>
           <Image
-            src="https://menmaifoods.com/logo.jpeg"
+            src="/logow.webp"
             alt="Menmai"
             width={150}
             height={150}
