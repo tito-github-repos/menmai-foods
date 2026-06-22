@@ -16,6 +16,7 @@ import LocalPhoneOutlinedIcon from "@mui/icons-material/LocalPhoneOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
+import YoutubeIcon from "@mui/icons-material/YouTube";
 
 export default function Footer() {
   return (
@@ -34,7 +35,7 @@ export default function Footer() {
 
             <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
               <Link
-                href="https://facebook.com"
+                href="https://www.facebook.com/share/1DLpsNr3ba/"
                 target="_blank"
                 aria-label="Visit our Facebook page"
                 className="contact-card"
@@ -42,12 +43,20 @@ export default function Footer() {
                 <FacebookIcon sx={{ color: "var(--glt)" }} />
               </Link>
               <Link
-                href="https://instagram.com"
+                href="https://www.instagram.com/menmaifoods?igsh=MzlxbHR0OTN2azls"
                 target="_blank"
                 aria-label="Visit our Instagram page"
                 className="contact-card"
               >
                 <InstagramIcon sx={{ color: "var(--glt)" }} />
+              </Link>
+              <Link
+                href="https://youtube.com/@menmaifoods?si=ldX0FnD7580s9vJU"
+                target="_blank"
+                aria-label="Visit our YouTube channel"
+                className="contact-card"
+              >
+                <YoutubeIcon sx={{ color: "var(--glt)" }} />
               </Link>
             </Box>
           </Grid>
@@ -222,13 +231,44 @@ export default function Footer() {
             © {new Date().getFullYear()} Menmai Foods. All rights reserved.
           </Typography>
 
-          <Box sx={{ display: "flex", gap: 2 }}>
+          {/* <Box sx={{ display: "flex", gap: 2 }}>
             <Typography variant="body2" sx={{ color: "var(--glt)" }}>
               Privacy Policy
             </Typography>
             <Typography variant="body2" sx={{ color: "var(--glt)" }}>
               Terms & Conditions
             </Typography>
+          </Box> */}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <MuiLink
+              component={Link}
+              href="/privacy-policy"
+              underline="none"
+              variant="body2"
+              sx={{
+                color: "var(--glt)",
+                "&:hover": {
+                  color: "var(--white)",
+                },
+              }}
+            >
+              Privacy Policy
+            </MuiLink>
+
+            <MuiLink
+              component={Link}
+              href="/terms-and-conditions"
+              underline="none"
+              variant="body2"
+              sx={{
+                color: "var(--glt)",
+                "&:hover": {
+                  color: "var(--white)",
+                },
+              }}
+            >
+              Terms & Conditions
+            </MuiLink>
           </Box>
         </Box>
       </Container>

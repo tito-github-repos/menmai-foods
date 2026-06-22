@@ -2,12 +2,18 @@ import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { sendTextMessage } from "@/lib/whatsapp/client";
 
+const OTP_LIMIT = 5;
+const COOLDOWN = 60 * 1000; // 60 sec
+const WINDOW = 24 * 60 * 60 * 1000; // 24 hours
+const OTP_EXPIRY_TIME = 1 * 60 * 1000; // 1 minute
+
 export async function POST(req: NextRequest) {
   try {
     const { mobile } = await req.json();
+    const cleanMobile = (mobile || "").replace(/\s/g, "");
 
-    // 1. Validate mobile number
-    if (!mobile || !/^[6-9]\d{9}$/.test(mobile)) {
+    // 1. Validate mobile
+    if (!cleanMobile || !/^[6-9]\d{9}$/.test(cleanMobile)) {
       return NextResponse.json(
         { message: "Invalid mobile number" },
         { status: 400 },
@@ -16,86 +22,96 @@ export async function POST(req: NextRequest) {
 
     const now = new Date();
 
-    // 2. Check if customer exists
+    // 2. Get customer
     const customer = await prisma.customer.findUnique({
-      where: { phone: mobile },
+      where: { phone: cleanMobile },
     });
 
-    // 3. Get existing OTP record
-    const existingOtp = await prisma.oTPVerification.findUnique({
-      where: { phone: mobile },
+    // 3. Get OTP record
+    const otpRecord = await prisma.oTPVerification.findUnique({
+      where: { phone: cleanMobile },
     });
 
-    let currentCount = existingOtp?.resendCount ?? 0;
-    let windowStart = existingOtp?.otpWindowStart ?? now;
+    const count = otpRecord?.resendCount ?? 0;
 
-    // 4. Reset 24-hour window if expired
-    if (
-      existingOtp?.otpWindowStart &&
-      now.getTime() - new Date(existingOtp.otpWindowStart).getTime() >=
-        24 * 60 * 60 * 1000
-    ) {
-      currentCount = 0;
-      windowStart = now;
-    }
+    const lastSentAt = otpRecord?.lastSentAt
+      ? new Date(otpRecord.lastSentAt)
+      : null;
 
-    // 5. Check daily OTP limit
-    if (currentCount >= 5) {
-      const nextAvailableTime = new Date(
-        new Date(windowStart).getTime() + 24 * 60 * 60 * 1000,
-      );
+    const windowStart = otpRecord?.otpWindowStart
+      ? new Date(otpRecord.otpWindowStart)
+      : now;
+
+    // 4. Check window expiry (24h reset)
+    const isWindowExpired =
+      otpRecord?.otpWindowStart &&
+      now.getTime() - windowStart.getTime() >= WINDOW;
+
+    const effectiveCount = isWindowExpired ? 0 : count;
+    const effectiveWindowStart = isWindowExpired ? now : windowStart;
+
+    // 5. Limit check
+    if (effectiveCount >= OTP_LIMIT) {
+      const nextAvailableAt = new Date(effectiveWindowStart.getTime() + WINDOW);
 
       return NextResponse.json(
         {
-          message:
-            "Maximum OTP limit reached. Please try again after 24 hours.",
-          nextAvailableAt: nextAvailableTime,
+          message: "Maximum OTP limit reached. Try after 24 hours.",
+          nextAvailableAt,
         },
         { status: 429 },
       );
     }
 
-    // 6. 30-second resend cooldown
-    if (
-      existingOtp?.lastSentAt &&
-      now.getTime() - new Date(existingOtp.lastSentAt).getTime() < 30 * 1000
-    ) {
+    // 6. Cooldown check (60 sec)
+    if (lastSentAt && now.getTime() - lastSentAt.getTime() < COOLDOWN) {
       const remainingSeconds = Math.ceil(
-        (30 * 1000 -
-          (now.getTime() - new Date(existingOtp.lastSentAt).getTime())) /
-          1000,
+        (COOLDOWN - (now.getTime() - lastSentAt.getTime())) / 1000,
       );
 
       return NextResponse.json(
         {
-          message: `Please wait ${remainingSeconds} seconds before requesting another OTP.`,
+          message: `Please wait ${remainingSeconds} seconds before retrying.`,
         },
         { status: 429 },
       );
     }
 
-    // 7. Generate 4-digit OTP
+    // 7. Generate OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const expiry = new Date(Date.now() + OTP_EXPIRY_TIME);
 
-    // OTP valid for 5 minutes
-    const expiry = new Date(Date.now() + 5 * 60 * 1000);
+    // 8. Send WhatsApp OTP
+    try {
+      await sendTextMessage(
+        `91${cleanMobile}`,
+        `Menmai Foods Verification\n\nYour OTP is: ${otp}\n\nThis OTP is valid for 1 minute.\nDo not share this OTP with anyone.`,
+      );
+    } catch (err) {
+      console.error("WhatsApp API Error:", err);
 
-    // 8. Save / Update OTP
+      return NextResponse.json(
+        { message: "Failed to send OTP. Please try again later." },
+        { status: 500 },
+      );
+    }
+
+    // 9. FIXED COUNT LOGIC (IMPORTANT FIX)
+    const resetCount = isWindowExpired ? 1 : count + 1;
+
     await prisma.oTPVerification.upsert({
-      where: { phone: mobile },
-
+      where: { phone: cleanMobile },
       update: {
         otpCode: otp,
         expiresAt: expiry,
         lastSentAt: now,
-        resendCount: currentCount + 1,
-        otpWindowStart: windowStart,
+        resendCount: resetCount,
+        otpWindowStart: effectiveWindowStart,
         verified: false,
         customerId: customer?.id,
       },
-
       create: {
-        phone: mobile,
+        phone: cleanMobile,
         otpCode: otp,
         expiresAt: expiry,
         lastSentAt: now,
@@ -106,37 +122,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 9. Send OTP via WhatsApp
-    try {
-      await sendTextMessage(
-        `91${mobile}`,
-        `Menmai Foods Verification\n\nYour OTP is: ${otp}\n\nThis OTP is valid for 5 minutes.\n\nDo not share this OTP with anyone.`,
-      );
-    } catch (error) {
-      console.error("WhatsApp OTP Send Error:", error);
-
-      return NextResponse.json(
-        {
-          message: "Failed to send OTP via WhatsApp",
-        },
-        { status: 500 },
-      );
-    }
-
+    // 10. Response
     return NextResponse.json({
       success: true,
-      message: "OTP sent via WhatsApp",
-      resendCount: currentCount + 1,
-      remainingAttempts: 5 - (currentCount + 1),
-      resendCooldown: 30,
+      message: "OTP sent successfully",
+      resendCount: resetCount,
+      remainingAttempts: OTP_LIMIT - resetCount,
+      resendCooldown: 60,
     });
   } catch (error) {
     console.error("OTP API Error:", error);
 
     return NextResponse.json(
-      {
-        message: "Something went wrong",
-      },
+      { message: "Something went wrong" },
       { status: 500 },
     );
   }

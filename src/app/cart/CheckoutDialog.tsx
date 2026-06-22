@@ -109,7 +109,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [otpError, setOtpError] = useState("");
   const [resendCount, setResendCount] = useState(0);
-  const [timer, setTimer] = useState(30);
+  const [timer, setTimer] = useState(0);
 
   const [paymentInProgress, setPaymentInProgress] = useState(false);
 
@@ -165,13 +165,19 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
   }, [step, timer]);
 
   useEffect(() => {
-    if (step === "otp") setTimer(30);
+    if (step === "otp") setTimer(60);
   }, [step]);
 
   const handleMobileChange = (value: string) => {
     setMobileError("");
     const digits = value.replace(/\D/g, "").slice(0, 10);
     setMobile(digits);
+
+    // Reset otp state
+    setOtp(["", "", "", ""]);
+    setOtpError("");
+    setResendCount(0);
+    setTimer(0);
   };
 
   const formatMobile = (value: string) => {
@@ -198,11 +204,12 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
   const resendOtp = async () => {
     setOtp(["", "", "", ""]);
     setOtpError("");
+    const cleanMobile = mobile.replace(/\s/g, "");
 
     const res = await fetch("/api/auth/send-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mobile }),
+      body: JSON.stringify({ mobile: cleanMobile }),
     });
 
     const data = await res.json();
@@ -213,7 +220,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
 
     // Update resend count and timer
     setResendCount(data.resendCount ?? resendCount + 1);
-    setTimer(data.resendCooldown ?? 30);
+    setTimer(data.resendCooldown ?? 60);
   };
 
   const validateField = async (name: string, value: string) => {
@@ -232,7 +239,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
       setMobileError("");
       setOtp(["", "", "", ""]);
       setOtpError("");
-      setTimer(30);
+      setTimer(60);
       setCustomerId(null);
       setToken(null);
       setForm({
@@ -426,7 +433,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                         setStep("mobile");
                         setOtp(["", "", "", ""]);
                         setOtpError("");
-                        setTimer(30);
+                        setTimer(60);
                       }}
                     >
                       Change
@@ -962,13 +969,6 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                       pincode: form.pincode,
                     }),
                   });
-                  // const data = await res.json();
-                  // if (!res.ok) {
-                  //   console.error("Address save failed:", data.message);
-                  //   return;
-                  // }
-                  // console.log("Address saved. addressId:", data.addressId);
-                  // onClose();
                   const data = await res.json();
                   if (!res.ok) {
                     setServerError(

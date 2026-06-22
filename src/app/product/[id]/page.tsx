@@ -819,22 +819,22 @@ const productDetails: Record<string, any> = {
       {
         title: "Heat Oil",
         desc: "Pour oil in kadai, heat on high flame.",
-        img: "/img/procedure/ppan_heat.png",
+        img: "/img/procedure/ppan_heat.webp",
       },
       {
         title: "Slide In Poori",
         desc: "Gently slide poori into hot oil.",
-        img: "/img/procedure/p_place.png",
+        img: "/img/procedure/p_place.webp",
       },
       {
         title: "Press & Puff",
         desc: "Press lightly until poori puffs up.",
-        img: "/img/procedure/p_flip.png",
+        img: "/img/procedure/p_flip.webp",
       },
       {
         title: "Drain & Serve",
         desc: "Drain oil, serve with masala.",
-        img: "/img/procedure/p_serve.png",
+        img: "/img/procedure/p_serve.webp",
       },
     ],
     cookTip: "Use fresh oil for best results and a perfect golden color.",
