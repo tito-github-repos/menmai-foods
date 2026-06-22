@@ -7,7 +7,7 @@ import { hydrateCart } from "@/store/cartSlice";
 import CartLoader from "@/store/CartLoader";
 import CartSync from "@/store/CartSync";
 
-const CART_KEY = "menmai_cart";
+const CART_KEY = "menmai_cart_state";
 
 function CartHydrator({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <CartHydrator>
-        <CartLoader />
+        {/* <CartLoader /> */}
         <CartSync />
         {children}
       </CartHydrator>

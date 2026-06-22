@@ -1,6 +1,10 @@
 // src/app/api/server-time/route.ts
 
-import { getISTDateTime, isAfterCutoff } from "@/lib/retailDeliveryTime";
+import {
+  getISTDateTime,
+  isAfterCutoff,
+  getDeliveryMessage,
+} from "@/lib/retailDeliveryTime";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -10,5 +14,6 @@ export async function GET() {
     hour: ist.getHours(),
     minute: ist.getMinutes(),
     isAfterCutoff: isAfterCutoff(),
+    message: getDeliveryMessage(),
   });
 }
