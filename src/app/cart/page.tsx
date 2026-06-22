@@ -118,6 +118,8 @@ export default function CartCheckout() {
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
 
   const [deliveryPopupOpen, setDeliveryPopupOpen] = useState(false);
+  const [deliveryMessage, setDeliveryMessage] = useState("");
+
   const [pincodeLoading, setPincodeLoading] = useState(false);
 
   const updateQty = (productId: number, delta: number) => {
@@ -225,6 +227,7 @@ export default function CartCheckout() {
 
       if (data.isAfterCutoff) {
         setDeliveryPopupOpen(true);
+        setDeliveryMessage(data.message);
       } else {
         setOpenOtp(true);
       }
@@ -1140,6 +1143,7 @@ export default function CartCheckout() {
 
       <RetailDeliveryCutoffDialog
         open={deliveryPopupOpen}
+        message={deliveryMessage}
         onClose={() => setDeliveryPopupOpen(false)}
         onContinue={() => {
           setDeliveryPopupOpen(false);

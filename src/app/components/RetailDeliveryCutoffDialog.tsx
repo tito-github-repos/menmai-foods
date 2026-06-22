@@ -19,12 +19,14 @@ import CloseIcon from "@mui/icons-material/Close";
 
 type Props = {
   open: boolean;
+  message?: string;
   onClose: () => void;
   onContinue: () => void;
 };
 
 export default function RetailDeliveryCutoffDialog({
   open,
+  message,
   onClose,
   onContinue,
 }: Props) {
@@ -94,8 +96,7 @@ export default function RetailDeliveryCutoffDialog({
 
       <DialogContent sx={{ px: isMobile ? 2 : 3, pt: 2 }}>
         <Typography sx={{ fontSize: 14, lineHeight: 1.6 }}>
-          Orders placed after <b>7:00 PM</b> will be delivered on the next day
-          morning.
+          {message}
           <br />
           <br />
           Do you want to continue checkout?
