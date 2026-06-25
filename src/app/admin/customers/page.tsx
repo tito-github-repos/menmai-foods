@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
   Container,
+  Divider,
   Pagination,
   Paper,
   Skeleton,
@@ -25,6 +26,9 @@ import {
 } from "@mui/material";
 
 import SearchIcon from "@mui/icons-material/Search";
+import PhoneIcon from "@mui/icons-material/Phone";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import EmailIcon from "@mui/icons-material/Email";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,6 +90,41 @@ function SkeletonRows({ cols }: { cols: number }) {
   );
 }
 
+// ─── Mobile skeleton cards ────────────────────────────────────────────────────
+
+function SkeletonCards() {
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Card
+          key={i}
+          sx={{ mb: 1.5, borderRadius: 3, boxShadow: "none", border: "0.5px solid #ECECEC", overflow: "hidden" }}
+        >
+          <CardContent sx={{ pb: "0 !important", px: "14px", pt: "12px" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+              <Skeleton variant="circular" width={38} height={38} />
+              <Box flex={1}>
+                <Skeleton width={120} height={16} />
+                <Skeleton width={80} height={12} sx={{ mt: 0.5 }} />
+              </Box>
+            </Box>
+            <Skeleton width="60%" height={13} sx={{ mb: 0.5 }} />
+            <Skeleton width="80%" height={13} sx={{ mb: 1.5 }} />
+          </CardContent>
+          <Box sx={{ display: "flex", borderTop: "0.5px solid #ECECEC" }}>
+            {[1, 2, 3].map((j) => (
+              <Box key={j} flex={1} sx={{ p: "8px 4px", textAlign: "center", borderLeft: j > 1 ? "0.5px solid #ECECEC" : "none" }}>
+                <Skeleton width="60%" height={10} sx={{ mx: "auto", mb: 0.5 }} />
+                <Skeleton width="50%" height={14} sx={{ mx: "auto" }} />
+              </Box>
+            ))}
+          </Box>
+        </Card>
+      ))}
+    </>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function CustomersPage() {
@@ -138,7 +177,7 @@ export default function CustomersPage() {
   const startRow   = Math.min((page - 1) * ROWS_PER_PAGE + 1, filtered.length);
   const endRow     = Math.min(page * ROWS_PER_PAGE, filtered.length);
 
-  const COL_COUNT = 7; // NAME | PHONE | ADDRESS | TOTAL ORDERS | LAST ORDER DATE | TOTAL SPENT
+  const COL_COUNT = 6; // NAME | PHONE | ADDRESS | TOTAL ORDERS | LAST ORDER DATE | TOTAL SPENT
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -171,11 +210,9 @@ export default function CustomersPage() {
         </Alert>
       )}
 
-      {/* ── Table card ── */}
-      <Paper sx={{ borderRadius: 4, border: "1px solid #ECECEC", boxShadow: "none", overflow: "hidden" }}>
-
-        {/* ── DESKTOP TABLE ── */}
-        {!mobile && (
+      {/* ── DESKTOP TABLE ── */}
+      {!mobile && (
+        <Paper sx={{ borderRadius: 4, border: "1px solid #ECECEC", boxShadow: "none", overflow: "hidden" }}>
           <TableContainer sx={{ overflowX: "auto" }}>
             <Table sx={{ minWidth: 1000 }}>
               <TableHead>
@@ -280,116 +317,210 @@ export default function CustomersPage() {
               </TableBody>
             </Table>
           </TableContainer>
-        )}
 
-        {/* ── MOBILE CARDS ── */}
-        {mobile && (
-          <Box p={2}>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <Card key={i} sx={{ mb: 2, borderRadius: 3, boxShadow: "none", border: "1px solid #eee" }}>
-                  <CardContent>
-                    <Skeleton width={120} />
-                    <Skeleton width="50%" />
-                    <Skeleton width="70%" sx={{ mt: 1 }} />
-                  </CardContent>
-                </Card>
-              ))
-            ) : paginated.length === 0 ? (
-              <Typography color="text.secondary" fontSize={14} textAlign="center" py={4}>
-                No customers found
-              </Typography>
-            ) : (
-              paginated.map((customer) => {
-                const color = avatarColor(customer.name);
-                return (
-                  <Card key={customer.id} sx={{ mb: 2, borderRadius: 3, boxShadow: "none", border: "1px solid #ECECEC" }}>
-                    <CardContent sx={{ pb: "12px !important" }}>
-
-                      {/* Name + avatar */}
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-                        <Avatar sx={{ bgcolor: color.bg, color: color.text, fontWeight: 600, width: 36, height: 36, fontSize: 14 }}>
-                          {customer.name.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Box>
-                          <Typography fontWeight={600} fontSize={14}>{customer.name}</Typography>
-                          {customer.email && (
-                            <Typography fontSize={11} color="text.secondary">{customer.email}</Typography>
-                          )}
-                        </Box>
-                      </Box>
-
-                      <Typography fontSize={13} color="text.secondary" mb={0.5}>{customer.phone}</Typography>
-
-                      {/* Address */}
-                      <Typography fontSize={12} color="text.secondary" mb={1}>{customer.address || "—"}</Typography>
-
-                      {/* Stats row */}
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-                        <Box>
-                          <Typography fontSize={11} color="text.secondary">Orders</Typography>
-                          <Typography fontSize={13} fontWeight={600}>{customer.totalOrders}</Typography>
-                        </Box>
-                        <Box>
-                          <Typography fontSize={11} color="text.secondary">Last Order</Typography>
-                          <Typography fontSize={13}>{formatDate(customer.lastOrderDate)}</Typography>
-                        </Box>
-                        <Box textAlign="right">
-                          <Typography fontSize={11} color="text.secondary">Total Spent</Typography>
-                          <Typography fontSize={14} fontWeight={700} color="var(--primary-teal-mid)">
-                            ₹{customer.totalSpent.toLocaleString("en-IN")}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </Box>
-        )}
-
-        {/* ── Pagination ── */}
-        <Box
-          sx={{
-            p: { xs: 2, md: 3 },
-            borderTop: "1px solid #ECECEC",
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            gap: 2,
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Typography variant="body2" color="text.secondary" textAlign={{ xs: "center", sm: "left" }}>
-            {loading
-              ? "Loading…"
-              : filtered.length === 0
-              ? "No customers to show"
-              : `Showing ${startRow} to ${endRow} of ${filtered.length} customers`}
-          </Typography>
-
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={(_, value) => { setPage(value); }}
-            shape="rounded"
-            siblingCount={0}
-            boundaryCount={1}
-            size={mobile ? "small" : "medium"}
+          {/* ── Pagination (desktop) ── */}
+          <Box
             sx={{
-              "& .MuiPaginationItem-root": {
-                color: "var(--primary-teal-mid)",
-                borderColor: "var(--primary-teal-mid)",
-              },
-              "& .Mui-selected": {
-                backgroundColor: "var(--primary-teal-mid) !important",
-                color: "#fff",
-              },
+              p: { xs: 2, md: 3 },
+              borderTop: "1px solid #ECECEC",
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: 2,
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
-          />
+          >
+            <Typography variant="body2" color="text.secondary">
+              {loading
+                ? "Loading…"
+                : filtered.length === 0
+                ? "No customers to show"
+                : `Showing ${startRow} to ${endRow} of ${filtered.length} customers`}
+            </Typography>
+
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={(_, value) => { setPage(value); }}
+              shape="rounded"
+              siblingCount={0}
+              boundaryCount={1}
+              size="medium"
+              sx={{
+                "& .MuiPaginationItem-root": {
+                  color: "var(--primary-teal-mid)",
+                  borderColor: "var(--primary-teal-mid)",
+                },
+                "& .Mui-selected": {
+                  backgroundColor: "var(--primary-teal-mid) !important",
+                  color: "#fff",
+                },
+              }}
+            />
+          </Box>
+        </Paper>
+      )}
+
+      {/* ── MOBILE / TABLET CARDS ── */}
+      {mobile && (
+        <Box>
+          {loading ? (
+            <SkeletonCards />
+          ) : paginated.length === 0 ? (
+            <Typography color="text.secondary" fontSize={14} textAlign="center" py={4}>
+              No customers found
+            </Typography>
+          ) : (
+            paginated.map((customer) => {
+              const color = avatarColor(customer.name);
+              return (
+                <Card
+                  key={customer.id}
+                  sx={{
+                    mb: 1.5,
+                    borderRadius: 3,
+                    boxShadow: "none",
+                    border: "0.5px solid #ECECEC",
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* ── Header: avatar + name + email ── */}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: "14px", pt: "12px", pb: "10px" }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: color.bg,
+                        color: color.text,
+                        fontWeight: 600,
+                        width: 38,
+                        height: 38,
+                        fontSize: 14,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {customer.name.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Box flex={1} minWidth={0}>
+                      <Typography fontSize={14} fontWeight={600} noWrap>
+                        {customer.name}
+                      </Typography>
+                      {customer.email ? (
+                        <Typography fontSize={11} color="text.secondary" noWrap>
+                          {customer.email}
+                        </Typography>
+                      ) : (
+                        <Typography fontSize={11} color="text.disabled" fontStyle="italic">
+                          No email
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Divider />
+
+                  {/* ── Phone + address ── */}
+                  <Box sx={{ px: "14px", py: "6px" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: "5px" }}>
+                      <PhoneIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }} />
+                      <Typography fontSize={12} color="text.secondary">
+                        {customer.phone}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, py: "5px" }}>
+                      <LocationOnIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0, mt: "1px" }} />
+                      <Typography fontSize={12} color="text.secondary">
+                        {customer.address || "—"}
+                      </Typography>
+                    </Box>
+                    {customer.email && (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: "5px" }}>
+                        <EmailIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }} />
+                        <Typography fontSize={12} color="text.secondary" noWrap>
+                          {customer.email}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* ── Stats strip ── */}
+                  <Box sx={{ display: "flex", borderTop: "0.5px solid #ECECEC" }}>
+                    {[
+                      { label: "Orders", value: String(customer.totalOrders), teal: false },
+                      { label: "Last order", value: formatDate(customer.lastOrderDate), teal: false },
+                      { label: "Total spent", value: `₹${customer.totalSpent.toLocaleString("en-IN")}`, teal: true },
+                    ].map((stat, i) => (
+                      <Box
+                        key={stat.label}
+                        flex={1}
+                        sx={{
+                          textAlign: "center",
+                          py: "8px",
+                          px: "4px",
+                          borderLeft: i > 0 ? "0.5px solid #ECECEC" : "none",
+                        }}
+                      >
+                        <Typography
+                          fontSize={10}
+                          color="text.disabled"
+                          sx={{ textTransform: "uppercase", letterSpacing: "0.4px", mb: "2px" }}
+                        >
+                          {stat.label}
+                        </Typography>
+                        <Typography
+                          fontSize={13}
+                          fontWeight={600}
+                          color={stat.teal ? "var(--primary-teal-mid)" : "text.primary"}
+                          noWrap
+                        >
+                          {stat.value}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Card>
+              );
+            })
+          )}
+
+          {/* ── Pagination (mobile) ── */}
+          <Box
+            sx={{
+              pt: 2,
+              display: "flex",
+              flexDirection: "column",
+              gap: 1.5,
+              alignItems: "center",
+            }}
+          >
+            <Typography variant="body2" color="text.secondary" textAlign="center">
+              {loading
+                ? "Loading…"
+                : filtered.length === 0
+                ? "No customers to show"
+                : `Showing ${startRow} to ${endRow} of ${filtered.length} customers`}
+            </Typography>
+
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={(_, value) => { setPage(value); }}
+              shape="rounded"
+              siblingCount={0}
+              boundaryCount={1}
+              size="small"
+              sx={{
+                "& .MuiPaginationItem-root": {
+                  color: "var(--primary-teal-mid)",
+                  borderColor: "var(--primary-teal-mid)",
+                },
+                "& .Mui-selected": {
+                  backgroundColor: "var(--primary-teal-mid) !important",
+                  color: "#fff",
+                },
+              }}
+            />
+          </Box>
         </Box>
-      </Paper>
+      )}
 
       {/* ── Footer ── */}
       <Box sx={{ mt: 4, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2, color: "#777", fontSize: 13 }}>
