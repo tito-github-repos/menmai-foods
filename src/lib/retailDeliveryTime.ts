@@ -68,12 +68,12 @@ export const getDeliveryMessage = () => {
 
   // Any other day after 7 PM
   if (hour >= 19) {
-    return "Orders placed after 7:00 PM will be delivered the next day morning.";
+    return "Orders placed after 7:00 PM will be delivered tomorrow.";
   }
 
   // Before 6 AM
   if (hour < 6) {
-    return "Orders placed before 6:00 AM will be delivered today morning.";
+    return "Orders placed before 6:00 AM will be delivered today.";
   }
 
   return "";

@@ -954,6 +954,11 @@ export default function CartCheckout() {
                         fontSize={14}
                         fontWeight={700}
                         color="text.secondary"
+                        sx={{
+                          textAlign: "right",
+                          flex: 1,
+                          ml: 2,
+                        }}
                       >
                         Calculated at delivery
                       </Typography>
@@ -1053,20 +1058,32 @@ export default function CartCheckout() {
                     </Button>
 
                     <Typography
+                      component="div"
                       fontSize={12}
                       color="text.secondary"
-                      textAlign="center"
                       mt={1}
                     >
-                      <LockIcon
+                      <Box
                         sx={{
-                          fontSize: 16,
-                          verticalAlign: "middle",
-                          mr: 0.5,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 0.5,
                         }}
-                      />{" "}
-                      You will be redirected to Razorpay
+                      >
+                        <LockIcon sx={{ fontSize: 16 }} />
+                        <span>You will be redirected to</span>
+                        <Box
+                          component="img"
+                          src="/razorpay-icon.svg"
+                          alt="Razorpay"
+                          sx={{
+                            height: 16,
+                          }}
+                        />
+                      </Box>
                     </Typography>
+
                     <Box
                       sx={{
                         display: "flex",
