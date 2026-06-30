@@ -56,8 +56,7 @@ MENMAI FOODS
 Nagamalai Pudukottai,
 Madurai, Tamil Nadu – 625019
 Email: menmaifoodsmdu@gmail.com
-Phone:
-+91 9894777825`,
+Phone: +91 9894777825`,
   },
 ];
 
@@ -67,38 +66,33 @@ export default function PrivacyPolicy() {
       {/* Hero Section */}
       <Box
         sx={{
-          py: { xs: 6, md: 8 },
+          py: { xs: 6, md: 6 },
           backgroundColor: "#f7f6f3",
           borderBottom: "1px solid #e5e5e5",
+          fontFamily: "var(--font-heading)",
         }}
       >
         <Container maxWidth="lg">
           <Typography
             sx={{
-              fontSize: { xs: "2rem", md: "3rem" },
+              fontSize: { xs: "1.9rem", sm: "1.9rem", md: "2.6rem" },
               fontWeight: 700,
               color: "var(--primary-maroon-dark)",
               mb: 1,
               fontFamily: "var(--font-heading)",
+              textAlign: "center",
             }}
           >
             Privacy Policy
           </Typography>
 
-          {/* <Typography
-            sx={{
-              color: "text.secondary",
-              fontSize: "0.95rem",
-              mb: 3,
-            }}
-          >
-            Last Updated: 19 June 2026
-          </Typography> */}
-
           <Typography
             sx={{
-              color: "text.secondary",
-              lineHeight: 1.8,
+              fontSize: { xs: ".9rem", sm: "1rem" },
+              color: "var(--text)",
+              lineHeight: 1.7,
+              textAlign: "center",
+              fontFamily: "var(--font-heading)",
             }}
           >
             This Privacy Policy outlines how MENMAI FOODS collects, uses, and
@@ -117,13 +111,14 @@ export default function PrivacyPolicy() {
           }}
         >
           {sections.map((section) => (
-            <Box key={section.title} sx={{ mb: 5 }}>
+            <Box key={section.title} sx={{ mb: 3 }}>
               <Typography
                 variant="h6"
                 sx={{
+                  fontSize: { xs: "1.3rem", md: "1.6rem" },
                   fontWeight: 600,
-                  color: "var(--primary-maroon-dark)",
-                  mb: 2,
+                  fontFamily: "var(--font-heading)",
+                  color: "var(--text)",
                 }}
               >
                 {section.title}
@@ -131,9 +126,11 @@ export default function PrivacyPolicy() {
 
               <Typography
                 sx={{
-                  color: "text.secondary",
-                  lineHeight: 1.9,
                   whiteSpace: "pre-line",
+                  fontFamily: "var(--font-heading)",
+                  fontSize: ".95rem",
+                  color: "var(--text)",
+                  lineHeight: 1.7,
                 }}
               >
                 {section.content}
