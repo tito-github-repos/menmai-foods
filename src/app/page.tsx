@@ -33,9 +33,9 @@ const banners: string[] = [
 ];
 
 const mobileBanners: string[] = [
-  "/img/herosection/mobilehero4.png",
-  "/img/herosection/mobilehero6.png",
-  "/img/herosection/mobilehero4.png",
+  "/img/herosection/mobileheaderbanner1.webp",
+  "/img/herosection/mobileheaderbanner2.webp",
+  "/img/herosection/mobileheaderbanner1.webp",
 ];
 
 /* ─────────────────────────────────────────
@@ -2284,3 +2284,4 @@ const handleBulkSubmit = async () => {
     </>
   );
 }
+
