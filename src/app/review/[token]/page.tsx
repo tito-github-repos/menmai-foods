@@ -19,13 +19,13 @@ type OrderInfo = {
 };
 
 const productImages: Record<string, string> = {
-  chapathi: "/img/products/chapathi_main.png",
-  poori: "/img/products/poori_main.png",
+  chapathi: "/img/products/chapathi_main.webp",
+  poori: "/img/products/poori_main.webp",
 };
 
 function getProductImage(name: string, imageUrl: string | null): string {
   const slug = name.toLowerCase();
-  return productImages[slug] ?? imageUrl ?? "/img/products/chapathi_main.png";
+  return productImages[slug] ?? imageUrl ?? "/img/products/chapathi_main.webp";
 }
 
 export default function ReviewPage() {
@@ -195,7 +195,7 @@ export default function ReviewPage() {
         {/* Wheat — left */}
         <Box
           component="img"
-          src="/img/certificates/wheat.png"
+          src="/img/certificates/wheat.webp"
           alt="" aria-hidden="true"
           sx={{
             position: "absolute",
@@ -209,7 +209,7 @@ export default function ReviewPage() {
         {/* Chapathi bowl — right */}
         <Box
           component="img"
-          src="/img/dec_img.png"
+          src="/img/dec_img.webp"
           alt="" aria-hidden="true"
           sx={{
             position: "absolute",
@@ -469,7 +469,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
     <Box sx={{ minHeight: "100vh", bgcolor: "#f5efe6", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
       {/* Decorations — only at top, inside fixed-height zone */}
       <Box sx={{ position: "absolute", top: 0, left: 0, right: 0, height: 220, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
-        <Box component="img" src="/img/certificates/wheat.png" alt="" aria-hidden="true"
+        <Box component="img" src="/img/certificates/wheat.webp" alt="" aria-hidden="true"
           sx={{ position: "absolute", left: -15, top: 60, width: { xs: 85, md: 120 }, opacity: 0.55, transform: "rotate(-10deg)" }} />
       </Box>
       {/* Centered content */}
