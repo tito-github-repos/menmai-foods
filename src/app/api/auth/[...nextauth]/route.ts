@@ -20,9 +20,14 @@ export const authOptions: NextAuthOptions = {
 
         if (!admin) return null;
 
+        // ✅ Case-sensitive username check
+        if (admin.username !== credentials.username) {
+          return null;
+        }
+
         const isValid = await bcrypt.compare(
           credentials.password,
-          admin.password
+          admin.password,
         );
 
         if (!isValid) return null;
