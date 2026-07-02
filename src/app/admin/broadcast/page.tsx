@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogContent,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -93,12 +94,13 @@ export default function BroadcastPage() {
     } catch (error) {
       console.error("Error uploading image:", error);
       URL.revokeObjectURL(objectUrl);
-      setImagePreview(""); 
+      setImagePreview("");
       setImageUrl("");
 
       setSnackbar({
         open: true,
-        message: "Something went wrong while uploading the image. Please try again.",
+        message:
+          "Something went wrong while uploading the image. Please try again.",
         severity: "error",
       });
     } finally {
@@ -111,9 +113,12 @@ export default function BroadcastPage() {
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const fetchBroadcasts = async (pageNumber = page) => {
     try {
+      setLoading(true);
+
       const response = await fetch(
         `/api/admin/broadcasts?page=${pageNumber}&limit=5`,
       );
@@ -127,6 +132,8 @@ export default function BroadcastPage() {
       }
     } catch (error) {
       console.error("Failed to fetch broadcasts:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -239,6 +246,7 @@ export default function BroadcastPage() {
               rows={6}
               fullWidth
               value={message}
+              disabled={sending}
               onChange={(e) => setMessage(e.target.value)}
             />
 
@@ -266,7 +274,7 @@ export default function BroadcastPage() {
                 <label htmlFor="broadcast-image">
                   <Button
                     component="span"
-                    disabled={uploading}
+                    disabled={uploading || sending}
                     startIcon={<CloudUploadOutlinedIcon />}
                   >
                     {uploading ? "Uploading..." : "Choose Image"}
@@ -431,52 +439,69 @@ export default function BroadcastPage() {
               </TableHead>
 
               <TableBody>
-                {broadcasts.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      {new Date(item.createdAt).toLocaleDateString("en-IN")}
-                    </TableCell>
-
-                    <TableCell>
-                      {item.imageUrl ? (
-                        <Button
-                          size="small"
-                          startIcon={<VisibilityIcon />}
-                          onClick={() => {
-                            setSelectedImage(item.imageUrl);
-                            setPreviewOpen(true);
-                          }}
-                        >
-                          View
-                        </Button>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
-
-                    <TableCell>{item.message || "-"}</TableCell>
-
-                    <TableCell>{item.totalCount}</TableCell>
-
-                    <TableCell>{item.successCount}</TableCell>
-
-                    <TableCell>{item.failedCount}</TableCell>
-
-                    <TableCell>
-                      <Chip
-                        label={item.status}
-                        color={
-                          item.status === "COMPLETED"
-                            ? "success"
-                            : item.status === "SENDING"
-                              ? "warning"
-                              : "error"
-                        }
-                        size="small"
-                      />
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center">
+                      <CircularProgress size={18} color="primary" />
+                      {" "}Loading broadcasts...
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : broadcasts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 5 }}>
+                      <Typography color="text.secondary">
+                        No broadcasts found.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  broadcasts.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        {new Date(item.createdAt).toLocaleDateString("en-IN")}
+                      </TableCell>
+
+                      <TableCell>
+                        {item.imageUrl ? (
+                          <Button
+                            size="small"
+                            startIcon={<VisibilityIcon />}
+                            onClick={() => {
+                              setSelectedImage(item.imageUrl);
+                              setPreviewOpen(true);
+                            }}
+                          >
+                            View
+                          </Button>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+
+                      <TableCell>{item.message || "-"}</TableCell>
+
+                      <TableCell>{item.totalCount}</TableCell>
+
+                      <TableCell>{item.successCount}</TableCell>
+
+                      <TableCell>{item.failedCount}</TableCell>
+
+                      <TableCell>
+                        <Chip
+                          label={item.status}
+                          color={
+                            item.status === "COMPLETED"
+                              ? "success"
+                              : item.status === "SENDING"
+                                ? "warning"
+                                : "error"
+                          }
+                          size="small"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -496,7 +521,9 @@ export default function BroadcastPage() {
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              Showing {broadcasts.length} of {totalBroadcasts} broadcasts
+              {totalBroadcasts === 0
+                ? "No broadcasts available."
+                : `Showing ${broadcasts.length} of ${totalBroadcasts} broadcasts`}
             </Typography>
 
             <Pagination

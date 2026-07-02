@@ -192,7 +192,7 @@ export default function OrderSuccessPage() {
             </Typography>
             <Typography
               component={Link}
-              href={`https://wa.me/91${PHONE_NUMBER}?text=Hi, I have a question about order #${orderNumber}`}
+              href={`https://wa.me/${PHONE_NUMBER}?text=Hi, I have a question about order #${orderNumber}`}
               target="_blank"
               sx={{
                 fontSize: 13,
