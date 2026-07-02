@@ -16,9 +16,11 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
 
  const isAuthPage =
-  pathname === "/admin" ||
   pathname === "/" ||
+  pathname === "/admin" ||
+  pathname === "/forgot-password" ||
   pathname === "/admin/forgot-password" ||
+  pathname.startsWith("/reset-password") ||
   pathname.startsWith("/admin/reset-password");
 
   useInactivityLogout(isAuthPage ? undefined : 60);
