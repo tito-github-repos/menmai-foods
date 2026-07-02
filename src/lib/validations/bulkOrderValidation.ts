@@ -121,18 +121,16 @@ export function validateName(value: string): string | undefined {
 export function validatePhone(value: string): string | undefined {
   const trimmed = value.trim();
   if (!trimmed) return "Phone number is required.";
-
-  const digits = trimmed.replace(/^(\+91|0)/, "").replace(/\s+/g, "");
-  if (!/^\d{10}$/.test(digits)) return "Enter a valid 10-digit Indian mobile number.";
-  if (!/^[6-9]/.test(digits)) return "Mobile number must start with 6, 7, 8, or 9.";
-
+  if (!/^\d{10}$/.test(trimmed)) return "Phone number must be exactly 10 digits.";
+  if (!/^[6-9]/.test(trimmed)) return "Mobile number must start with 6, 7, 8, or 9.";
   return undefined;
 }
 
 export function validateEmail(value: string): string | undefined {
   const trimmed = value.trim();
   if (!trimmed) return "Email address is required.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return "Enter a valid email address.";
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(trimmed)) return "Enter a valid email address (e.g. name@example.com).";
   return undefined;
 }
 

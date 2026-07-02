@@ -26,6 +26,7 @@ import {
   Avatar,
   Tooltip,
   Divider,
+  TablePagination,
   alpha,
   Alert,
 } from "@mui/material";
@@ -53,6 +54,7 @@ import {
   validatePincode,
   getAvailableTimeSlots,
 } from "@/lib/validations/bulkOrderValidation";
+import CloseIcon from "@mui/icons-material/Close";
 
 type BulkStatus = "NEW" | "ACCEPTED" | "IN_DISCUSSION" | "REJECTED" | "DELIVERED";
 type SourceFilter = "ALL" | "CUSTOMER_FORM" | "ADMIN_MANUAL";
@@ -252,11 +254,14 @@ export default function AdminBulkOrdersPage() {
   const [confirmSlotOpen, setConfirmSlotOpen] = useState(false);
   const [pendingSlot, setPendingSlot] = useState<string | null>(null);
   const [originalSlot, setOriginalSlot] = useState<{ date: string; time: string } | null>(null);
-
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [pincodeOutOfZone, setPincodeOutOfZone] = useState(false);
   const [pincodeChecking, setPincodeChecking] = useState(false);
   const [confirmPincodeOpen, setConfirmPincodeOpen] = useState(false);
-
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<BulkOrder | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const fetchOrders = async () => {
     const res = await fetch("/api/bulk-orders");
     const data = await res.json();
@@ -269,6 +274,10 @@ export default function AdminBulkOrdersPage() {
       .then((res) => res.json())
       .then((data) => setProducts(data || []));
   }, []);
+
+  useEffect(() => {
+    setPage(0);
+  }, [search, statusFilter, dateFilter, slotFilter, sourceFilter, conflictOnly, sortBy]);
 
   useEffect(() => {
     if (!open || !form.deliveryDate) {
@@ -362,7 +371,6 @@ export default function AdminBulkOrdersPage() {
 
       return matchesSearch && matchesStatus && matchesDate && matchesSlot && matchesSource && matchesConflict;
     });
-
     return next.sort((a, b) => {
       if (sortBy === "NEWEST") {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -383,6 +391,11 @@ export default function AdminBulkOrdersPage() {
       return 0;
     });
   }, [orders, search, statusFilter, dateFilter, slotFilter, sourceFilter, conflictOnly, sortBy]);
+
+  const paginatedOrders = useMemo(() => {
+    const start = page * rowsPerPage;
+    return filteredOrders.slice(start, start + rowsPerPage);
+  }, [filteredOrders, page, rowsPerPage]);
 
   const stats = useMemo(() => ({
     total: orders.length,
@@ -540,19 +553,56 @@ export default function AdminBulkOrdersPage() {
     }
   };
 
-  const handleDeleteOrder = async (order: BulkOrder) => {
-    const ok = window.confirm(`Delete ${order.orderRef}? This cannot be undone.`);
-    if (!ok) return;
+  // const handleDeleteOrder = async (order: BulkOrder) => {
+  //   const ok = window.confirm(`Delete ${order.orderRef}? This cannot be undone.`);
+  //   if (!ok) return;
 
+  //   const oldOrders = orders;
+  //   setOrders((prev) => prev.filter((o) => o.id !== order.id));
+
+  //   const res = await fetch(`/api/bulk-orders/${order.id}`, { method: "DELETE" });
+
+  //   if (!res.ok) {
+  //     setOrders(oldOrders);
+  //     const data = await res.json().catch(() => ({}));
+  //     alert(data.message || "Could not delete order.");
+  //   }
+  // };
+
+  const requestDeleteOrder = (order: BulkOrder) => {
+    setOrderToDelete(order);
+    setDeleteConfirmOpen(true);
+  };
+
+  const cancelDeleteOrder = () => {
+    setDeleteConfirmOpen(false);
+    setOrderToDelete(null);
+  };
+
+  const confirmDeleteOrder = async () => {
+    if (!orderToDelete) return;
+
+    const target = orderToDelete;
     const oldOrders = orders;
-    setOrders((prev) => prev.filter((o) => o.id !== order.id));
 
-    const res = await fetch(`/api/bulk-orders/${order.id}`, { method: "DELETE" });
+    setDeleting(true);
+    setOrders((prev) => prev.filter((o) => o.id !== target.id));
 
-    if (!res.ok) {
+    try {
+      const res = await fetch(`/api/bulk-orders/${target.id}`, { method: "DELETE" });
+
+      if (!res.ok) {
+        setOrders(oldOrders);
+        const data = await res.json().catch(() => ({}));
+        alert(data.message || "Could not delete order.");
+      }
+    } catch {
       setOrders(oldOrders);
-      const data = await res.json().catch(() => ({}));
-      alert(data.message || "Could not delete order.");
+      alert("Network error. Could not delete order — check your connection.");
+    } finally {
+      setDeleting(false);
+      setDeleteConfirmOpen(false);
+      setOrderToDelete(null);
     }
   };
 
@@ -881,7 +931,7 @@ export default function AdminBulkOrdersPage() {
             </TableHead>
 
             <TableBody>
-              {filteredOrders.map((order) => {
+              {paginatedOrders.map((order) => {
                 const conflicts = getOrderConflicts(order);
                 const hasConflict = conflicts.length > 0;
                 const itemQty = order.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
@@ -1030,7 +1080,7 @@ export default function AdminBulkOrdersPage() {
                         </Tooltip>
 
                         <Tooltip title="Delete Order">
-                          <IconButton size="small" onClick={() => handleDeleteOrder(order)} sx={{ color: "#ef4444", "&:hover": { backgroundColor: "#fff1f2" } }}>
+                          <IconButton size="small" onClick={() => requestDeleteOrder(order)} sx={{ color: "#ef4444", "&:hover": { backgroundColor: "#fff1f2" } }}>
                             <DeleteOutlineIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
@@ -1053,21 +1103,57 @@ export default function AdminBulkOrdersPage() {
           </Table>
         </Box>
 
-        {filteredOrders.length > 0 && (
+        {/* {filteredOrders.length > 0 && (
           <Box sx={{ px: 2.5, py: 1.5, borderTop: "1px solid #f1f5f9" }}>
             <Typography sx={{ fontSize: 12, color: "#94a3b8" }}>
               Showing {filteredOrders.length} of {orders.length} orders
             </Typography>
           </Box>
+        )} */}
+
+        {filteredOrders.length > 0 && (
+          <TablePagination
+            component="div"
+            count={filteredOrders.length}
+            page={page}
+            onPageChange={(_e, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => {
+              setRowsPerPage(Number(e.target.value));
+              setPage(0);
+            }}
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            sx={{
+              borderTop: "1px solid #f1f5f9",
+              "& .MuiTablePagination-toolbar": { px: 2, minHeight: 52 },
+              "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
+                fontSize: 12.5,
+                color: "#64748b",
+              },
+            }}
+          />
         )}
       </Paper>
 
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: "16px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" } }}>
-        <DialogTitle sx={{ fontWeight: 900, fontSize: 18, color: "#0f172a", pb: 1 }}>
-          {mode === "ADD" ? "New Bulk Order" : "Edit Bulk Order"}
-          <Typography sx={{ fontSize: 13, color: "#64748b", fontWeight: 400, mt: 0.25 }}>
-            {mode === "ADD" ? "Fill in the details to create a new bulk order." : "Update the order details below."}
-          </Typography>
+      <Dialog
+        open={open}
+        onClose={(event, reason) => {
+          if (reason === "backdropClick" || reason === "escapeKeyDown") return;
+          setOpen(false);
+        }}
+        maxWidth="md" fullWidth
+        PaperProps={{ sx: { borderRadius: "16px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" } }}
+      >
+        <DialogTitle sx={{ fontWeight: 900, fontSize: 18, color: "#0f172a", pb: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <Box>
+            {mode === "ADD" ? "New Bulk Order" : "Edit Bulk Order"}
+            <Typography sx={{ fontSize: 13, color: "#64748b", fontWeight: 400, mt: 0.25 }}>
+              {mode === "ADD" ? "Fill in the details to create a new bulk order." : "Update the order details below."}
+            </Typography>
+          </Box>
+          <IconButton size="small" onClick={() => setOpen(false)} sx={{ color: "#94a3b8" }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
         </DialogTitle>
 
         <Divider />
@@ -1090,10 +1176,13 @@ export default function AdminBulkOrdersPage() {
 
             <Grid item xs={12} md={6}>
               <TextField fullWidth label="Phone" size="small" value={form.phone} onChange={(e) => {
-                const value = e.target.value;
+                const value = e.target.value.replace(/\D/g, "").slice(0, 10);
                 setForm({ ...form, phone: value });
                 setErrors((prev) => ({ ...prev, phone: validatePhone(value) }));
-              }} error={!!errors.phone} helperText={errors.phone} sx={fieldSx} />
+              }} 
+              inputProps={{ maxLength: 10, inputMode: "numeric" }}
+              error={!!errors.phone} helperText={errors.phone} sx={fieldSx}
+            />
             </Grid>
 
             <Grid item xs={12} md={6}>
@@ -1307,6 +1396,11 @@ export default function AdminBulkOrdersPage() {
                       <Typography sx={{ fontSize: 12, color: "#92400e" }}>{order.phone} | {statusLabel[order.status]}</Typography>
                     </Box>
                     <Button size="small" onClick={() => {
+                      const confirmed = window.confirm(
+                        "Switching to edit this conflicting order will discard the details you've entered in the current form. Continue?"
+                      );
+                      if (!confirmed) return;
+
                       setConfirmSlotOpen(false);
                       setPendingSlot(null);
                       openEdit(order);
@@ -1346,6 +1440,44 @@ export default function AdminBulkOrdersPage() {
           </Button>
           <Button variant="contained" onClick={confirmOutOfZoneSave} sx={{ textTransform: "none", backgroundColor: BRAND, fontWeight: 700, "&:hover": { backgroundColor: BRAND_DARK } }}>
             Yes, continue
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={(event, reason) => {
+          if (reason === "backdropClick" || reason === "escapeKeyDown") return;
+          cancelDeleteOrder();
+        }}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: "16px" } }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, fontWeight: 800, fontSize: 16, color: "#0f172a" }}>
+          <WarningAmberRoundedIcon sx={{ color: "#ef4444" }} />
+          Delete this order?
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: 14, color: "#475569" }}>
+            Delete <b>{orderToDelete?.orderRef}</b> for <b>{orderToDelete?.customerName}</b>? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={cancelDeleteOrder} disabled={deleting} sx={{ textTransform: "none", color: "#64748b", fontWeight: 600 }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={confirmDeleteOrder}
+            disabled={deleting}
+            sx={{
+              textTransform: "none",
+              backgroundColor: "#ef4444",
+              fontWeight: 700,
+              "&:hover": { backgroundColor: "#dc2626" },
+            }}
+          >
+            {deleting ? "Deleting..." : "Delete Order"}
           </Button>
         </DialogActions>
       </Dialog>
