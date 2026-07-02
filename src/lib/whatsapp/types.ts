@@ -38,9 +38,20 @@ export type WhatsAppInteractiveMessageRequest = {
   };
 };
 
+export type WhatsAppImageMessageRequest = {
+  messaging_product: "whatsapp";
+  to: string;
+  type: "image";
+  image: {
+    link: string;
+    caption?: string;
+  };
+};
+
 export type WhatsAppSendMessageRequest =
   | WhatsAppTextMessageRequest
-  | WhatsAppInteractiveMessageRequest;
+  | WhatsAppInteractiveMessageRequest
+  | WhatsAppImageMessageRequest;
 
 export type WhatsAppSendMessageResponse = {
   messaging_product: "whatsapp";

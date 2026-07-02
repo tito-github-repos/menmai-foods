@@ -512,7 +512,7 @@ export default function ContactPage() {
                           fontFamily: "var(--font-heading)",
                         }}
                       >
-                        Order Timings
+                        Delivery Timings
                       </Typography>
 
                       <Typography

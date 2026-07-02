@@ -26,7 +26,7 @@ function getAccessToken() {
   return accessToken;
 }
 
-function formatPhoneNumber(phone: string) {
+export function formatPhoneNumber(phone: string) {
   if (!phone) return phone;
 
   let cleaned = phone.replace(/\D/g, "");
