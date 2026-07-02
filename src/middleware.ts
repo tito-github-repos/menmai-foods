@@ -23,7 +23,7 @@ export default withAuth(
       // admin.menmaifoods.com/admin/orders
       if (pathname.startsWith("/admin")) {
         url.pathname = pathname.replace("/admin", "") || "/";
-       return NextResponse.redirect(url, 308);
+        return NextResponse.redirect(url, 308);
       }
 
       // Login page
@@ -53,7 +53,7 @@ export default withAuth(
     // ─────────────────────────────────────────────
     if (pathname.startsWith("/admin")) {
       url.pathname = "/";
-     return NextResponse.redirect(url, 308);
+      return NextResponse.redirect(url, 308);
     }
 
     return NextResponse.next();
@@ -83,11 +83,18 @@ export default withAuth(
         // So public-route matching must check BOTH shapes.
         // ─────────────────────────────────────────
         if (isAdminSubdomain) {
+          let normalizedPath = pathname;
+
+          if (normalizedPath.startsWith("/admin")) {
+            normalizedPath = normalizedPath.replace("/admin", "") || "/";
+          }
           const publicRoutes = ["/", "/forgot-password", "/reset-password"];
 
           const isPublic = publicRoutes.some((route) => {
-            if (route === "/") return pathname === "/";
-            return pathname === route || pathname.startsWith(route + "/");
+            if (route === "/") return normalizedPath === "/";
+            return (
+              normalizedPath === route || normalizedPath.startsWith(route + "/")
+            );
           });
           if (isPublic) return true;
 
@@ -99,20 +106,31 @@ export default withAuth(
         // LOCALHOST PUBLIC ROUTES
         // ─────────────────────────────────────────
 
-        if (
-          pathname === "/admin" ||
-          pathname === "/admin/forgot-password" ||
-          pathname.startsWith("/admin/reset-password")
-        ) {
-          return true;
+        let normalizedLocalPath = pathname;
+
+        if (normalizedLocalPath.startsWith("/admin")) {
+          normalizedLocalPath =
+            normalizedLocalPath.replace("/admin", "") || "/";
         }
+
+        const publicRoutes = ["/", "/forgot-password", "/reset-password"];
+
+        const isPublic = publicRoutes.some((route) => {
+          if (route === "/") return normalizedLocalPath === "/";
+          return (
+            normalizedLocalPath === route ||
+            normalizedLocalPath.startsWith(route + "/")
+          );
+        });
+
+        if (isPublic) return true;
 
         // ─────────────────────────────────────────
         // PROTECT ALL OTHER ADMIN ROUTES
         // ─────────────────────────────────────────
 
-        if (pathname.startsWith("/admin/")) {
-          return !!token && (token as any).role === "admin";
+        if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+          return !!token && (token as any)?.role === "admin";
         }
 
         // Customer website routes
