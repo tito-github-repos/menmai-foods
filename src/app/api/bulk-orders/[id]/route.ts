@@ -50,3 +50,43 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  _req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const orderId = Number(id);
+
+    if (!orderId || Number.isNaN(orderId)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid order id." },
+        { status: 400 }
+      );
+    }
+
+    // BulkOrderItem has onDelete: Cascade on bulkOrderId in your schema,
+    // so deleting the BulkOrder alone is enough — items go with it.
+    await prisma.bulkOrder.delete({
+      where: { id: orderId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("Bulk order delete error:", error);
+
+    // Prisma throws P2025 when the record doesn't exist
+    if (error?.code === "P2025") {
+      return NextResponse.json(
+        { success: false, message: "Order not found or already deleted." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, message: "Failed to delete bulk order." },
+      { status: 500 }
+    );
+  }
+}
