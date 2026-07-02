@@ -23,7 +23,7 @@ export const getISTDateTime = () => {
     `${dateMap.year}-${dateMap.month}-${dateMap.day}T${dateMap.hour}:${dateMap.minute}:${dateMap.second}`,
   );
 
-  // return new Date("2026-06-20T23:59:59");
+  // return new Date("2026-07-02T08:59:59");
 };
 
 // ✅ FIXED: Now checks both before 6 AM AND after 7 PM
@@ -34,17 +34,26 @@ export const isAfterCutoff = () => {
   if (day === 0) {
     return true; // Always cutoff on Sunday
   }
-  return hour < 6 || hour >= 19; // Outside 6 AM - 7 PM window
+  return hour < 9 || hour >= 19; // Outside 9 AM - 7 PM window
 };
 
 export const getExpectedDeliveryDate = () => {
   const ist = getISTDateTime();
+  const day = ist.getDay(); // 0 = Sunday
   const hour = ist.getHours();
   const deliveryDate = new Date(ist);
 
-  // If after 7 PM OR before 6 AM, deliver next day
-  if (hour >= 19 || hour < 6) {
+  // Sunday -> Monday
+  if (day === 0) {
     deliveryDate.setDate(deliveryDate.getDate() + 1);
+  }
+  // Saturday after 7 PM -> Monday
+  else if (day === 6 && hour >= 19) {
+    deliveryDate.setDate(deliveryDate.getDate() + 2);
+  }
+  // Monday to Friday after 7 PM -> Next Day
+  else if (hour >= 19) {
+    deliveryDate.setDate(deliveryDate.getDate() + 1); 
   }
 
   return deliveryDate.toISOString().split("T")[0];
@@ -58,22 +67,22 @@ export const getDeliveryMessage = () => {
 
   // Sunday
   if (day === 0) {
-    return "Orders placed on Sunday will be delivered on Monday.";
+    return "Orders placed on Sunday will be delivered on Monday between 9:00 AM and 7:00 PM.";
   }
 
   // Saturday after 7 PM
   if (day === 6 && hour >= 19) {
-    return "Orders placed after 7:00 PM on Saturday will be delivered on Monday.";
+    return "Orders placed after 7:00 PM on Saturday will be delivered on Monday between 9:00 AM and 7:00 PM.";
   }
 
   // Any other day after 7 PM
   if (hour >= 19) {
-    return "Orders placed after 7:00 PM will be delivered tomorrow.";
+    return "Orders placed after 7:00 PM will be delivered next day between 9:00 AM and 7:00 PM.";
   }
 
-  // Before 6 AM
-  if (hour < 6) {
-    return "Orders placed before 6:00 AM will be delivered today.";
+  // Before 9 AM
+  if (hour < 9) {
+    return "Your order will be delivered today between 9:00 AM and 7:00 PM.";
   }
 
   return "";
