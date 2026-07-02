@@ -79,7 +79,7 @@ const addressSchema = Yup.object({
     .required("City is required")
     .test(
       "min-address",
-      "City must be at least 3 characters",
+      "Please enter a valid city",
       (value) => !value || value.length >= 3,
     ),
 
@@ -291,6 +291,12 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
 
     check();
   }, [form.pincode, step]);
+
+  useEffect(() => {
+    if (step === "otp") {
+      inputRefs.current[0]?.focus();
+    }
+  }, [step]);
 
   return (
     <>
