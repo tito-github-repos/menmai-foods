@@ -11,11 +11,13 @@ import {
   Button,
   Alert,
   InputAdornment,
+  IconButton,
 } from "@mui/material";
 
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -24,6 +26,9 @@ export default function ResetPasswordPage() {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -186,7 +191,7 @@ export default function ResetPasswordPage() {
 
             <TextField
               fullWidth
-              type="password"
+              type={showPassword ? "text" : "password"}
               label="New Password"
               margin="normal"
               value={password}
@@ -197,12 +202,27 @@ export default function ResetPasswordPage() {
                     <LockOutlinedIcon />
                   </InputAdornment>
                 ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      edge="end"
+                      size="small"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <VisibilityOffIcon fontSize="small" />
+                      ) : (
+                        <VisibilityIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
               }}
             />
 
             <TextField
               fullWidth
-              type="password"
+              type={showConfirmPassword ? "text" : "password"}
               label="Confirm Password"
               margin="normal"
               value={confirmPassword}
@@ -211,6 +231,23 @@ export default function ResetPasswordPage() {
                 startAdornment: (
                   <InputAdornment position="start">
                     <LockOutlinedIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      edge="end"
+                      size="small"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <VisibilityOffIcon fontSize="small" />
+                      ) : (
+                        <VisibilityIcon fontSize="small" />
+                      )}
+                    </IconButton>
                   </InputAdornment>
                 ),
               }}
