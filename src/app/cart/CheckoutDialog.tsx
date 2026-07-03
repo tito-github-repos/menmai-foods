@@ -419,10 +419,10 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                   }}
                 >
                   {step === "mobile" ? (
-                    "Enter your mobile number — we'll send a one-time code."
+                    "Enter your mobile number — we'll send a one-time code on WhatsApp."
                   ) : step === "otp" ? (
                     <>
-                      Enter 4 digit code sent to{" "}
+                      Enter 4 digit code sent on WhatsApp to{" "}
                       <Box
                         component="span"
                         sx={{
