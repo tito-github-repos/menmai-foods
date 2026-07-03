@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function createBulkOrderRef() {
   const datePart = new Date()
@@ -65,6 +68,30 @@ export async function POST(req: Request) {
         items: true,
       },
     });
+
+    try {
+      await resend.emails.send({
+        from: "Menmai Foods <onboarding@menmaifoods.com>",
+        to: process.env.ADMIN_NOTIFICATION_EMAIL!,
+        subject: `New Bulk Order — ${order.orderRef}`,
+        html: `
+          <h2>New Bulk Order Received</h2>
+          <p><strong>Order Ref:</strong> ${order.orderRef}</p>
+          <p><strong>Customer:</strong> ${order.customerName} (${order.phone})</p>
+          <p><strong>Email:</strong> ${order.email || "-"}</p>
+          <p><strong>Delivery:</strong> ${new Date(order.deliveryDate).toLocaleDateString("en-IN")} — ${order.deliveryTime}</p>
+          <p><strong>Occasion:</strong> ${order.occasion}</p>
+          <p><strong>Address:</strong> ${order.deliveryAddress}, ${order.pincode}</p>
+          <p><strong>Estimated Total:</strong> ₹${order.estimatedTotal}</p>
+          <h3>Items</h3>
+          <ul>
+            ${order.items.map((i) => `<li>${i.productName} — ${i.quantity} pcs — ₹${i.totalPrice}</li>`).join("")}
+          </ul>
+        `,
+      });
+    } catch (emailError) {
+      console.error("Admin notification email failed:", emailError);
+    }
 
     return NextResponse.json({
       success: true,

@@ -29,7 +29,7 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 
 /* ── MUI Icons ─────────────────────────────────────── */
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
@@ -207,6 +207,7 @@ export default function BulkOrderPage() {
   /* ── Products from DB ── */
   const [allProducts, setAllProducts]         = useState<ProductOption[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
+  const pincodeRequestId = useRef(0);
 
   useEffect(() => {
     fetch("/api/products")
@@ -608,7 +609,15 @@ export default function BulkOrderPage() {
                     {/* Phone */}
                     <Grid item xs={12} sm={6}>
                       <TextField fullWidth label="Phone Number" required placeholder="Enter your phone number"
-                        value={form.phone} onChange={handleFieldChange("phone")} sx={fieldSx}
+                        value={form.phone}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          setSubmitted(false);
+                          setForm((prev) => ({ ...prev, phone: value }));
+                          setErrors((prev) => ({ ...prev, phone: validateField("phone", value) }));
+                        }}
+                        inputProps={{ maxLength: 10, inputMode: "numeric" }}
+                        sx={fieldSx}
                         InputProps={{ startAdornment: <InputAdornment position="start"><PhoneOutlinedIcon sx={{ color: "var(--primary-teal-dark)", fontSize: 19 }} /></InputAdornment> }}
                         error={!!errors.phone} helperText={errors.phone}
                         onBlur={() => setErrors(prev => ({ ...prev, phone: validateField("phone", form.phone) }))}
@@ -1158,22 +1167,24 @@ export default function BulkOrderPage() {
                             setErrors((prev) => ({ ...prev, pincode: basicError }));
                             return;
                           }
-                          if (form.pincode.length === 6) {
-                            const res = await fetch("/api/check-pincode", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ pincode: form.pincode }),
-                            });
-                            const data = await res.json();
-                            if (!data.serviceable) {
-                              setErrors((prev) => ({
-                                ...prev,
-                                pincode: "Sorry, we don't deliver to this pincode yet.",
-                              }));
-                            } else {
-                              setErrors((prev) => ({ ...prev, pincode: undefined }));
-                            }
-                          }
+                          if (form.pincode.length !== 6) return;
+
+                          const checkedPincode = form.pincode;
+                          const requestId = ++pincodeRequestId.current;
+
+                          const res = await fetch("/api/check-pincode", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ pincode: checkedPincode }),
+                          });
+                          const data = await res.json();
+
+                          if (requestId !== pincodeRequestId.current) return;
+
+                          setErrors((prev) => ({
+                            ...prev,
+                            pincode: data.serviceable ? undefined : "Sorry, we don't deliver to this pincode yet.",
+                          }));
                         }}
                         inputProps={{
                           maxLength: 6,
@@ -1493,6 +1504,12 @@ export default function BulkOrderPage() {
                             ? "Order Submitted"
                             : "Submit Bulk Order"}
                       </Button>
+
+                      {submittedOrderRef && (
+                        <Typography sx={{ fontSize: ".78rem", color: "var(--text)", opacity: 0.75, textAlign: "center", mt: 0.5 }}>
+                          Our team will review your order and contact you at <b>{form.phone}</b> to confirm final pricing and delivery.
+                        </Typography>
+                      )}
 
                       {/* Download + Reset in one row, always single line */}
                       <Box sx={{ display: "flex", gap: 1.5 }}>
