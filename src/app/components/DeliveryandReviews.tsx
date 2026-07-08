@@ -117,11 +117,11 @@ export function DeliverySection() {
     </Typography>
 
     <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 14, color: "#7a5c45", lineHeight: 1.8 }}>
-      We deliver fresh chapathi and poori within{" "}
+      We deliver fresh chapathi and poori across{" "}
       <Box component="span" sx={{ fontWeight: 700, color: "var(--primary-maroon-mid)" }}>
-        10 km radius
+        Madurai District
       </Box>{" "}
-      of Madurai.
+      ,ensuring quality, freshness, and timely doorstep delivery.
     </Typography>
   </Box>
 
@@ -132,7 +132,7 @@ export function DeliverySection() {
     </Typography>
 
     <Typography sx={{ fontFamily: "var(--font-main)", fontSize: 13.5, color: "#7a5c45", lineHeight: 1.6 }}>
-      Enter your pincode to check if we deliver in your area (within 10 km of Madurai).
+       Enter your pincode to check if we deliver to your location in Madurai District.
     </Typography>
 
     <Box sx={{ display: "flex", alignItems: "center", border: "1.5px solid rgba(90,40,20,0.18)", borderRadius: "12px", overflow: "hidden", background: "#fafaf8" }}>

@@ -66,6 +66,7 @@ import {
   validateProductQuantities,
   getAvailableTimeSlots,
   FormErrors,
+  maxDateStr,
 } from "@/lib/validations/bulkOrderValidation";
 
 /* ════════════════════════════════════════
@@ -245,6 +246,8 @@ export default function BulkOrderPage() {
     pincode:      "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [pincodeServiceable, setPincodeServiceable] = useState<boolean | null>(null);
+  const [pincodeChecking, setPincodeChecking] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [bookedSlotsLoading, setBookedSlotsLoading] = useState(false);
   const [submittedOrderRef, setSubmittedOrderRef] = useState<string | null>(null);
@@ -417,6 +420,7 @@ export default function BulkOrderPage() {
     setProductRows([]);
     setSubmitted(false);
     setErrors({});
+    setPincodeServiceable(null);
     setSubmittedOrderRef(null);   // ← NEW
     setSubmitSuccess("");         // ← NEW
     setIsSubmitting(false);       // ← NEW
@@ -433,9 +437,12 @@ export default function BulkOrderPage() {
     if (isSubmitting || submittedOrderRef) return;
 
     const { errors: newErrors, isValid } = validateBulkOrderForm(form, productRows);
+    if (pincodeServiceable === false) {
+      newErrors.pincode = "Sorry, we don't deliver to this pincode yet.";
+    }
     setErrors(newErrors);
 
-    if (!isValid) return;
+    if (!isValid || pincodeServiceable === false) return;
 
     if (bookedSlots.includes(form.deliveryTime)) {
       setErrors((prev) => ({
@@ -904,7 +911,7 @@ export default function BulkOrderPage() {
                             deliveryTime: undefined,
                           }));
                         }}
-                        inputProps={{ min: todayStr() }}
+                        inputProps={{ min: todayStr(), max: maxDateStr() }}
                         InputLabelProps={{ shrink: true }}
                         sx={{
                           ...fieldSx,
@@ -1146,20 +1153,47 @@ export default function BulkOrderPage() {
                         required
                         placeholder="6-digit pincode"
                         value={form.pincode}
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const val = e.target.value.replace(/\D/g, "").slice(0, 6);
 
                           setSubmitted(false);
+                          setPincodeServiceable(null);
+                          setPincodeChecking(false);
 
                           setForm((prev) => ({
                             ...prev,
                             pincode: val,
                           }));
 
+                          const basicError = validateField("pincode", val);
                           setErrors((prev) => ({
                             ...prev,
-                            pincode: validateField("pincode", val),
+                            pincode: basicError,
                           }));
+
+                          if (basicError || val.length !== 6) return;
+
+                          const requestId = ++pincodeRequestId.current;
+                          setPincodeChecking(true);
+
+                          try {
+                            const res = await fetch("/api/check-pincode", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ pincode: val }),
+                            });
+                            const data = await res.json();
+
+                            if (requestId !== pincodeRequestId.current) return;
+
+                            setPincodeServiceable(data.serviceable);
+                            setErrors((prev) => ({
+                              ...prev,
+                              pincode: data.serviceable ? undefined : "Sorry, we don't deliver to this pincode yet.",
+                            }));
+                          } finally {
+                            if (requestId === pincodeRequestId.current) setPincodeChecking(false);
+                          }
                         }}
                         onBlur={async () => {
                           const basicError = validateField("pincode", form.pincode);
@@ -1167,24 +1201,31 @@ export default function BulkOrderPage() {
                             setErrors((prev) => ({ ...prev, pincode: basicError }));
                             return;
                           }
-                          if (form.pincode.length !== 6) return;
+                          if (form.pincode.length !== 6 || pincodeServiceable !== null) return;
 
                           const checkedPincode = form.pincode;
                           const requestId = ++pincodeRequestId.current;
 
-                          const res = await fetch("/api/check-pincode", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ pincode: checkedPincode }),
-                          });
-                          const data = await res.json();
+                          setPincodeChecking(true);
 
-                          if (requestId !== pincodeRequestId.current) return;
+                          try {
+                            const res = await fetch("/api/check-pincode", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ pincode: checkedPincode }),
+                            });
+                            const data = await res.json();
 
-                          setErrors((prev) => ({
-                            ...prev,
-                            pincode: data.serviceable ? undefined : "Sorry, we don't deliver to this pincode yet.",
-                          }));
+                            if (requestId !== pincodeRequestId.current) return;
+
+                            setPincodeServiceable(data.serviceable);
+                            setErrors((prev) => ({
+                              ...prev,
+                              pincode: data.serviceable ? undefined : "Sorry, we don't deliver to this pincode yet.",
+                            }));
+                          } finally {
+                            if (requestId === pincodeRequestId.current) setPincodeChecking(false);
+                          }
                         }}
                         inputProps={{
                           maxLength: 6,
@@ -1204,16 +1245,15 @@ export default function BulkOrderPage() {
                         helperText={
                           errors.pincode
                             ? errors.pincode
-                            : form.pincode.length === 6 && !errors.pincode
-                              ? "✓ Delivery available in your area"
-                              : "Madurai delivery zone only"
+                            : pincodeChecking
+                              ? "Checking delivery availability..."
+                              : pincodeServiceable === true
+                                ? "✓ Delivery available in your area"
+                                : "Madurai delivery zone only"
                         }
                         FormHelperTextProps={{
                           sx: {
-                            color:
-                              form.pincode.length === 6 && !validatePincode(form.pincode)
-                                ? "var(--primary-teal-dark) !important"
-                                : undefined,
+                            color: pincodeServiceable === true ? "var(--primary-teal-dark) !important" : undefined,
                             fontSize: "0.74rem",
                             mx: 0,
                             mt: 0.5,
@@ -1226,8 +1266,11 @@ export default function BulkOrderPage() {
                     <Grid item xs={12}>
                       <Button fullWidth onClick={() => {
                         const { errors: newErrors, isValid } = validateBulkOrderForm(form, productRows);
+                        if (pincodeServiceable === false) {
+                          newErrors.pincode = "Sorry, we don't deliver to this pincode yet.";
+                        }
                         setErrors(newErrors);
-                        if (isValid) setSubmitted(true);
+                        if (isValid && pincodeServiceable !== false) setSubmitted(true);
                       }} startIcon={<SendOutlinedIcon />}
                         sx={{
                           backgroundColor: "var(--primary-teal-dark)", color: "#fff",
