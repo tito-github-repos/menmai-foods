@@ -52,9 +52,13 @@ import {
   validateOccasion,
   validateAddress,
   validatePincode,
+  validateItemQuantity,
   getAvailableTimeSlots,
+  getAllTimeSlots,
+  maxDateStr,
 } from "@/lib/validations/bulkOrderValidation";
 import CloseIcon from "@mui/icons-material/Close";
+import * as XLSX from "xlsx";
 
 type BulkStatus = "NEW" | "ACCEPTED" | "IN_DISCUSSION" | "REJECTED" | "DELIVERED";
 type SourceFilter = "ALL" | "CUSTOMER_FORM" | "ADMIN_MANUAL";
@@ -219,6 +223,33 @@ function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 }
 
+function sanitizeDecimal(value: string): string {
+  const cleaned = value.replace(/[^\d.]/g, "");
+  const parts = cleaned.split(".");
+  return parts.length > 1 ? `${parts[0]}.${parts.slice(1).join("")}` : cleaned;
+}
+
+function buildOrderExportRows(orders: BulkOrder[]) {
+  return orders.map((order) => ({
+    "Order Ref": order.orderRef,
+    "Customer Name": order.customerName,
+    "Phone": order.phone,
+    "Email": order.email || "",
+    "Delivery Date": formatDate(order.deliveryDate),
+    "Delivery Time": order.deliveryTime,
+    "Occasion": order.occasion,
+    "Address": order.deliveryAddress,
+    "Pincode": order.pincode,
+    "Items": order.items.map((i) => `${i.productName} x${i.quantity}`).join(", "),
+    "Subtotal": order.subtotal,
+    "Delivery Charge": order.deliveryCharge,
+    "Estimated Total": order.estimatedTotal,
+    "Status": statusLabel[order.status],
+    "Source": order.source === "CUSTOMER_FORM" ? "Customer" : "Admin",
+    "Created At": formatDate(order.createdAt),
+  }));
+}
+
 function getSlotHour(slot: string) {
   const match = slot.match(/^(\d{1,2}):?\d*\s*(AM|PM)/i);
   if (!match) return 0;
@@ -253,6 +284,7 @@ export default function AdminBulkOrdersPage() {
   const [bookedSlotsLoading, setBookedSlotsLoading] = useState(false);
   const [confirmSlotOpen, setConfirmSlotOpen] = useState(false);
   const [pendingSlot, setPendingSlot] = useState<string | null>(null);
+  const [slotConfirmSource, setSlotConfirmSource] = useState<"select" | "save" | null>(null);
   const [originalSlot, setOriginalSlot] = useState<{ date: string; time: string } | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -312,15 +344,17 @@ export default function AdminBulkOrdersPage() {
     setSortBy("NEWEST");
   };
 
-  const slotOptions = useMemo(() => {
-    const set = new Set<string>();
+  const slotOptions = useMemo(() => getAllTimeSlots(), []);
 
-    orders.forEach((order) => {
-      if (order.deliveryTime) set.add(order.deliveryTime);
-    });
+  // const slotOptions = useMemo(() => {
+  //   const set = new Set<string>();
 
-    return Array.from(set).sort((a, b) => getSlotHour(a) - getSlotHour(b));
-  }, [orders]);
+  //   orders.forEach((order) => {
+  //     if (order.deliveryTime) set.add(order.deliveryTime);
+  //   });
+
+  //   return Array.from(set).sort((a, b) => getSlotHour(a) - getSlotHour(b));
+  // }, [orders]);
 
   const getSlotOrders = (date: string, slot: string, excludeId?: number) => {
     if (!date || !slot) return [];
@@ -397,6 +431,22 @@ export default function AdminBulkOrdersPage() {
     return filteredOrders.slice(start, start + rowsPerPage);
   }, [filteredOrders, page, rowsPerPage]);
 
+  const handleExportExcel = () => {
+    if (filteredOrders.length === 0) return;
+
+    const rows = buildOrderExportRows(filteredOrders);
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Bulk Orders");
+
+    const parts = ["bulk-orders"];
+    if (statusFilter !== "ALL") parts.push(statusFilter.toLowerCase());
+    if (dateFilter) parts.push(dateFilter);
+    if (sourceFilter !== "ALL") parts.push(sourceFilter.toLowerCase());
+
+    XLSX.writeFile(workbook, `${parts.join("-")}.xlsx`);
+  };
+
   const stats = useMemo(() => ({
     total: orders.length,
     newOrders: orders.filter((o) => o.status === "NEW").length,
@@ -428,9 +478,12 @@ export default function AdminBulkOrdersPage() {
       pincode: validatePincode(f.pincode),
     };
 
-    const validItems = f.items.filter((item) => item.name && Number(item.quantity) > 0);
-    if (validItems.length === 0) {
-      next.items = "Please add at least one item with a valid quantity.";
+    const itemsWithProduct = f.items.filter((item) => item.name);
+    if (itemsWithProduct.length === 0) {
+      next.items = "Please add at least one item.";
+    } else {
+      const badItem = itemsWithProduct.find((item) => validateItemQuantity(item.quantity));
+      if (badItem) next.items = "Every item needs a valid quantity greater than 0.";
     }
 
     (Object.keys(next) as (keyof AdminFormErrors)[]).forEach((key) => {
@@ -446,6 +499,7 @@ export default function AdminBulkOrdersPage() {
 
     if (isBooked || conflicts.length > 0) {
       setPendingSlot(value);
+      setSlotConfirmSource("select");
       setConfirmSlotOpen(true);
       return;
     }
@@ -454,19 +508,32 @@ export default function AdminBulkOrdersPage() {
     setErrors((prev) => ({ ...prev, deliveryTime: validateDeliveryTime(value) }));
   };
 
-  const confirmSlotSelection = () => {
-    if (pendingSlot) {
-      setForm((prev) => ({ ...prev, deliveryTime: pendingSlot }));
+  const confirmSlotSelection = async () => {
+    const resolvedSlot = pendingSlot;
+    const source = slotConfirmSource;
+
+    if (resolvedSlot) {
+      setForm((prev) => ({ ...prev, deliveryTime: resolvedSlot }));
       setErrors((prev) => ({ ...prev, deliveryTime: undefined }));
     }
 
     setConfirmSlotOpen(false);
     setPendingSlot(null);
+    setSlotConfirmSource(null);
+
+    if (source === "save") {
+      if (pincodeOutOfZone) {
+        setConfirmPincodeOpen(true);
+        return;
+      }
+      await submitOrder(resolvedSlot ?? undefined);
+    }
   };
 
   const cancelSlotSelection = () => {
     setConfirmSlotOpen(false);
     setPendingSlot(null);
+    setSlotConfirmSource(null);
   };
 
   const checkPincodeZone = async (pincode: string) => {
@@ -648,6 +715,7 @@ export default function AdminBulkOrdersPage() {
 
     if (conflicts.length > 0) {
       setPendingSlot(form.deliveryTime);
+      setSlotConfirmSource("save");
       setConfirmSlotOpen(true);
       return;
     }
@@ -660,7 +728,8 @@ export default function AdminBulkOrdersPage() {
     await submitOrder();
   };
 
-  const submitOrder = async () => {
+  const submitOrder = async (deliveryTimeOverride?: string) => {
+    const deliveryTime = deliveryTimeOverride ?? form.deliveryTime;
     const validItems = form.items.filter((item) => item.name && Number(item.quantity) > 0);
 
     setSaving(true);
@@ -670,7 +739,7 @@ export default function AdminBulkOrdersPage() {
       phone: form.phone,
       email: form.email,
       deliveryDate: form.deliveryDate,
-      deliveryTime: form.deliveryTime,
+      deliveryTime: deliveryTime,
       occasion: form.occasion,
       deliveryAddress: form.deliveryAddress,
       pincode: form.pincode,
@@ -736,6 +805,26 @@ export default function AdminBulkOrdersPage() {
           }}
         >
           Add Bulk Order
+        </Button>
+
+        <Button
+          variant="outlined"
+          startIcon={<DownloadOutlinedIcon />}
+          onClick={handleExportExcel}
+          disabled={filteredOrders.length === 0}
+          sx={{
+            textTransform: "none",
+            borderRadius: "10px",
+            fontWeight: 700,
+            fontSize: 14,
+            px: 2.5,
+            py: 1.2,
+            borderColor: "#cbd5e1",
+            color: "#475569",
+            "&:hover": { borderColor: BRAND, backgroundColor: BRAND_LIGHT, color: BRAND_DARK },
+          }}
+        >
+          Export Excel ({filteredOrders.length})
         </Button>
       </Stack>
 
@@ -1208,7 +1297,9 @@ export default function AdminBulkOrdersPage() {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <TextField fullWidth type="date" label="Delivery Date" size="small" InputLabelProps={{ shrink: true }} value={form.deliveryDate} onChange={(e) => {
+              <TextField fullWidth type="date" label="Delivery Date" size="small" InputLabelProps={{ shrink: true }} value={form.deliveryDate}
+                inputProps={{ max: maxDateStr() }}
+                onChange={(e) => {
                 const value = e.target.value;
                 setForm({ ...form, deliveryDate: value, deliveryTime: "" });
                 setErrors((prev) => ({ ...prev, deliveryDate: validateDeliveryDate(value), deliveryTime: undefined }));
@@ -1216,37 +1307,47 @@ export default function AdminBulkOrdersPage() {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <TextField
-                select
-                fullWidth
-                label="Delivery Slot"
-                size="small"
-                value={form.deliveryTime}
-                onChange={(e) => handleSlotSelect(e.target.value)}
-                error={!!errors.deliveryTime}
-                disabled={!form.deliveryDate || !!errors.deliveryDate}
-                helperText={
-                  errors.deliveryTime ||
-                  (bookedSlotsLoading ? "Checking booked slots..." : !form.deliveryDate ? "Pick a delivery date first" : "")
-                }
-                sx={fieldSx}
-              >
-                {getAvailableTimeSlots(form.deliveryDate).map((slot) => {
-                  const conflicts = getSlotOrders(form.deliveryDate, slot, form.id);
-                  const isBooked = (bookedSlots.includes(slot) || conflicts.length > 0) && !isOwnOriginalSlot(form.deliveryDate, slot);
+              {(() => {
+                const baseSlots = getAvailableTimeSlots(form.deliveryDate);
+                const timeSlotOptions =
+                  form.deliveryTime && !baseSlots.includes(form.deliveryTime)
+                    ? [form.deliveryTime, ...baseSlots]
+                    : baseSlots;
 
-                  return (
-                    <MenuItem key={slot} value={slot}>
-                      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: "100%" }}>
-                        <span>{slot}</span>
-                        {isBooked && (
-                          <Chip label={`${conflicts.length || 1} booked`} size="small" sx={{ height: 18, fontSize: 10, fontWeight: 700, ml: 1.5, backgroundColor: "#fff1f2", color: "#9f1239" }} />
-                        )}
-                      </Stack>
-                    </MenuItem>
-                  );
-                })}
-              </TextField>
+                return (
+                  <TextField
+                    select
+                    fullWidth
+                    label="Delivery Slot"
+                    size="small"
+                    value={form.deliveryTime}
+                    onChange={(e) => handleSlotSelect(e.target.value)}
+                    error={!!errors.deliveryTime}
+                    disabled={!form.deliveryDate || !!errors.deliveryDate}
+                    helperText={
+                      errors.deliveryTime ||
+                      (bookedSlotsLoading ? "Checking booked slots..." : !form.deliveryDate ? "Pick a delivery date first" : "")
+                    }
+                    sx={fieldSx}
+                  >
+                    {timeSlotOptions.map((slot) => {
+                      const conflicts = getSlotOrders(form.deliveryDate, slot, form.id);
+                      const hasOtherOrders = conflicts.length > 0;
+
+                      return (
+                        <MenuItem key={slot} value={slot}>
+                          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: "100%" }}>
+                            <span>{slot}</span>
+                            {hasOtherOrders && (
+                              <Chip label={`${conflicts.length} booked`} size="small" sx={{ height: 18, fontSize: 10, fontWeight: 700, ml: 1.5, backgroundColor: "#fff1f2", color: "#9f1239" }} />
+                            )}
+                          </Stack>
+                        </MenuItem>
+                      );
+                    })}
+                  </TextField>
+                );
+              })()}
             </Grid>
 
             {form.deliveryDate && form.deliveryTime && selectedSlotConflicts.length > 0 && (
@@ -1297,12 +1398,13 @@ export default function AdminBulkOrdersPage() {
                     </TextField>
 
                     <TextField size="small" label="Qty" value={item.quantity} onChange={(e) => {
-                      updateFormItem(index, { quantity: e.target.value });
+                      updateFormItem(index, { quantity: e.target.value.replace(/\D/g, "") });
                       setErrors((prev) => ({ ...prev, items: undefined }));
-                    }} sx={{ ...fieldSx, flex: 1 }} />
+                    }} error={!!item.productId && !!validateItemQuantity(item.quantity)}
+                       helperText={item.productId ? validateItemQuantity(item.quantity) : ""}
+                       sx={{ ...fieldSx, flex: 1 }} />
 
-                    <TextField size="small" label="Rate (₹)" value={item.unitPrice} onChange={(e) => updateFormItem(index, { unitPrice: e.target.value })} sx={{ ...fieldSx, flex: 1 }} />
-
+                    <TextField size="small" label="Rate (₹)" value={item.unitPrice} onChange={(e) => updateFormItem(index, { unitPrice: sanitizeDecimal(e.target.value) })} sx={{ ...fieldSx, flex: 1 }} />
                     <TextField size="small" disabled label="Total" value={`₹${(Number(item.quantity || 0) * Number(item.unitPrice || 0)).toLocaleString("en-IN")}`} sx={{ ...fieldSx, flex: 1 }} />
 
                     <IconButton onClick={() => removeItemRow(index)} disabled={form.items.length === 1} sx={{ color: "#ef4444", "&:hover": { backgroundColor: "#fff1f2" }, flexShrink: 0 }}>
@@ -1326,7 +1428,7 @@ export default function AdminBulkOrdersPage() {
                     <TextField fullWidth size="small" disabled label="Subtotal" value={`₹${formTotals.subtotal.toLocaleString("en-IN")}`} sx={fieldSx} />
                   </Grid>
                   <Grid item xs={12} md={4}>
-                    <TextField fullWidth size="small" label="Delivery Charge (₹)" value={form.deliveryCharge} onChange={(e) => setForm({ ...form, deliveryCharge: e.target.value })} sx={fieldSx} />
+                   <TextField fullWidth size="small" label="Delivery Charge (₹)" value={form.deliveryCharge} onChange={(e) => setForm({ ...form, deliveryCharge: sanitizeDecimal(e.target.value) })} sx={fieldSx} />
                   </Grid>
                   <Grid item xs={12} md={4}>
                     <TextField fullWidth size="small" disabled label="Estimated Total" value={`₹${formTotals.estimatedTotal.toLocaleString("en-IN")}`} sx={{

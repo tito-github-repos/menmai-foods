@@ -134,6 +134,20 @@ export function validateEmail(value: string): string | undefined {
   return undefined;
 }
 
+// export function validateDeliveryDate(value: string): string | undefined {
+//   if (!value) return "Delivery date is required.";
+
+//   const selected = parseDateInput(value);
+//   const today = new Date();
+//   today.setHours(0, 0, 0, 0);
+
+//   if (isNaN(selected.getTime())) return "Enter a valid date.";
+//   if (selected < today) return "Delivery date cannot be in the past.";
+//   if (isSundayDate(selected)) return "Delivery is not available on Sunday.";
+
+//   return undefined;
+// }
+
 export function validateDeliveryDate(value: string): string | undefined {
   if (!value) return "Delivery date is required.";
 
@@ -143,9 +157,20 @@ export function validateDeliveryDate(value: string): string | undefined {
 
   if (isNaN(selected.getTime())) return "Enter a valid date.";
   if (selected < today) return "Delivery date cannot be in the past.";
+
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + 90);
+  if (selected > maxDate) return "Delivery date is too far in the future.";
+
   if (isSundayDate(selected)) return "Delivery is not available on Sunday.";
 
   return undefined;
+}
+
+export function maxDateStr(days = 90): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
 }
 
 export function validateDeliveryTime(value: string): string | undefined {
@@ -192,6 +217,15 @@ export function formatHour(hour: number): string {
     hour12: true,
   });
 }
+
+export function getAllTimeSlots(): string[] {
+  const slots: string[] = [];
+  for (let hour = WORK_START_HOUR; hour < WORK_END_HOUR; hour++) {
+    slots.push(`${formatHour(hour)} - ${formatHour(hour + 1)}`);
+  }
+  return slots;
+}
+
 
 export function getAvailableTimeSlots(deliveryDate: string): string[] {
   if (!deliveryDate) return [];
@@ -288,6 +322,15 @@ export function validateProductsSelected(
   productRows: ProductRowForValidation[]
 ): string | undefined {
   if (productRows.length === 0) return "Please select at least one product before submitting.";
+  return undefined;
+}
+
+export function validateItemQuantity(qty: string): string | undefined {
+  const trimmed = qty.trim();
+  if (!trimmed) return "Quantity is required.";
+  const num = Number(trimmed);
+  if (!Number.isInteger(num) || isNaN(num)) return "Quantity must be a whole number.";
+  if (num <= 0) return "Quantity must be greater than 0.";
   return undefined;
 }
 
