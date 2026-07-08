@@ -23,12 +23,22 @@ import {
   Alert,
   useMediaQuery,
   useTheme,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Rating,
 } from "@mui/material";
 
 import SearchIcon from "@mui/icons-material/Search";
 import PhoneIcon from "@mui/icons-material/Phone";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import EmailIcon from "@mui/icons-material/Email";
+
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,14 +53,23 @@ interface Customer {
   address: string; // primary address
 }
 
+interface CustomerReview {
+  id: number;
+  rating: number;
+  comment: string | null;
+  productName: string;
+  orderNumber: string;
+  createdAt: string;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-IN", {
-    day:   "2-digit",
+    day: "2-digit",
     month: "short",
-    year:  "numeric",
+    year: "numeric",
   });
 }
 
@@ -66,7 +85,7 @@ const AVATAR_COLORS = [
 
 function avatarColor(name: string) {
   const code = (name ?? "").charCodeAt(0);
-  const idx  = (isNaN(code) ? 0 : code) % AVATAR_COLORS.length;
+  const idx = (isNaN(code) ? 0 : code) % AVATAR_COLORS.length;
   return AVATAR_COLORS[idx] ?? AVATAR_COLORS[0];
 }
 
@@ -98,10 +117,18 @@ function SkeletonCards() {
       {Array.from({ length: 5 }).map((_, i) => (
         <Card
           key={i}
-          sx={{ mb: 1.5, borderRadius: 3, boxShadow: "none", border: "0.5px solid #ECECEC", overflow: "hidden" }}
+          sx={{
+            mb: 1.5,
+            borderRadius: 3,
+            boxShadow: "none",
+            border: "0.5px solid #ECECEC",
+            overflow: "hidden",
+          }}
         >
           <CardContent sx={{ pb: "0 !important", px: "14px", pt: "12px" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+            <Box
+              sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}
+            >
               <Skeleton variant="circular" width={38} height={38} />
               <Box flex={1}>
                 <Skeleton width={120} height={16} />
@@ -113,8 +140,20 @@ function SkeletonCards() {
           </CardContent>
           <Box sx={{ display: "flex", borderTop: "0.5px solid #ECECEC" }}>
             {[1, 2, 3].map((j) => (
-              <Box key={j} flex={1} sx={{ p: "8px 4px", textAlign: "center", borderLeft: j > 1 ? "0.5px solid #ECECEC" : "none" }}>
-                <Skeleton width="60%" height={10} sx={{ mx: "auto", mb: 0.5 }} />
+              <Box
+                key={j}
+                flex={1}
+                sx={{
+                  p: "8px 4px",
+                  textAlign: "center",
+                  borderLeft: j > 1 ? "0.5px solid #ECECEC" : "none",
+                }}
+              >
+                <Skeleton
+                  width="60%"
+                  height={10}
+                  sx={{ mx: "auto", mb: 0.5 }}
+                />
                 <Skeleton width="50%" height={14} sx={{ mx: "auto" }} />
               </Box>
             ))}
@@ -128,14 +167,23 @@ function SkeletonCards() {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function CustomersPage() {
-  const theme  = useTheme();
+  const theme = useTheme();
   const mobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState<string | null>(null);
-  const [search,    setSearch]    = useState("");
-  const [page,      setPage]      = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null,
+  );
+  const [reviews, setReviews] = useState<CustomerReview[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewPage, setReviewPage] = useState(1);
+  const REVIEWS_PER_PAGE = 5;
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -146,7 +194,8 @@ export default function CustomersPage() {
       setError(null);
       try {
         const res = await fetch("/api/admin/customers");
-        if (!res.ok) throw new Error(`Failed to fetch customers (${res.status})`);
+        if (!res.ok)
+          throw new Error(`Failed to fetch customers (${res.status})`);
         const data: Customer[] = await res.json();
         if (!cancelled) setCustomers(data);
       } catch (err: unknown) {
@@ -158,375 +207,767 @@ export default function CustomersPage() {
     }
 
     fetchCustomers();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  const handleOpenReviews = async (customer: Customer) => {
+    try {
+      setReviewLoading(true);
+      setSelectedCustomer(customer);
+      setReviewOpen(true);
+      setReviewPage(1);
+
+      const res = await fetch(`/api/admin/customers/${customer.id}/reviews`);
+
+      const data = await res.json();
+      setReviews(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
 
   // ── Filter + paginate ──────────────────────────────────────────────────────
   const filtered = customers.filter((c) => {
     if (!search) return true;
     const q = search.toLowerCase();
     return (
-      c.name.toLowerCase().includes(q)  ||
-      c.phone.includes(q)               ||
+      c.name.toLowerCase().includes(q) ||
+      c.phone.includes(q) ||
       (c.email ?? "").toLowerCase().includes(q)
     );
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
-  const paginated  = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE);
-  const startRow   = Math.min((page - 1) * ROWS_PER_PAGE + 1, filtered.length);
-  const endRow     = Math.min(page * ROWS_PER_PAGE, filtered.length);
+  const paginated = filtered.slice(
+    (page - 1) * ROWS_PER_PAGE,
+    page * ROWS_PER_PAGE,
+  );
+  const startRow = Math.min((page - 1) * ROWS_PER_PAGE + 1, filtered.length);
+  const endRow = Math.min(page * ROWS_PER_PAGE, filtered.length);
 
-  const COL_COUNT = 6; // NAME | PHONE | ADDRESS | TOTAL ORDERS | LAST ORDER DATE | TOTAL SPENT
+  const COL_COUNT = 7; // NAME | PHONE | ADDRESS | TOTAL ORDERS | LAST ORDER DATE | TOTAL SPENT | REVIEWS
 
   // ─────────────────────────────────────────────────────────────────────────
 
+  const reviewTotalPages = Math.max(
+    1,
+    Math.ceil(reviews.length / REVIEWS_PER_PAGE),
+  );
+  const paginatedReviews = reviews.slice(
+    (reviewPage - 1) * REVIEWS_PER_PAGE,
+    reviewPage * REVIEWS_PER_PAGE,
+  );
+
   return (
-    <Container maxWidth={false} sx={{ py: { xs: 2, md: 4 }, px: { xs: 1.5, sm: 2, md: 3 } }}>
-
-      {/* ── Search bar ── */}
-      <Box sx={{ pb: { xs: 2, md: 3 }, display: "flex", justifyContent: "flex-end" }}>
-        <TextField
-          placeholder="Search by name, phone or email…"
-          size="small"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          sx={{ width: { xs: "100%", md: 350 } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
-            sx: { borderRadius: 2, fontSize: 13 },
+    <>
+      <Container
+        maxWidth={false}
+        sx={{ py: { xs: 2, md: 4 }, px: { xs: 1.5, sm: 2, md: 3 } }}
+      >
+        {/* ── Search bar ── */}
+        <Box
+          sx={{
+            pb: { xs: 2, md: 3 },
+            display: "flex",
+            justifyContent: "flex-end",
           }}
-        />
-      </Box>
+        >
+          <TextField
+            placeholder="Search by name, phone or email…"
+            size="small"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            sx={{ width: { xs: "100%", md: 350 } }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+              sx: { borderRadius: 2, fontSize: 13 },
+            }}
+          />
+        </Box>
 
-      {/* ── Error ── */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2, borderRadius: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
+        {/* ── Error ── */}
+        {error && (
+          <Alert
+            severity="error"
+            sx={{ mb: 2, borderRadius: 3 }}
+            onClose={() => setError(null)}
+          >
+            {error}
+          </Alert>
+        )}
 
-      {/* ── DESKTOP TABLE ── */}
-      {!mobile && (
-        <Paper sx={{ borderRadius: 4, border: "1px solid #ECECEC", boxShadow: "none", overflow: "hidden" }}>
-          <TableContainer sx={{ overflowX: "auto" }}>
-            <Table sx={{ minWidth: 1000 }}>
-              <TableHead>
-                <TableRow>
-                  {[
-                    "NAME",
-                    "PHONE",
-                    "ADDRESS",
-                    "TOTAL ORDERS",
-                    "LAST ORDER DATE",
-                    "TOTAL SPENT",
-                  ].map((col) => (
-                    <TableCell
-                      key={col}
-                      sx={{ color: "var(--primary-maroon-mid)", fontWeight: 600, whiteSpace: "nowrap" }}
-                    >
-                      {col}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {loading ? (
-                  <SkeletonRows cols={COL_COUNT} />
-                ) : paginated.length === 0 ? (
+        {/* ── DESKTOP TABLE ── */}
+        {!mobile && (
+          <Paper
+            sx={{
+              borderRadius: 4,
+              border: "1px solid #ECECEC",
+              boxShadow: "none",
+              overflow: "hidden",
+            }}
+          >
+            <TableContainer sx={{ overflowX: "auto" }}>
+              <Table sx={{ minWidth: 1000 }}>
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={COL_COUNT} align="center" sx={{ py: 6 }}>
-                      <Typography color="text.secondary" fontSize={14}>
-                        No customers found
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginated.map((customer) => {
-                    const color = avatarColor(customer.name);
-                    return (
-                      <TableRow
-                        key={customer.id}
-                        sx={{ "&:hover": { bgcolor: "#FAFAFA" }, "&:last-child td": { border: 0 } }}
+                    {[
+                      "NAME",
+                      "PHONE",
+                      "ADDRESS",
+                      "TOTAL ORDERS",
+                      "LAST ORDER DATE",
+                      "TOTAL SPENT",
+                      "REVIEWS",
+                    ].map((col) => (
+                      <TableCell
+                        key={col}
+                        sx={{
+                          color: "var(--primary-maroon-mid)",
+                          fontWeight: 600,
+                          whiteSpace: "nowrap",
+                        }}
                       >
-                        {/* NAME */}
-                        <TableCell>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <Avatar sx={{ bgcolor: color.bg, color: color.text, fontWeight: 600, width: 36, height: 36, fontSize: 14 }}>
-                              {customer.name.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Box>
-                              <Typography fontWeight={600} fontSize={13}>
-                                {customer.name}
-                              </Typography>
-                              {customer.email && (
-                                <Typography fontSize={11} color="text.secondary">
-                                  {customer.email}
+                        {col}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {loading ? (
+                    <SkeletonRows cols={COL_COUNT} />
+                  ) : paginated.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={COL_COUNT}
+                        align="center"
+                        sx={{ py: 6 }}
+                      >
+                        <Typography color="text.secondary" fontSize={14}>
+                          No customers found
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginated.map((customer) => {
+                      const color = avatarColor(customer.name);
+                      return (
+                        <TableRow
+                          key={customer.id}
+                          sx={{
+                            "&:hover": { bgcolor: "#FAFAFA" },
+                            "&:last-child td": { border: 0 },
+                          }}
+                        >
+                          {/* NAME */}
+                          <TableCell>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1.5,
+                              }}
+                            >
+                              <Avatar
+                                sx={{
+                                  bgcolor: color.bg,
+                                  color: color.text,
+                                  fontWeight: 600,
+                                  width: 36,
+                                  height: 36,
+                                  fontSize: 14,
+                                }}
+                              >
+                                {customer.name.charAt(0).toUpperCase()}
+                              </Avatar>
+                              <Box>
+                                <Typography fontWeight={600} fontSize={13}>
+                                  {customer.name}
                                 </Typography>
-                              )}
+                                {customer.email && (
+                                  <Typography
+                                    fontSize={11}
+                                    color="text.secondary"
+                                  >
+                                    {customer.email}
+                                  </Typography>
+                                )}
+                              </Box>
                             </Box>
-                          </Box>
-                        </TableCell>
+                          </TableCell>
 
-                        {/* PHONE */}
-                        <TableCell>
-                          <Typography fontSize={13} whiteSpace="nowrap">{customer.phone}</Typography>
-                        </TableCell>
+                          {/* PHONE */}
+                          <TableCell>
+                            <Typography fontSize={13} whiteSpace="nowrap">
+                              {customer.phone}
+                            </Typography>
+                          </TableCell>
 
-                        {/* ADDRESS */}
-                        <TableCell sx={{ maxWidth: 220 }}>
+                          {/* ADDRESS */}
+                          <TableCell sx={{ maxWidth: 220 }}>
+                            <Typography
+                              fontSize={12}
+                              color="text.secondary"
+                              title={customer.address}
+                              sx={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {customer.address || "—"}
+                            </Typography>
+                          </TableCell>
+
+                          {/* TOTAL ORDERS */}
+                          <TableCell>
+                            <Typography
+                              fontSize={13}
+                              fontWeight={600}
+                              textAlign="center"
+                            >
+                              {customer.totalOrders}
+                            </Typography>
+                          </TableCell>
+
+                          {/* LAST ORDER DATE */}
+                          <TableCell>
+                            <Typography
+                              fontSize={13}
+                              color="text.secondary"
+                              whiteSpace="nowrap"
+                            >
+                              {formatDate(customer.lastOrderDate)}
+                            </Typography>
+                          </TableCell>
+
+                          {/* TOTAL SPENT */}
+                          <TableCell>
+                            <Typography
+                              fontSize={13}
+                              fontWeight={700}
+                              color="var(--primary-teal-mid)"
+                              whiteSpace="nowrap"
+                            >
+                              ₹{customer.totalSpent.toLocaleString("en-IN")}
+                            </Typography>
+                          </TableCell>
+
+                          {/* REVIEWS */}
+                          <TableCell align="center">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenReviews(customer)}
+                            >
+                              <VisibilityOutlinedIcon
+                                sx={{ color: "var(--primary-teal-mid)" }}
+                              />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* ── Pagination (desktop) ── */}
+            <Box
+              sx={{
+                p: { xs: 2, md: 3 },
+                borderTop: "1px solid #ECECEC",
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                gap: 2,
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                {loading
+                  ? "Loading…"
+                  : filtered.length === 0
+                    ? "No customers to show"
+                    : `Showing ${startRow} to ${endRow} of ${filtered.length} customers`}
+              </Typography>
+
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_, value) => {
+                  setPage(value);
+                }}
+                shape="rounded"
+                siblingCount={0}
+                boundaryCount={1}
+                size="medium"
+                sx={{
+                  "& .MuiPaginationItem-root": {
+                    color: "var(--primary-teal-mid)",
+                    borderColor: "var(--primary-teal-mid)",
+                  },
+                  "& .Mui-selected": {
+                    backgroundColor: "var(--primary-teal-mid) !important",
+                    color: "#fff",
+                  },
+                }}
+              />
+            </Box>
+          </Paper>
+        )}
+
+        {/* ── MOBILE / TABLET CARDS ── */}
+        {mobile && (
+          <Box>
+            {loading ? (
+              <SkeletonCards />
+            ) : paginated.length === 0 ? (
+              <Typography
+                color="text.secondary"
+                fontSize={14}
+                textAlign="center"
+                py={4}
+              >
+                No customers found
+              </Typography>
+            ) : (
+              paginated.map((customer) => {
+                const color = avatarColor(customer.name);
+                return (
+                  <Card
+                    key={customer.id}
+                    sx={{
+                      mb: 1.5,
+                      borderRadius: 3,
+                      boxShadow: "none",
+                      border: "0.5px solid #ECECEC",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {/* ── Header: avatar + name + email ── */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                        px: "14px",
+                        pt: "12px",
+                        pb: "10px",
+                      }}
+                    >
+                      <Avatar
+                        sx={{
+                          bgcolor: color.bg,
+                          color: color.text,
+                          fontWeight: 600,
+                          width: 38,
+                          height: 38,
+                          fontSize: 14,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {customer.name.charAt(0).toUpperCase()}
+                      </Avatar>
+                      <Box flex={1} minWidth={0}>
+                        <Typography fontSize={14} fontWeight={600} noWrap>
+                          {customer.name}
+                        </Typography>
+                        {customer.email ? (
+                          <Typography
+                            fontSize={11}
+                            color="text.secondary"
+                            noWrap
+                          >
+                            {customer.email}
+                          </Typography>
+                        ) : (
+                          <Typography
+                            fontSize={11}
+                            color="text.disabled"
+                            fontStyle="italic"
+                          >
+                            No email
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+
+                    <Divider />
+
+                    {/* ── Phone + address ── */}
+                    <Box sx={{ px: "14px", py: "6px" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          py: "5px",
+                        }}
+                      >
+                        <PhoneIcon
+                          sx={{
+                            fontSize: 14,
+                            color: "text.disabled",
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography fontSize={12} color="text.secondary">
+                          {customer.phone}
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 1,
+                          py: "5px",
+                        }}
+                      >
+                        <LocationOnIcon
+                          sx={{
+                            fontSize: 14,
+                            color: "text.disabled",
+                            flexShrink: 0,
+                            mt: "1px",
+                          }}
+                        />
+                        <Typography fontSize={12} color="text.secondary">
+                          {customer.address || "—"}
+                        </Typography>
+                      </Box>
+                      {customer.email && (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            py: "5px",
+                          }}
+                        >
+                          <EmailIcon
+                            sx={{
+                              fontSize: 14,
+                              color: "text.disabled",
+                              flexShrink: 0,
+                            }}
+                          />
                           <Typography
                             fontSize={12}
                             color="text.secondary"
-                            title={customer.address}
-                            sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                            noWrap
                           >
-                            {customer.address || "—"}
+                            {customer.email}
                           </Typography>
-                        </TableCell>
-
-                        {/* TOTAL ORDERS */}
-                        <TableCell>
-                          <Typography fontSize={13} fontWeight={600} textAlign="center">
-                            {customer.totalOrders}
-                          </Typography>
-                        </TableCell>
-
-                        {/* LAST ORDER DATE */}
-                        <TableCell>
-                          <Typography fontSize={13} color="text.secondary" whiteSpace="nowrap">
-                            {formatDate(customer.lastOrderDate)}
-                          </Typography>
-                        </TableCell>
-
-                        {/* TOTAL SPENT */}
-                        <TableCell>
-                          <Typography fontSize={13} fontWeight={700} color="var(--primary-teal-mid)" whiteSpace="nowrap">
-                            ₹{customer.totalSpent.toLocaleString("en-IN")}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {/* ── Pagination (desktop) ── */}
-          <Box
-            sx={{
-              p: { xs: 2, md: 3 },
-              borderTop: "1px solid #ECECEC",
-              display: "flex",
-              flexDirection: { xs: "column", sm: "row" },
-              gap: 2,
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              {loading
-                ? "Loading…"
-                : filtered.length === 0
-                ? "No customers to show"
-                : `Showing ${startRow} to ${endRow} of ${filtered.length} customers`}
-            </Typography>
-
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={(_, value) => { setPage(value); }}
-              shape="rounded"
-              siblingCount={0}
-              boundaryCount={1}
-              size="medium"
-              sx={{
-                "& .MuiPaginationItem-root": {
-                  color: "var(--primary-teal-mid)",
-                  borderColor: "var(--primary-teal-mid)",
-                },
-                "& .Mui-selected": {
-                  backgroundColor: "var(--primary-teal-mid) !important",
-                  color: "#fff",
-                },
-              }}
-            />
-          </Box>
-        </Paper>
-      )}
-
-      {/* ── MOBILE / TABLET CARDS ── */}
-      {mobile && (
-        <Box>
-          {loading ? (
-            <SkeletonCards />
-          ) : paginated.length === 0 ? (
-            <Typography color="text.secondary" fontSize={14} textAlign="center" py={4}>
-              No customers found
-            </Typography>
-          ) : (
-            paginated.map((customer) => {
-              const color = avatarColor(customer.name);
-              return (
-                <Card
-                  key={customer.id}
-                  sx={{
-                    mb: 1.5,
-                    borderRadius: 3,
-                    boxShadow: "none",
-                    border: "0.5px solid #ECECEC",
-                    overflow: "hidden",
-                  }}
-                >
-                  {/* ── Header: avatar + name + email ── */}
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: "14px", pt: "12px", pb: "10px" }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: color.bg,
-                        color: color.text,
-                        fontWeight: 600,
-                        width: 38,
-                        height: 38,
-                        fontSize: 14,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {customer.name.charAt(0).toUpperCase()}
-                    </Avatar>
-                    <Box flex={1} minWidth={0}>
-                      <Typography fontSize={14} fontWeight={600} noWrap>
-                        {customer.name}
-                      </Typography>
-                      {customer.email ? (
-                        <Typography fontSize={11} color="text.secondary" noWrap>
-                          {customer.email}
-                        </Typography>
-                      ) : (
-                        <Typography fontSize={11} color="text.disabled" fontStyle="italic">
-                          No email
-                        </Typography>
+                        </Box>
                       )}
                     </Box>
-                  </Box>
 
-                  <Divider />
-
-                  {/* ── Phone + address ── */}
-                  <Box sx={{ px: "14px", py: "6px" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: "5px" }}>
-                      <PhoneIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }} />
-                      <Typography fontSize={12} color="text.secondary">
-                        {customer.phone}
-                      </Typography>
+                    {/* ── Stats strip ── */}
+                    <Box
+                      sx={{ display: "flex", borderTop: "0.5px solid #ECECEC" }}
+                    >
+                      {[
+                        {
+                          label: "Orders",
+                          value: String(customer.totalOrders),
+                          teal: false,
+                        },
+                        {
+                          label: "Last order",
+                          value: formatDate(customer.lastOrderDate),
+                          teal: false,
+                        },
+                        {
+                          label: "Total spent",
+                          value: `₹${customer.totalSpent.toLocaleString("en-IN")}`,
+                          teal: true,
+                        },
+                      ].map((stat, i) => (
+                        <Box
+                          key={stat.label}
+                          flex={1}
+                          sx={{
+                            textAlign: "center",
+                            py: "8px",
+                            px: "4px",
+                            borderLeft: i > 0 ? "0.5px solid #ECECEC" : "none",
+                          }}
+                        >
+                          <Typography
+                            fontSize={10}
+                            color="text.disabled"
+                            sx={{
+                              textTransform: "uppercase",
+                              letterSpacing: "0.4px",
+                              mb: "2px",
+                            }}
+                          >
+                            {stat.label}
+                          </Typography>
+                          <Typography
+                            fontSize={13}
+                            fontWeight={600}
+                            color={
+                              stat.teal
+                                ? "var(--primary-teal-mid)"
+                                : "text.primary"
+                            }
+                            noWrap
+                          >
+                            {stat.value}
+                          </Typography>
+                        </Box>
+                      ))}
                     </Box>
-                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, py: "5px" }}>
-                      <LocationOnIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0, mt: "1px" }} />
-                      <Typography fontSize={12} color="text.secondary">
-                        {customer.address || "—"}
-                      </Typography>
-                    </Box>
-                    {customer.email && (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: "5px" }}>
-                        <EmailIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }} />
-                        <Typography fontSize={12} color="text.secondary" noWrap>
-                          {customer.email}
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
 
-                  {/* ── Stats strip ── */}
-                  <Box sx={{ display: "flex", borderTop: "0.5px solid #ECECEC" }}>
-                    {[
-                      { label: "Orders", value: String(customer.totalOrders), teal: false },
-                      { label: "Last order", value: formatDate(customer.lastOrderDate), teal: false },
-                      { label: "Total spent", value: `₹${customer.totalSpent.toLocaleString("en-IN")}`, teal: true },
-                    ].map((stat, i) => (
-                      <Box
-                        key={stat.label}
-                        flex={1}
+                    <Divider />
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        p: 1.5,
+                      }}
+                    >
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<VisibilityOutlinedIcon />}
+                        onClick={() => handleOpenReviews(customer)}
                         sx={{
-                          textAlign: "center",
-                          py: "8px",
-                          px: "4px",
-                          borderLeft: i > 0 ? "0.5px solid #ECECEC" : "none",
+                          borderColor: "var(--primary-teal-mid)",
+                          color: "var(--primary-teal-mid)",
+                          textTransform: "none",
+                          borderRadius: 2,
                         }}
                       >
-                        <Typography
-                          fontSize={10}
-                          color="text.disabled"
-                          sx={{ textTransform: "uppercase", letterSpacing: "0.4px", mb: "2px" }}
-                        >
-                          {stat.label}
-                        </Typography>
-                        <Typography
-                          fontSize={13}
-                          fontWeight={600}
-                          color={stat.teal ? "var(--primary-teal-mid)" : "text.primary"}
-                          noWrap
-                        >
-                          {stat.value}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                </Card>
-              );
-            })
-          )}
+                        View Reviews
+                      </Button>
+                    </Box>
+                  </Card>
+                );
+              })
+            )}
 
-          {/* ── Pagination (mobile) ── */}
-          <Box
-            sx={{
-              pt: 2,
-              display: "flex",
-              flexDirection: "column",
-              gap: 1.5,
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="body2" color="text.secondary" textAlign="center">
-              {loading
-                ? "Loading…"
-                : filtered.length === 0
-                ? "No customers to show"
-                : `Showing ${startRow} to ${endRow} of ${filtered.length} customers`}
+            {/* ── Pagination (mobile) ── */}
+            <Box
+              sx={{
+                pt: 2,
+                display: "flex",
+                flexDirection: "column",
+                gap: 1.5,
+                alignItems: "center",
+              }}
+            >
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                textAlign="center"
+              >
+                {loading
+                  ? "Loading…"
+                  : filtered.length === 0
+                    ? "No customers to show"
+                    : `Showing ${startRow} to ${endRow} of ${filtered.length} customers`}
+              </Typography>
+
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_, value) => {
+                  setPage(value);
+                }}
+                shape="rounded"
+                siblingCount={0}
+                boundaryCount={1}
+                size="small"
+                sx={{
+                  "& .MuiPaginationItem-root": {
+                    color: "var(--primary-teal-mid)",
+                    borderColor: "var(--primary-teal-mid)",
+                  },
+                  "& .Mui-selected": {
+                    backgroundColor: "var(--primary-teal-mid) !important",
+                    color: "#fff",
+                  },
+                }}
+              />
+            </Box>
+          </Box>
+        )}
+
+        {/* ── Footer ── */}
+        <Box
+          sx={{
+            mt: 4,
+            display: "flex",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 2,
+            color: "#777",
+            fontSize: 13,
+          }}
+        >
+          <Typography variant="body2">
+            © 2026 Menmai Foods. All rights reserved.
+          </Typography>
+          <Typography variant="body2">
+            Made with ❤️ for better food experiences.
+          </Typography>
+        </Box>
+      </Container>
+
+      <Dialog
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Box>
+            <Typography variant="h6" fontWeight={600}>
+              Customer Reviews
             </Typography>
 
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={(_, value) => { setPage(value); }}
-              shape="rounded"
-              siblingCount={0}
-              boundaryCount={1}
-              size="small"
-              sx={{
-                "& .MuiPaginationItem-root": {
-                  color: "var(--primary-teal-mid)",
-                  borderColor: "var(--primary-teal-mid)",
-                },
-                "& .Mui-selected": {
-                  backgroundColor: "var(--primary-teal-mid) !important",
-                  color: "#fff",
-                },
-              }}
-            />
+            {selectedCustomer && (
+              <Typography variant="body2" color="text.secondary">
+                {selectedCustomer.name} • {selectedCustomer.phone}
+              </Typography>
+            )}
           </Box>
-        </Box>
-      )}
+          <IconButton onClick={() => setReviewOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
 
-      {/* ── Footer ── */}
-      <Box sx={{ mt: 4, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2, color: "#777", fontSize: 13 }}>
-        <Typography variant="body2">© 2026 Menmai Foods. All rights reserved.</Typography>
-        <Typography variant="body2">Made with ❤️ for better food experiences.</Typography>
-      </Box>
-    </Container>
+        <DialogContent dividers>
+          {reviewLoading ? (
+            <Typography>Loading reviews...</Typography>
+          ) : reviews.length === 0 ? (
+            <Typography textAlign="center" py={4} color="text.secondary">
+              No reviews found.
+            </Typography>
+          ) : (
+            <>
+              <TableContainer
+                component={Paper}
+                elevation={0}
+                sx={{
+                  border: "1px solid #ECECEC",
+                  borderRadius: 2,
+                }}
+              >
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 600 }}>Rating</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Product</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Order</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Review</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+                    </TableRow>
+                  </TableHead>
+
+                  <TableBody>
+                    {paginatedReviews.map((review) => (
+                      <TableRow key={review.id}>
+                        <TableCell>
+                          <Rating value={review.rating} readOnly size="small" />
+                        </TableCell>
+
+                        <TableCell>{review.productName}</TableCell>
+
+                        <TableCell sx={{ maxWidth: 250, whiteSpace: "nowrap" }}>
+                          {review.orderNumber}
+                        </TableCell>
+
+                        <TableCell
+                          sx={{
+                            maxWidth: 450,
+                            whiteSpace: "normal",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {review.comment || "—"}
+                        </TableCell>
+
+                        <TableCell sx={{ maxWidth: 150, whiteSpace: "nowrap" }}>
+                          {formatDate(review.createdAt)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              <Box
+                sx={{
+                  mt: 2,
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                  justifyContent: { xs: "center", sm: "space-between" },
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Showing{" "}
+                  {Math.min(
+                    (reviewPage - 1) * REVIEWS_PER_PAGE + 1,
+                    reviews.length,
+                  )}
+                  {" - "}
+                  {Math.min(reviewPage * REVIEWS_PER_PAGE, reviews.length)}
+                  {" of "}
+                  {reviews.length} reviews
+                </Typography>
+
+                {reviewTotalPages > 1 && (
+                  <Pagination
+                    count={reviewTotalPages}
+                    page={reviewPage}
+                    onChange={(_, page) => setReviewPage(page)}
+                    shape="rounded"
+                    size="small"
+                    sx={{
+                      "& .MuiPaginationItem-root": {
+                        color: "var(--primary-teal-mid)",
+                        borderColor: "var(--primary-teal-mid)",
+                      },
+                      "& .Mui-selected": {
+                        backgroundColor: "var(--primary-teal-mid) !important",
+                        color: "#fff",
+                      },
+                    }}
+                  />
+                )}
+              </Box>
+            </>
+          )}
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setReviewOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }
