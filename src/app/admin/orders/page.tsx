@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 
 import {
   Box,
@@ -37,11 +38,14 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CalendarViewWeekIcon from "@mui/icons-material/CalendarViewWeek";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonthOutlined";
 import DateRangeIcon from "@mui/icons-material/DateRange";
+import EditCalendarIcon from "@mui/icons-material/EditCalendar";
 import CheckIcon from "@mui/icons-material/Check";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
+import ClearIcon from "@mui/icons-material/Clear";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type DateFilterValue = "all" | "24h" | "7d" | "30d" | "3m";
+type DateFilterValue = "all" | "24h" | "7d" | "30d" | "3m" | "custom";
 
 interface RetailOrder {
   id: string;           // formatted order number, e.g. "#MM-0001"
@@ -63,11 +67,12 @@ const DATE_FILTER_OPTIONS: {
   label: string;
   icon: React.ReactNode;
 }[] = [
-  { value: "all", label: "All time",       icon: <DateRangeIcon fontSize="small" /> },
-  { value: "24h", label: "Last 24 hours",  icon: <AccessTimeIcon fontSize="small" /> },
-  { value: "7d",  label: "Last 7 days",    icon: <CalendarViewWeekIcon fontSize="small" /> },
-  { value: "30d", label: "Last 30 days",   icon: <CalendarMonthIcon fontSize="small" /> },
-  { value: "3m",  label: "Last 3 months",  icon: <CalendarTodayIcon fontSize="small" /> },
+  { value: "all",    label: "All time",       icon: <DateRangeIcon fontSize="small" /> },
+  { value: "24h",    label: "Last 24 hours",  icon: <AccessTimeIcon fontSize="small" /> },
+  { value: "7d",     label: "Last 7 days",    icon: <CalendarViewWeekIcon fontSize="small" /> },
+  { value: "30d",    label: "Last 30 days",   icon: <CalendarMonthIcon fontSize="small" /> },
+  { value: "3m",     label: "Last 3 months",  icon: <CalendarTodayIcon fontSize="small" /> },
+  { value: "custom", label: "Custom range",   icon: <EditCalendarIcon fontSize="small" /> },
 ];
 
 const ORDER_STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
@@ -110,6 +115,23 @@ function formatDate(dateStr: string): string {
     month: "short",
     year:  "numeric",
   });
+}
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Turns a plain "YYYY-MM-DD" into a full ISO timestamp at local start-of-day.
+function toStartOfDayISO(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00`);
+  return d.toISOString();
+}
+
+// Turns a plain "YYYY-MM-DD" into a full ISO timestamp at local end-of-day,
+// so the end date is treated INCLUSIVELY (matches orders placed any time that day).
+function toEndOfDayISO(dateStr: string): string {
+  const d = new Date(`${dateStr}T23:59:59.999`);
+  return d.toISOString();
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -176,6 +198,14 @@ export default function OrdersPage() {
   const mobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const [dateFilter, setDateFilter] = useState<DateFilterValue>("all");
+
+  // Custom range: draft values live in the menu popover, applied values drive the fetch
+  const [customStartDraft, setCustomStartDraft] = useState("");
+  const [customEndDraft,   setCustomEndDraft]   = useState("");
+  const [customStart,      setCustomStart]      = useState("");
+  const [customEnd,        setCustomEnd]        = useState("");
+  const [customRangeError, setCustomRangeError] = useState<string | null>(null);
+
   const [search,     setSearch]     = useState("");
   const [anchorEl,   setAnchorEl]   = useState<null | HTMLElement>(null);
   const [page,       setPage]       = useState(1);
@@ -184,18 +214,31 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
 
-  const menuOpen      = Boolean(anchorEl);
-  const selectedLabel = DATE_FILTER_OPTIONS.find((o) => o.value === dateFilter)?.label ?? "All time";
+  const menuOpen = Boolean(anchorEl);
+
+  const selectedLabel =
+    dateFilter === "custom" && customStart && customEnd
+      ? `${formatDate(customStart)} – ${formatDate(customEnd)}`
+      : DATE_FILTER_OPTIONS.find((o) => o.value === dateFilter)?.label ?? "All time";
 
   // ── Fetch ───────────────────────────────────────────────────────────────────
   useEffect(() => {
+    // Don't fetch a half-filled custom range yet
+    if (dateFilter === "custom" && (!customStart || !customEnd)) return;
+
     let cancelled = false;
 
     async function fetchOrders() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/admin/orders/retail?range=${dateFilter}`);
+        const params = new URLSearchParams({ range: dateFilter });
+        if (dateFilter === "custom") {
+          params.set("startDate", toStartOfDayISO(customStart));
+          params.set("endDate", toEndOfDayISO(customEnd));
+        }
+
+        const res = await fetch(`/api/admin/orders/retail?${params.toString()}`);
         if (!res.ok) throw new Error(`Failed to fetch orders (${res.status})`);
         const data: RetailOrder[] = await res.json();
         if (!cancelled) setOrders(data);
@@ -209,7 +252,7 @@ export default function OrdersPage() {
 
     fetchOrders();
     return () => { cancelled = true; };
-  }, [dateFilter]);
+  }, [dateFilter, customStart, customEnd]);
 
   // ── Filter: PAID only + search ──────────────────────────────────────────────
   const filtered = orders.filter((o) => {
@@ -229,6 +272,120 @@ export default function OrdersPage() {
 
   // ORDER ID | CUSTOMER | ITEMS | AMOUNT | PAYMENT ID | ADDRESS | ORDER STATUS
   const COL_COUNT = 7;
+
+  // ── Menu handlers ───────────────────────────────────────────────────────────
+  function openMenu(e: React.MouseEvent<HTMLElement>) {
+    // seed drafts with whatever is currently applied
+    setCustomStartDraft(customStart);
+    setCustomEndDraft(customEnd);
+    setCustomRangeError(null);
+    setAnchorEl(e.currentTarget);
+  }
+
+  function selectPreset(value: DateFilterValue) {
+    setDateFilter(value);
+    setCustomRangeError(null);
+    setAnchorEl(null);
+    setPage(1);
+  }
+
+  function handleStartDraftChange(value: string) {
+    setCustomStartDraft(value);
+    if (value && customEndDraft && value > customEndDraft) {
+      setCustomRangeError("Start date cannot be later than the end date");
+    } else {
+      setCustomRangeError(null);
+    }
+  }
+
+  function handleEndDraftChange(value: string) {
+    setCustomEndDraft(value);
+    if (customStartDraft && value && value < customStartDraft) {
+      setCustomRangeError("End date cannot be earlier than the start date");
+    } else {
+      setCustomRangeError(null);
+    }
+  }
+
+  function applyCustomRange() {
+    if (!customStartDraft || !customEndDraft) {
+      setCustomRangeError("Please select both a start and end date");
+      return;
+    }
+    if (customStartDraft > customEndDraft) {
+      setCustomRangeError("Start date cannot be later than the end date");
+      return;
+    }
+    if (customEndDraft > todayStr()) {
+      setCustomRangeError("End date cannot be in the future");
+      return;
+    }
+
+    setCustomRangeError(null);
+    setCustomStart(customStartDraft);
+    setCustomEnd(customEndDraft);
+    setDateFilter("custom");
+    setAnchorEl(null);
+    setPage(1);
+  }
+
+  function clearAllFilters() {
+    setDateFilter("all");
+    setSearch("");
+    setCustomStart("");
+    setCustomEnd("");
+    setCustomStartDraft("");
+    setCustomEndDraft("");
+    setCustomRangeError(null);
+    setAnchorEl(null);
+    setPage(1);
+  }
+
+  const hasActiveFilters = dateFilter !== "all" || search.trim().length > 0;
+
+  // ── Excel export ────────────────────────────────────────────────────────────
+  function handleDownloadReport() {
+    if (filtered.length === 0) return;
+
+    const rows = filtered.map((o) => ({
+      "Order ID":       o.id,
+      "Date":           formatDate(o.date),
+      "Customer":       o.customer,
+      "Phone":          o.phone,
+      "Items":          o.items,
+      "Amount":         o.amount,
+      "Payment ID":     o.paymentId,
+      "Address":        o.address,
+      "Order Status":   o.orderStatus,
+      "Payment Status": o.paymentStatus,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+
+    // Reasonable column widths so it's readable straight out of the export
+    worksheet["!cols"] = [
+      { wch: 12 }, // Order ID
+      { wch: 12 }, // Date
+      { wch: 18 }, // Customer
+      { wch: 14 }, // Phone
+      { wch: 30 }, // Items
+      { wch: 10 }, // Amount
+      { wch: 22 }, // Payment ID
+      { wch: 30 }, // Address
+      { wch: 14 }, // Order Status
+      { wch: 14 }, // Payment Status
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+
+    const rangeSuffix =
+      dateFilter === "custom" && customStart && customEnd
+        ? `${customStart}_to_${customEnd}`
+        : dateFilter;
+
+    XLSX.writeFile(workbook, `orders-report-${rangeSuffix}-${todayStr()}.xlsx`);
+  }
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -267,7 +424,7 @@ export default function OrdersPage() {
                   sx={{ transition: "transform 0.2s", transform: menuOpen ? "rotate(180deg)" : "none" }}
                 />
               }
-              onClick={(e) => setAnchorEl(e.currentTarget)}
+              onClick={openMenu}
               sx={{
                 textTransform: "none",
                 borderRadius: 2,
@@ -293,18 +450,18 @@ export default function OrdersPage() {
                 elevation: 2,
                 sx: {
                   mt: 0.5,
-                  minWidth: 200,
+                  minWidth: 240,
                   borderRadius: 3,
                   border: "1px solid #eee",
                   "& .MuiMenuItem-root": { fontSize: 13, borderRadius: 1, mx: 0.5, px: 1.5 },
                 },
               }}
             >
-              {DATE_FILTER_OPTIONS.map((opt) => (
+              {DATE_FILTER_OPTIONS.filter((o) => o.value !== "custom").map((opt) => (
                 <MenuItem
                   key={opt.value}
                   selected={opt.value === dateFilter}
-                  onClick={() => { setDateFilter(opt.value); setAnchorEl(null); setPage(1); }}
+                  onClick={() => selectPreset(opt.value)}
                   sx={{
                     "&.Mui-selected": {
                       bgcolor: "#FFF8F5", color: "#4B1E00", fontWeight: 600,
@@ -323,6 +480,60 @@ export default function OrdersPage() {
                   )}
                 </MenuItem>
               ))}
+
+              {/* ── Custom range block ── */}
+              <Box sx={{ mt: 0.5, pt: 1, px: 1.5, borderTop: "1px solid #F1F5F9" }}>
+                <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
+                  <EditCalendarIcon sx={{ fontSize: 15 }} /> Custom range
+                </Typography>
+
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <TextField
+                    type="date"
+                    size="small"
+                    label="Start date"
+                    InputLabelProps={{ shrink: true }}
+                    value={customStartDraft}
+                    onChange={(e) => handleStartDraftChange(e.target.value)}
+                    error={Boolean(customRangeError)}
+                    inputProps={{ max: customEndDraft || todayStr() }}
+                    fullWidth
+                  />
+                  <TextField
+                    type="date"
+                    size="small"
+                    label="End date"
+                    InputLabelProps={{ shrink: true }}
+                    value={customEndDraft}
+                    onChange={(e) => handleEndDraftChange(e.target.value)}
+                    error={Boolean(customRangeError)}
+                    inputProps={{ min: customStartDraft || undefined, max: todayStr() }}
+                    fullWidth
+                  />
+
+                  {customRangeError && (
+                    <Typography variant="caption" color="error" sx={{ mt: -0.5 }}>
+                      {customRangeError}
+                    </Typography>
+                  )}
+
+                  <Button
+                    size="small"
+                    variant="contained"
+                    disabled={!customStartDraft || !customEndDraft || Boolean(customRangeError)}
+                    onClick={applyCustomRange}
+                    sx={{
+                      textTransform: "none",
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      bgcolor: "#4B1E00",
+                      "&:hover": { bgcolor: "#3A1700" },
+                    }}
+                  >
+                    Apply
+                  </Button>
+                </Box>
+              </Box>
             </Menu>
 
             {/* Count pill */}
@@ -331,29 +542,70 @@ export default function OrdersPage() {
                 {loading ? "Loading…" : `${filtered.length} paid order${filtered.length !== 1 ? "s" : ""}`}
               </Typography>
             </Box>
+
+            {/* Clear filters */}
+            {hasActiveFilters && (
+              <Button
+                size="small"
+                startIcon={<ClearIcon fontSize="small" />}
+                onClick={clearAllFilters}
+                sx={{
+                  textTransform: "none",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "text.secondary",
+                  "&:hover": { bgcolor: "action.hover", color: "text.primary" },
+                }}
+              >
+                Clear
+              </Button>
+            )}
           </Box>
 
-          {/* Right — search */}
-          <TextField
-            size="small"
-            placeholder="Search by order ID, customer, items…"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            sx={{ width: { xs: "100%", md: 300 } }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <TuneIcon fontSize="small" sx={{ cursor: "pointer" }} />
-                </InputAdornment>
-              ),
-              sx: { borderRadius: 2, fontSize: 13 },
-            }}
-          />
+          {/* Right — search + report */}
+          <Box sx={{ display: "flex", gap: 1.5, width: { xs: "100%", md: "auto" }, flexWrap: "wrap" }}>
+            <TextField
+              size="small"
+              placeholder="Search by order ID, customer, items…"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              sx={{ width: { xs: "100%", md: 300 } }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <TuneIcon fontSize="small" sx={{ cursor: "pointer" }} />
+                  </InputAdornment>
+                ),
+                sx: { borderRadius: 2, fontSize: 13 },
+              }}
+            />
+
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<FileDownloadOutlinedIcon fontSize="small" />}
+              onClick={handleDownloadReport}
+              disabled={loading || filtered.length === 0}
+              sx={{
+                textTransform: "none",
+                borderRadius: 2,
+                fontWeight: 600,
+                fontSize: 13,
+                color: "#4B1E00",
+                borderColor: "#4B1E00",
+                px: 2,
+                whiteSpace: "nowrap",
+                "&:hover": { borderColor: "#3A1700", bgcolor: "#FFF8F5" },
+              }}
+            >
+              Report
+            </Button>
+          </Box>
         </Box>
 
         {/* ── DESKTOP TABLE ── */}

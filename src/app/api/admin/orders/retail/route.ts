@@ -3,14 +3,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-function getCutoff(range: string | null): Date | null {
+function getDateFilter(
+  range: string | null,
+  startDateParam: string | null,
+  endDateParam: string | null
+): { gte?: Date; lte?: Date } | null {
+  if (range === "custom") {
+    const start = startDateParam ? new Date(startDateParam) : null;
+    const end   = endDateParam ? new Date(endDateParam) : null;
+
+    const filter: { gte?: Date; lte?: Date } = {};
+    if (start && !isNaN(start.getTime())) filter.gte = start;
+    if (end && !isNaN(end.getTime())) filter.lte = end;
+
+    // If both dates were missing/invalid, treat it as no filter rather than
+    // silently matching everything with an empty {} object.
+    return Object.keys(filter).length > 0 ? filter : null;
+  }
+
   if (!range || range === "all") return null;
+
   const now = new Date();
   switch (range) {
-    case "24h": return new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    case "7d":  return new Date(now.getTime() - 7  * 24 * 60 * 60 * 1000);
-    case "30d": return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    case "3m":  return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    case "24h": return { gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) };
+    case "7d":  return { gte: new Date(now.getTime() - 7  * 24 * 60 * 60 * 1000) };
+    case "30d": return { gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) };
+    case "3m":  return { gte: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000) };
     default:    return null;
   }
 }
@@ -18,11 +36,14 @@ function getCutoff(range: string | null): Date | null {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const range  = searchParams.get("range");
-    const cutoff = getCutoff(range);
+    const range      = searchParams.get("range");
+    const startDate  = searchParams.get("startDate");
+    const endDate    = searchParams.get("endDate");
+
+    const dateFilter = getDateFilter(range, startDate, endDate);
 
     const orders = await prisma.order.findMany({
-      where: cutoff ? { orderedAt: { gte: cutoff } } : undefined,
+      where: dateFilter ? { orderedAt: dateFilter } : undefined,
       orderBy: { orderedAt: "desc" },
       include: {
         Customer: {
