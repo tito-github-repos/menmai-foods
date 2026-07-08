@@ -9,14 +9,14 @@ export async function POST(req: NextRequest) {
     if (!token || typeof token !== "string") {
       return NextResponse.json(
         { message: "Token is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!rating || typeof rating !== "number" || rating < 1 || rating > 5) {
       return NextResponse.json(
         { message: "Rating must be between 1 and 5" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
           include: {
             OrderItem: {
               orderBy: { id: "asc" },
-              take: 1,
+              // take: 1,
             },
           },
         },
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     if (!reviewRequest) {
       return NextResponse.json(
         { message: "Invalid or expired token", reason: "not_found" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     if (order.orderStatus !== "DELIVERED") {
       return NextResponse.json(
         { message: "Order is not delivered yet", reason: "not_delivered" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -60,29 +60,19 @@ export async function POST(req: NextRequest) {
     if (existing) {
       return NextResponse.json(
         { message: "Review already submitted", reason: "already_reviewed" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
-    const firstItem = order.OrderItem[0];
-
-    if (!firstItem) {
-      return NextResponse.json(
-        { message: "No order items found" },
-        { status: 400 }
-      );
-    }
-
-    // Save the review
-    await prisma.review.create({
-      data: {
+    await prisma.review.createMany({
+      data: order.OrderItem.map((item) => ({
         orderId: order.id,
-        productId: firstItem.productId,
+        productId: item.productId,
         customerId: order.customerId,
         rating,
         comment: comment?.trim() || null,
         isApproved: true,
-      },
+      })),
     });
 
     // Mark ReviewRequest as SENT (used)
@@ -99,7 +89,7 @@ export async function POST(req: NextRequest) {
     console.error("Review submit error:", error);
     return NextResponse.json(
       { message: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
