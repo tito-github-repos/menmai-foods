@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
+import { sendOrderConfirmedWorkflow } from "@/lib/orders/whatsapp-workflow";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text();
-
     const signature = req.headers.get("x-razorpay-signature") || "";
 
     const expectedSignature = crypto
@@ -13,37 +13,39 @@ export async function POST(req: NextRequest) {
       .update(body)
       .digest("hex");
 
-    if (expectedSignature !== signature) {
+    // ✅ CHANGE 1: timing-safe comparison instead of !==
+    const isValidSignature =
+      expectedSignature.length === signature.length &&
+      crypto.timingSafeEqual(
+        Buffer.from(expectedSignature),
+        Buffer.from(signature),
+      );
+
+    if (!isValidSignature) {
       return NextResponse.json(
         { message: "Invalid signature" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const event = JSON.parse(body);
     const eventId = event.id;
 
-    // ✅ FIX 1: safe deduplication
     try {
-      await prisma.webhookLog.create({
-        data: { eventId },
-      });
+      await prisma.webhookLog.create({ data: { eventId } });
     } catch (e: any) {
-      // duplicate webhook → already processed
       if (e.code === "P2002") {
         return NextResponse.json({
           success: true,
           message: "Duplicate webhook ignored",
         });
       }
-
       throw e;
     }
 
-    // 🎯 ONLY PAYMENT SUCCESS
+    // ✅ CHANGE 2: handle payment.captured
     if (event.event === "payment.captured") {
       const payment = event.payload.payment.entity;
-
       const razorpayOrderId = payment.order_id || payment.orderId;
       const razorpayPaymentId = payment.id;
 
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
       if (!dbPayment) {
         return NextResponse.json(
           { message: "Payment not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -66,7 +68,6 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // ✅ FIX 2: single transaction (important)
       await prisma.$transaction(async (tx) => {
         await tx.payment.update({
           where: { id: dbPayment.id },
@@ -85,18 +86,76 @@ export async function POST(req: NextRequest) {
         });
 
         await tx.cartItem.deleteMany({
-          where: {
-            customerId: dbPayment.Order.customerId,
-          },
+          where: { customerId: dbPayment.Order.customerId },
         });
       });
+
+      // ✅ CHANGE 3: send WhatsApp confirmation, same dedup pattern as verify route
+      const confirmedOrder = await prisma.order.findUnique({
+        where: { id: dbPayment.orderId },
+        include: { Customer: true },
+      });
+
+      if (confirmedOrder) {
+        const existingWhatsApp = await prisma.whatsAppLog.findFirst({
+          where: {
+            orderId: dbPayment.orderId,
+            eventType: "ORDER_CONFIRMED",
+            status: "SENT",
+          },
+        });
+
+        if (!existingWhatsApp) {
+          await sendOrderConfirmedWorkflow(dbPayment.orderId);
+
+          await prisma.whatsAppLog.create({
+            data: {
+              orderId: dbPayment.orderId,
+              phone: confirmedOrder.Customer.phone,
+              direction: "OUTBOUND",
+              eventType: "ORDER_CONFIRMED",
+              status: "SENT",
+              payload: {
+                orderNumber: confirmedOrder.orderNumber,
+                totalAmount: confirmedOrder.totalAmount,
+              },
+            },
+          });
+        }
+      }
+    }
+
+    // ✅ CHANGE 4: handle payment.failed
+    if (event.event === "payment.failed") {
+      const payment = event.payload.payment.entity;
+      const razorpayOrderId = payment.order_id || payment.orderId;
+
+      const dbPayment = await prisma.payment.findFirst({
+        where: { razorpayOrderId },
+      });
+
+      // Don't overwrite an already-PAID record with a stale/late failure event
+      if (dbPayment && dbPayment.paymentStatus !== "PAID") {
+        await prisma.$transaction(async (tx) => {
+          await tx.payment.update({
+            where: { id: dbPayment.id },
+            data: { paymentStatus: "FAILED" },
+          });
+
+          await tx.order.update({
+            where: { id: dbPayment.orderId },
+            data: { paymentStatus: "FAILED" },
+          });
+        });
+      }
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
+    console.error("Webhook Error:", err);
     return NextResponse.json(
       { success: false, message: "Webhook failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
