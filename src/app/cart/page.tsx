@@ -392,8 +392,8 @@ export default function CartCheckout() {
                           maxWidth: 560,
                         }}
                       >
-                        Enter your pincode to check if we deliver in your area
-                        (within 10 km of Madurai).
+                        Enter your pincode to check if we deliver to your
+                        location in Madurai District.
                       </Typography>
                     </Box>
                   </Box>
@@ -530,11 +530,14 @@ export default function CartCheckout() {
                     color="#5f2120"
                     mb={0.5}
                   >
-                    Free delivery up to 5 km from Nagamalaipudukottai
+                    Free delivery up to 5 km from Nagamalaipudukottai &amp;
+                    Kadachanendhal
                   </Typography>
 
                   <Typography fontSize={{ xs: 12, md: 13 }} color="#5f2120">
-                    ₹45 charge for locations beyond 5 km, collected at delivery
+                    {/* ₹45 charge for locations beyond 5 km, collected at delivery */}
+                    Delivery charges apply for locations beyond 5 km, collected
+                    at delivery
                   </Typography>
                 </Box>
               </Paper>
@@ -1013,11 +1016,14 @@ export default function CartCheckout() {
                             color="#5f2120"
                           >
                             Free delivery up to 5 km from Nagamalaipudukottai
+                            &amp; Kadachanendhal
                           </Typography>
 
                           <Typography fontSize={12} color="#5f2120">
-                            ₹45 charge for locations beyond 5 km, collected at
-                            delivery
+                            {/* ₹45 charge for locations beyond 5 km, collected at
+                            delivery */}
+                            Delivery charges apply for locations beyond 5 km,
+                            collected at delivery
                           </Typography>
                         </Box>
                       </Box>

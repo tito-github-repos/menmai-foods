@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-import { sendTextMessage } from "@/lib/whatsapp/client";
+import { sendTemplateMessage } from "@/lib/whatsapp/client";
+import { buildOtpTemplate } from "@/lib/whatsapp/messages";
 
 const OTP_LIMIT = 5;
 const COOLDOWN = 60 * 1000; // 60 sec
@@ -81,11 +82,16 @@ export async function POST(req: NextRequest) {
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
     const expiry = new Date(Date.now() + OTP_EXPIRY_TIME);
 
-    // 8. Send WhatsApp OTP
+    // 8. Send WhatsApp OTP via the approved Authentication template
+    // (free-form text OTPs are blocked/flagged in production — Meta requires
+    // an Authentication-category template for one-time passcodes)
     try {
-      await sendTextMessage(
+      const tpl = buildOtpTemplate(otp);
+      await sendTemplateMessage(
         `91${cleanMobile}`,
-        `Menmai Foods Verification\n\nYour OTP is: ${otp}\n\nThis OTP is valid for 1 minute.\nDo not share this OTP with anyone.`,
+        tpl.name,
+        tpl.language,
+        tpl.components,
       );
     } catch (err) {
       console.error("WhatsApp API Error:", err);

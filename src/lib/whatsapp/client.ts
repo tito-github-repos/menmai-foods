@@ -2,6 +2,7 @@ import type {
   WhatsAppInteractiveButton,
   WhatsAppSendMessageRequest,
   WhatsAppSendMessageResponse,
+  WhatsAppTemplateComponent,
 } from "./types";
 
 const apiVersion = process.env.WHATSAPP_API_VERSION ?? "v24.0";
@@ -83,6 +84,34 @@ export async function sendTextMessage(to: string, body: string) {
     text: {
       preview_url: false,
       body,
+    },
+  });
+}
+
+/**
+ * Send a Meta-approved template message. Required for any business-initiated
+ * message sent outside the 24h customer service window (order confirmed,
+ * out for delivery, delivered, review request, OTP, broadcasts, etc).
+ *
+ * `templateName` and `languageCode` must exactly match what's approved in
+ * Meta Business Manager (Account Tools → Message Templates). `components`
+ * must supply parameters in the same order as the {{1}}, {{2}}... placeholders
+ * in the approved template body/header/buttons.
+ */
+export async function sendTemplateMessage(
+  to: string,
+  templateName: string,
+  languageCode: string,
+  components?: WhatsAppTemplateComponent[],
+) {
+  return sendWhatsAppMessage({
+    messaging_product: "whatsapp",
+    to: formatPhoneNumber(to),
+    type: "template",
+    template: {
+      name: templateName,
+      language: { code: languageCode },
+      ...(components?.length ? { components } : {}),
     },
   });
 }
