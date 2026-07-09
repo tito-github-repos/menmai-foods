@@ -48,10 +48,41 @@ export type WhatsAppImageMessageRequest = {
   };
 };
 
+/* ── TEMPLATE MESSAGES (Meta-approved) ── */
+
+export type WhatsAppTemplateParameter =
+  | { type: "text"; text: string }
+  | {
+      type: "currency";
+      currency: { fallback_value: string; code: string; amount_1000: number };
+    }
+  | { type: "date_time"; date_time: { fallback_value: string } }
+  | { type: "image"; image: { link: string } }
+  | { type: "payload"; payload: string };
+
+export type WhatsAppTemplateComponent = {
+  type: "header" | "body" | "button";
+  sub_type?: "quick_reply" | "url";
+  index?: string; // required when type is "button"
+  parameters: WhatsAppTemplateParameter[];
+};
+
+export type WhatsAppTemplateMessageRequest = {
+  messaging_product: "whatsapp";
+  to: string;
+  type: "template";
+  template: {
+    name: string;
+    language: { code: string }; // must exactly match the language on the approved template
+    components?: WhatsAppTemplateComponent[];
+  };
+};
+
 export type WhatsAppSendMessageRequest =
   | WhatsAppTextMessageRequest
   | WhatsAppInteractiveMessageRequest
-  | WhatsAppImageMessageRequest;
+  | WhatsAppImageMessageRequest
+  | WhatsAppTemplateMessageRequest;
 
 export type WhatsAppSendMessageResponse = {
   messaging_product: "whatsapp";

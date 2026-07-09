@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
+import { sendBroadcastTemplateMessage } from "./broadcast";
 import {
-  sendBroadcastImageMessage,
-  sendBroadcastTextMessage,
-} from "./broadcast";
+  buildBroadcastImageTemplate,
+  buildBroadcastTextTemplate,
+} from "./messages";
 
 export async function processBroadcast(broadcastId: number) {
   // 1. Get broadcast details
@@ -29,20 +30,20 @@ export async function processBroadcast(broadcastId: number) {
 
   for (const recipient of recipients) {
     try {
-      let response;
+      // menmai_broadcast_image / menmai_broadcast_text both take the
+      // free-text `broadcast.message` as body variable {{1}} — that's
+      // fine because these templates were approved with a generic {{1}}
+      // slot, unlike a "catch-all" template Meta would normally reject.
+      const tpl = broadcast.imageUrl
+        ? buildBroadcastImageTemplate(broadcast.message, broadcast.imageUrl)
+        : buildBroadcastTextTemplate(broadcast.message);
 
-      if (broadcast.imageUrl) {
-        response = await sendBroadcastImageMessage(
-          recipient.phone,
-          broadcast.message,
-          broadcast.imageUrl,
-        );
-      } else {
-        response = await sendBroadcastTextMessage(
-          recipient.phone,
-          broadcast.message,
-        );
-      }
+      const response = await sendBroadcastTemplateMessage(
+        recipient.phone,
+        tpl.name,
+        tpl.language,
+        tpl.components,
+      );
 
       await prisma.broadcastRecipient.update({
         where: {

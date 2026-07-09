@@ -1,12 +1,11 @@
 import { prisma } from "../prisma";
-import { sendButtonMessage, sendTextMessage } from "../whatsapp/client";
+import { sendTemplateMessage } from "../whatsapp/client";
 import {
-  adminOrderButtons,
-  buildAdminOrderMessage,
-  buildCustomerDeliveredMessage,
-  buildCustomerOrderConfirmedMessage,
-  buildCustomerOutForDeliveryMessage,
-  buildCustomerReviewRequestMessage,
+  buildAdminOrderTemplate,
+  buildCustomerDeliveredTemplate,
+  buildCustomerOrderConfirmedTemplate,
+  buildCustomerOutForDeliveryTemplate,
+  buildCustomerReviewRequestTemplate,
   parseAdminOrderAction,
   type OrderMessageData,
 } from "../whatsapp/messages";
@@ -85,9 +84,12 @@ export async function sendOrderConfirmedWorkflow(orderId: number) {
     .catch(() => {});
 
   try {
-    const customerResponse = await sendTextMessage(
+    const tpl = buildCustomerOrderConfirmedTemplate(order);
+    const customerResponse = await sendTemplateMessage(
       order.customerPhone,
-      buildCustomerOrderConfirmedMessage(order),
+      tpl.name,
+      tpl.language,
+      tpl.components,
     );
     await logWhatsAppEvent({
       orderId: order.id,
@@ -109,13 +111,13 @@ export async function sendOrderConfirmedWorkflow(orderId: number) {
     });
   }
 
-  sendButtonMessage({
-    to: getAdminPhone(),
-    header: "Menmai Foods",
-    body: buildAdminOrderMessage(order),
-    footer: "Update the order status",
-    buttons: adminOrderButtons(order.id),
-  })
+  const adminTpl = buildAdminOrderTemplate(order);
+  sendTemplateMessage(
+    getAdminPhone(),
+    adminTpl.name,
+    adminTpl.language,
+    adminTpl.components,
+  )
     .then(async (adminResponse) => {
       await logWhatsAppEvent({
         orderId: order.id,
@@ -193,9 +195,12 @@ async function markOrderOutForDelivery(
   });
 
   const order = await getOrderMessageData(orderId);
-  const response = await sendTextMessage(
+  const tpl = buildCustomerOutForDeliveryTemplate(order);
+  const response = await sendTemplateMessage(
     order.customerPhone,
-    buildCustomerOutForDeliveryMessage(order),
+    tpl.name,
+    tpl.language,
+    tpl.components,
   );
 
   await logWhatsAppEvent({
@@ -228,9 +233,12 @@ async function markOrderDelivered(
 
   const order = await getOrderMessageData(orderId);
 
-  const response = await sendTextMessage(
+  const tpl = buildCustomerDeliveredTemplate(order);
+  const response = await sendTemplateMessage(
     order.customerPhone,
-    buildCustomerDeliveredMessage(order),
+    tpl.name,
+    tpl.language,
+    tpl.components,
   );
 
   await logWhatsAppEvent({
@@ -309,9 +317,12 @@ export async function sendDueReviewRequests() {
     try {
       const order = await getOrderMessageData(request.orderId);
 
-      const response = await sendTextMessage(
+      const tpl = buildCustomerReviewRequestTemplate(order, request.token);
+      const response = await sendTemplateMessage(
         order.customerPhone,
-        buildCustomerReviewRequestMessage(order, request.token),
+        tpl.name,
+        tpl.language,
+        tpl.components,
       );
 
       await prisma.reviewRequest.update({
