@@ -40,7 +40,13 @@ export async function POST(req: NextRequest) {
         { status: 404 },
       );
     }
-
+    // ✅ CHECK: Order belongs to the authenticated customer
+    if (order.customerId !== auth.customerId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized access to order" },
+        { status: 403 },
+      );
+    }
     // ✅ CHECK 1: Order exists in EXPIRED state
     if (order.orderStatus === "EXPIRED") {
       return NextResponse.json(
