@@ -34,7 +34,7 @@ async function getOrderMessageData(orderId: number): Promise<OrderMessageData> {
     orderNumber: order.orderNumber,
     customerName: order.Customer.fullName,
     customerPhone: order.Customer.phone,
-    deliveryAddress: order.CustomerAddress.fullAddress,
+    deliveryAddress: `${order.CustomerAddress.fullAddress}, ${order.CustomerAddress.city}, ${order.CustomerAddress.pincode}`,
     totalAmount: order.totalAmount,
     items: order.OrderItem.map((item) => ({
       productName: item.productName,
