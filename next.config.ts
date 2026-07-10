@@ -14,6 +14,7 @@ const csp = `
     'unsafe-eval'
     https://checkout.razorpay.com
     https://api.razorpay.com
+    https://cdn.razorpay.com
     https://maps.googleapis.com
     https://maps.gstatic.com
     https://www.googletagmanager.com
@@ -45,6 +46,7 @@ const csp = `
     'self'
     https://api.razorpay.com
     https://checkout.razorpay.com
+    https://lumberjack.razorpay.com
     https://maps.googleapis.com
     https://maps.gstatic.com
     https://www.google-analytics.com
