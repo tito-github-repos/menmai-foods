@@ -5,9 +5,12 @@ import { PrismaClient } from "../src/generated/prisma";
 
 const prisma = new PrismaClient();
 
-const PINCODES = Array.from({ length: 21 }, (_, i) =>
-  String(625001 + i)
-); // ["625001", "625002", ..., "625021"]
+const START = 625001;
+const END = 625708;
+
+const PINCODES = Array.from({ length: END - START + 1 }, (_, i) =>
+  String(START + i),
+); // ["625001", "625002", ..., "625708"]
 
 async function seed() {
   console.log("🌱 Starting delivery pincode seed...\n");

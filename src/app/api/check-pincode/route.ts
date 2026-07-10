@@ -3,7 +3,7 @@
 // Purpose: Quick check — do we deliver to this pincode?
 
 import { NextRequest, NextResponse } from "next/server";
-import {prisma} from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,8 +11,11 @@ export async function POST(req: NextRequest) {
 
     if (!pincode || pincode.length !== 6) {
       return NextResponse.json(
-        { serviceable: false, message: "Please enter a valid 6-digit pincode." },
-        { status: 400 }
+        {
+          serviceable: false,
+          message: "Please enter a valid 6-digit pincode.",
+        },
+        { status: 400 },
       );
     }
 
@@ -23,7 +26,8 @@ export async function POST(req: NextRequest) {
     if (!deliveryPincode || !deliveryPincode.isActive) {
       return NextResponse.json({
         serviceable: false,
-        message: "Sorry, we don't deliver to this pincode yet.",
+        message:
+          "We're expanding soon and will be delivering to your area shortly.",
       });
     }
 
@@ -31,12 +35,14 @@ export async function POST(req: NextRequest) {
       serviceable: true,
       message: "Great! We deliver to your area.",
     });
-
   } catch (error) {
     console.error("Check pincode error:", error);
     return NextResponse.json(
-      { serviceable: false, message: "Something went wrong. Please try again." },
-      { status: 500 }
+      {
+        serviceable: false,
+        message: "Something went wrong. Please try again.",
+      },
+      { status: 500 },
     );
   }
 }
