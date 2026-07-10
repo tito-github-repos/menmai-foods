@@ -1,5 +1,82 @@
 import type { NextConfig } from "next";
 
+const csp = `
+  default-src 'self';
+  base-uri 'self';
+  object-src 'none';
+  frame-ancestors 'self';
+  form-action 'self';
+  upgrade-insecure-requests;
+
+  script-src
+    'self'
+    'unsafe-inline'
+    'unsafe-eval'
+    https://checkout.razorpay.com
+    https://api.razorpay.com
+    https://maps.googleapis.com
+    https://maps.gstatic.com
+    https://www.googletagmanager.com
+    https://www.google-analytics.com
+    https://www.gstatic.com
+    https://www.google.com;
+
+  style-src
+    'self'
+    'unsafe-inline'
+    https://fonts.googleapis.com;
+
+  font-src
+    'self'
+    https://fonts.gstatic.com
+    data:;
+
+  img-src
+    'self'
+    data:
+    blob:
+    https:
+    https://res.cloudinary.com
+    https://*.googleusercontent.com
+    https://maps.gstatic.com
+    https://maps.googleapis.com;
+
+  connect-src
+    'self'
+    https://api.razorpay.com
+    https://checkout.razorpay.com
+    https://maps.googleapis.com
+    https://maps.gstatic.com
+    https://www.google-analytics.com
+    https://analytics.google.com
+    https://www.googletagmanager.com
+    https://res.cloudinary.com
+    https://menmaifoods.com
+    https://admin.menmaifoods.com;
+
+  frame-src
+    'self'
+    https://checkout.razorpay.com
+    https://api.razorpay.com
+    https://www.google.com
+    https://maps.google.com;
+
+  worker-src
+    'self'
+    blob:;
+
+  manifest-src
+    'self';
+
+  media-src
+    'self'
+    blob:
+    data:;
+`
+  .replace(/\n/g, "")
+  .replace(/\s{2,}/g, " ")
+  .trim();
+
 const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
@@ -16,6 +93,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "www.menmaifoods.com",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
     ],
   },
 
@@ -24,36 +105,39 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          // Prevent clickjacking
+          // ==========================
+          // Security Headers
+          // ==========================
+
           {
             key: "X-Frame-Options",
             value: "SAMEORIGIN",
           },
-
-          // Prevent MIME type sniffing
           {
             key: "X-Content-Type-Options",
             value: "nosniff",
           },
-
-          // Protect user privacy
           {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
           },
-
-          // Disable unnecessary browser permissions
           {
             key: "Permissions-Policy",
             value:
               "camera=(), microphone=(), geolocation=(), usb=(), payment=(self)",
           },
-
-          // Force HTTPS for future visits (already handled by most hosting providers,
-          // but safe to include if your entire site is HTTPS)
           {
             key: "Strict-Transport-Security",
             value: "max-age=31536000; includeSubDomains; preload",
+          },
+
+          // ==========================
+          // CSP (Report Only)
+          // ==========================
+
+          {
+            key: "Content-Security-Policy-Report-Only",
+            value: csp,
           },
         ],
       },
