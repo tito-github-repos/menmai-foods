@@ -1237,9 +1237,9 @@ export default function ProductPage() {
                   <Typography fontSize={13} fontWeight={700} color="#daa56b">
                     4.8
                   </Typography>
-                  <Typography fontSize={13} color="#bbb">
+                  {/* <Typography fontSize={13} color="#bbb">
                     (120 reviews)
-                  </Typography>
+                  </Typography> */}
                 </Box>
 
                 <Box display="flex" gap={1} flexWrap="wrap">
@@ -1491,9 +1491,9 @@ export default function ProductPage() {
                   <Typography fontSize={13} fontWeight={700} color="#daa56b">
                     4.8
                   </Typography>
-                  <Typography fontSize={13} color="#bbb">
+                  {/* <Typography fontSize={13} color="#bbb">
                     (120 reviews)
-                  </Typography>
+                  </Typography> */}
                 </Box>
 
                 {/* ── Trust chips: white bg, brown outline, custom SVG ── */}

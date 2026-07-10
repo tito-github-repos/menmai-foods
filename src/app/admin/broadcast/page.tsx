@@ -31,6 +31,12 @@ import Alert from "@mui/material/Alert";
 
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
+import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
+
+// Used only when an image is uploaded with no message typed — the WhatsApp
+// template always needs some body text, so this fills that in automatically
+// for a true "image only" send.
+const DEFAULT_IMAGE_CAPTION = "Check out what's new at Menmai Foods!";
 
 export default function BroadcastPage() {
   const [page, setPage] = useState(1);
@@ -46,6 +52,10 @@ export default function BroadcastPage() {
   });
 
   const [broadcasts, setBroadcasts] = useState<any[]>([]);
+
+  // The text that will actually be sent as {{1}} — the admin's message if
+  // they typed one, otherwise the default caption if there's an image.
+  const effectiveMessage = message.trim() || (imageUrl ? DEFAULT_IMAGE_CAPTION : "");
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -160,7 +170,7 @@ export default function BroadcastPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message,
+          message: effectiveMessage,
           imageUrl,
         }),
       });
@@ -247,7 +257,17 @@ export default function BroadcastPage() {
               fullWidth
               value={message}
               disabled={sending}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => {
+                // Strip line breaks the moment they appear in the value —
+                // covers desktop/mobile Enter, paste, and voice dictation.
+                // Includes \u2028/\u2029 (line/paragraph separators) and \v
+                // (vertical tab), which some paste sources (Word, some web
+                // exports) use instead of a plain \n.
+                setMessage(
+                  e.target.value.replace(/[\r\n\v\u2028\u2029]+/g, " "),
+                );
+              }}
+              helperText="Write this as one paragraph — line breaks aren't allowed."
             />
 
             <Box mt={3}>
@@ -364,15 +384,55 @@ export default function BroadcastPage() {
                   />
                 )}
 
-                <Typography
-                  sx={{
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {message}
-                </Typography>
+                {message.trim() || imageUrl ? (
+                  <>
+                    <Typography
+                      sx={{
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {"Dear Customer 👋,\n\n"}
+                      {effectiveMessage}
+                      {"\n\nWarmest Regards,\nMenmai Foods"}
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        mt: 2,
+                        pt: 1.5,
+                        borderTop: "1px solid rgba(0,0,0,0.12)",
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "var(--primary-teal-mid)",
+                          fontWeight: 600,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                        }}
+                      >
+                        <LaunchOutlinedIcon sx={{ fontSize: "1rem" }} />
+                        Visit website
+                      </Typography>
+                    </Box>
+                  </>
+                ) : (
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "text.disabled", fontStyle: "italic" }}
+                  >
+                    Type a message or add an image to see the preview.
+                  </Typography>
+                )}
               </Box>
             </Box>
+
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1.5 }}>
+              This is a preview of the approved WhatsApp template ({imageUrl ? "menmai_broadcast_image" : "menmai_broadcast_text"}). The wrapper text and button are fixed by Meta and cannot be changed here.
+            </Typography>
           </Paper>
         </Box>
 
