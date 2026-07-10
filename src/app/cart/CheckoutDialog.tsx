@@ -829,8 +829,8 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                   />
 
                   <Typography fontSize={12} color="error.main">
-                    Sorry, we don't deliver to this pincode yet. We currently
-                    serve within 10 km of Madurai.
+                    We're expanding soon and will be delivering to your area
+                    shortly.
                   </Typography>
                 </Box>
               </>
