@@ -1489,7 +1489,7 @@ export default function ProductPage() {
                     sx={{ color: "#daa56b" }}
                   />
                   <Typography fontSize={13} fontWeight={700} color="#daa56b">
-                    4.8
+                    5
                   </Typography>
                   {/* <Typography fontSize={13} color="#bbb">
                     (120 reviews)
