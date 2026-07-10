@@ -834,7 +834,7 @@ export function DeliverySection() {
               >
                 {available
                   ? "We deliver to your area! Timely and hygienic delivery right at your doorstep."
-                  : "Sorry, we don't deliver to this pincode yet. We currently serve within 10 km of Madurai."}
+                  : "We're expanding soon and will be delivering to your area shortly."}
               </Typography>
             </Box>
           )}

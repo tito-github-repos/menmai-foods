@@ -95,7 +95,7 @@ const pincodeSchema = Yup.string()
 
 export default function CartCheckout() {
   const dispatch = useAppDispatch();
-  const cartItems = useAppSelector((state) => state.cart.items);
+  const cartItems = useAppSelector((state: any) => state.cart.items);
 
   const [openOtp, setOpenOtp] = useState(false);
 
@@ -123,7 +123,7 @@ export default function CartCheckout() {
   const [pincodeLoading, setPincodeLoading] = useState(false);
 
   const updateQty = (productId: number, delta: number) => {
-    const item = cartItems.find((item) => item.productId === productId);
+    const item = cartItems.find((item: any) => item.productId === productId);
     if (!item) return;
 
     const newQty = item.quantity + delta;
@@ -144,7 +144,7 @@ export default function CartCheckout() {
   };
 
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum: number, item: any) => sum + item.price * item.quantity,
     0,
   );
 
@@ -589,7 +589,7 @@ export default function CartCheckout() {
                         >
                           (
                           {cartItems.reduce(
-                            (total, item) => total + item.quantity,
+                            (total: number, item: any) => total + item.quantity,
                             0,
                           )}{" "}
                           Items)
@@ -677,7 +677,7 @@ export default function CartCheckout() {
                     <>
                       {/* Cart Items */}
                       <Stack spacing={2.5}>
-                        {cartItems.map((item) => (
+                        {cartItems.map((item: any) => (
                           <Box key={item.productId}>
                             <Box
                               sx={{
@@ -860,7 +860,7 @@ export default function CartCheckout() {
                               <Box component="span" sx={{ fontWeight: 700 }}>
                                 ₹
                                 {cartItems.reduce(
-                                  (total, item) =>
+                                  (total: number, item: any) =>
                                     total +
                                     (item.mrp - item.price) * item.quantity,
                                   0,
@@ -934,7 +934,7 @@ export default function CartCheckout() {
                       <Typography fontSize={14} color="text.secondary">
                         Subtotal (
                         {cartItems.reduce(
-                          (sum, item) => sum + item.quantity,
+                          (sum: number, item: any) => sum + item.quantity,
                           0,
                         )}{" "}
                         items)

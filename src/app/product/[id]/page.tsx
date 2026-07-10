@@ -904,7 +904,6 @@ export default function ProductPage() {
   const [activeStep, setActiveStep] = useState(0);
   const [revIdx, setRevIdx] = useState(0);
 
-  
   const MAX_RETAIL_QTY = getProductLimit(product?.slug ?? "");
 
   useEffect(() => {
@@ -1802,7 +1801,8 @@ export default function ProductPage() {
                         mb={1}
                         fontFamily="'Sora', sans-serif"
                       >
-                        Sorry, we don't deliver to this pincode yet.
+                        We're expanding soon and will be delivering to your area
+                        shortly.
                       </Typography>
                     )}
                   </>
