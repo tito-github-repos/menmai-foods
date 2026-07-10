@@ -5,8 +5,13 @@ import Providers from "./providers";
 import LayoutWrapper from "./components/LayoutWrapper";
 
 export const metadata: Metadata = {
-  title: "Menmai",
+  title: "Menmai Foods",
   description: "Fresh homemade Chapathi & Poori delivered to your doorstep",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
 };
 
 export const viewport: Viewport = {
