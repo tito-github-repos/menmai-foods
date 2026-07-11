@@ -302,7 +302,7 @@ export default function BroadcastPage() {
                 </label>
 
                 <Typography variant="body2" color="text.secondary" mt={1}>
-                  JPG, JPEG, PNG, WEBP
+                  JPG, PNG
                 </Typography>
               </Box>
             </Box>

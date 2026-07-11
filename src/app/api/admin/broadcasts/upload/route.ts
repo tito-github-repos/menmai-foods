@@ -16,13 +16,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Allow only image files
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    const allowedTypes = ["image/jpg", "image/png"];
 
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         {
           success: false,
-          message: "Only JPG, JPEG, PNG and WEBP images are allowed.",
+          message: "Only JPG, and PNG images are allowed.",
         },
         {
           status: 400,
