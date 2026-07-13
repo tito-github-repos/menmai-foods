@@ -251,10 +251,12 @@ async function markOrderDelivered(
     payload: response,
   });
 
-  // Schedule review — non-blocking, failure must not affect delivery flow
-  scheduleReviewRequest(order.id).catch((err) => {
+  // Schedule review — awaited so the edge runtime can't kill it mid-write
+  try {
+    await scheduleReviewRequest(order.id);
+  } catch (err) {
     console.error(`[scheduleReviewRequest] Failed for orderId ${orderId}:`, err);
-  });
+  }
 
   return { handled: true, orderId, orderStatus: "DELIVERED" };
 }
