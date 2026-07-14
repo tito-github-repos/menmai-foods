@@ -1,12 +1,23 @@
 // File location: src/app/api/admin/dashboard/stats/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Order_paymentStatus } from "@/generated/prisma";
 
 export async function GET() {
   try {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
     const todayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    // Retail orders count as "today's" when PAID and either placed today
+    // OR updated today (covers retry-payment-next-day scenarios).
+    const retailTodayWhere = {
+      paymentStatus: Order_paymentStatus.PAID,
+      OR: [
+        { orderedAt: { gte: todayStart, lte: todayEnd } },
+        { updatedAt: { gte: todayStart, lte: todayEnd } },
+      ],
+    };
 
     const [
       todayBulkOrders,
@@ -19,9 +30,9 @@ export async function GET() {
       prisma.bulkOrder.count({
         where: { createdAt: { gte: todayStart, lte: todayEnd } },
       }),
-      // Order uses orderedAt
+      // Order: same condition as retail-orders table (PAID + ordered/updated today)
       prisma.order.count({
-        where: { orderedAt: { gte: todayStart, lte: todayEnd } },
+        where: retailTodayWhere,
       }),
       // BulkOrder revenue: sum estimatedTotal (schema has no totalAmount)
       prisma.bulkOrder.aggregate({
@@ -31,13 +42,10 @@ export async function GET() {
           status: { notIn: ["REJECTED"] },
         },
       }),
-      // Order revenue: sum totalAmount, exclude cancelled/expired/abandoned
+      // Order revenue: sum totalAmount for the same PAID + today set
       prisma.order.aggregate({
         _sum: { totalAmount: true },
-        where: {
-          orderedAt: { gte: todayStart, lte: todayEnd },
-          orderStatus: { notIn: ["CANCELLED", "EXPIRED", "ABANDONED"] },
-        },
+        where: retailTodayWhere,
       }),
       prisma.customer.count(),
     ]);

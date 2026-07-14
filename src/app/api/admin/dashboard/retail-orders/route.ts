@@ -30,12 +30,16 @@ export async function GET(req: NextRequest) {
       999,
     );
 
+    // Show orders that are PAID, and either placed today OR updated
+    // (e.g. payment completed / retried) today. This covers the case
+    // where an order was created yesterday (payment declined) and the
+    // customer completed payment today.
     const where = {
-      orderedAt: {
-        gte: todayStart,
-        lte: todayEnd,
-      },
       paymentStatus: Order_paymentStatus.PAID,
+      OR: [
+        { orderedAt: { gte: todayStart, lte: todayEnd } },
+        { updatedAt: { gte: todayStart, lte: todayEnd } },
+      ],
     };
 
     const [rawOrders, total] = await Promise.all([
@@ -43,7 +47,7 @@ export async function GET(req: NextRequest) {
         where,
         skip,
         take: limit,
-        orderBy: { orderedAt: "desc" },
+        orderBy: { updatedAt: "desc" }, // most recently paid/updated first
         include: {
           // schema relations use PascalCase: Customer, CustomerAddress, OrderItem
           Customer: {
