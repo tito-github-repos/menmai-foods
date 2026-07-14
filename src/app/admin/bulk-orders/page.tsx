@@ -59,6 +59,10 @@ import {
 } from "@/lib/validations/bulkOrderValidation";
 import CloseIcon from "@mui/icons-material/Close";
 import * as XLSX from "xlsx";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 type BulkStatus = "NEW" | "ACCEPTED" | "IN_DISCUSSION" | "REJECTED" | "DELIVERED";
 type SourceFilter = "ALL" | "CUSTOMER_FORM" | "ADMIN_MANUAL";
@@ -263,12 +267,47 @@ function getSlotHour(slot: string) {
   return hour;
 }
 
+function toDayjs(value: string): Dayjs | null {
+  return value ? dayjs(value) : null;
+}
+
+function fromDayjs(value: Dayjs | null): string {
+  return value && value.isValid() ? value.format("YYYY-MM-DD") : "";
+}
+
+// function clampDateInput(value: string): string {
+//   // value is "YYYY-MM-DD" from the native date input
+//   if (!value) return "";
+
+//   const [yearStr] = value.split("-");
+//   const year = Number(yearStr);
+//   const currentYear = new Date().getFullYear();
+
+//   // Reject anything with a garbage/partial year (browser lets this happen
+//   // when typed digit-by-digit instead of picked from the calendar)
+//   if (yearStr.length !== 4 || Number.isNaN(year) || year < currentYear - 1 || year > currentYear + 2) {
+//     return "";
+//   }
+
+//   return value;
+// }
+
+// function openDatePicker(e: React.MouseEvent<HTMLInputElement>) {
+//   const input = e.target as HTMLInputElement & { showPicker?: () => void };
+//   try {
+//     input.showPicker?.();
+//   } catch {
+//     // showPicker unsupported (non-Chromium) — falls back to normal native behavior
+//   }
+// }
+
 export default function AdminBulkOrdersPage() {
   const [orders, setOrders] = useState<BulkOrder[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | BulkStatus>("ALL");
-  const [dateFilter, setDateFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [slotFilter, setSlotFilter] = useState("ALL");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("ALL");
   const [conflictOnly, setConflictOnly] = useState(false);
@@ -309,7 +348,7 @@ export default function AdminBulkOrdersPage() {
 
   useEffect(() => {
     setPage(0);
-  }, [search, statusFilter, dateFilter, slotFilter, sourceFilter, conflictOnly, sortBy]);
+  }, [search, statusFilter, dateFrom, dateTo, slotFilter, sourceFilter, conflictOnly, sortBy]);
 
   useEffect(() => {
     if (!open || !form.deliveryDate) {
@@ -328,7 +367,8 @@ export default function AdminBulkOrdersPage() {
   const hasActiveFilters =
     Boolean(search.trim()) ||
     statusFilter !== "ALL" ||
-    Boolean(dateFilter) ||
+    Boolean(dateFrom) ||
+    Boolean(dateTo) ||
     slotFilter !== "ALL" ||
     sourceFilter !== "ALL" ||
     conflictOnly ||
@@ -337,7 +377,8 @@ export default function AdminBulkOrdersPage() {
   const resetFilters = () => {
     setSearch("");
     setStatusFilter("ALL");
-    setDateFilter("");
+    setDateFrom("");
+    setDateTo("");
     setSlotFilter("ALL");
     setSourceFilter("ALL");
     setConflictOnly(false);
@@ -398,12 +439,13 @@ export default function AdminBulkOrdersPage() {
         order.deliveryAddress.toLowerCase().includes(q);
 
       const matchesStatus = statusFilter === "ALL" || order.status === statusFilter;
-      const matchesDate = !dateFilter || orderDate === dateFilter;
+      const matchesDateFrom = !dateFrom || orderDate >= dateFrom;
+      const matchesDateTo = !dateTo || orderDate <= dateTo;
       const matchesSlot = slotFilter === "ALL" || order.deliveryTime === slotFilter;
       const matchesSource = sourceFilter === "ALL" || order.source === sourceFilter;
       const matchesConflict = !conflictOnly || conflicts.length > 0;
 
-      return matchesSearch && matchesStatus && matchesDate && matchesSlot && matchesSource && matchesConflict;
+      return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo && matchesSlot && matchesSource && matchesConflict;
     });
     return next.sort((a, b) => {
       if (sortBy === "NEWEST") {
@@ -424,7 +466,7 @@ export default function AdminBulkOrdersPage() {
 
       return 0;
     });
-  }, [orders, search, statusFilter, dateFilter, slotFilter, sourceFilter, conflictOnly, sortBy]);
+  }, [orders, search, statusFilter, dateFrom, dateTo, slotFilter, sourceFilter, conflictOnly, sortBy]);
 
   const paginatedOrders = useMemo(() => {
     const start = page * rowsPerPage;
@@ -441,7 +483,8 @@ export default function AdminBulkOrdersPage() {
 
     const parts = ["bulk-orders"];
     if (statusFilter !== "ALL") parts.push(statusFilter.toLowerCase());
-    if (dateFilter) parts.push(dateFilter);
+    if (dateFrom) parts.push(`from-${dateFrom}`);
+    if (dateTo) parts.push(`to-${dateTo}`);
     if (sourceFilter !== "ALL") parts.push(sourceFilter.toLowerCase());
 
     XLSX.writeFile(workbook, `${parts.join("-")}.xlsx`);
@@ -786,6 +829,7 @@ export default function AdminBulkOrdersPage() {
   };
 
   return (
+     <LocalizationProvider dateAdapter={AdapterDayjs}>
     <Box sx={{ p: { xs: 2, md: 3 }, backgroundColor: "#f1f5f9", minHeight: "100vh" }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <Button
@@ -892,17 +936,46 @@ export default function AdminBulkOrdersPage() {
                 <MenuItem key={s} value={s}>{statusLabel[s]}</MenuItem>
               ))}
             </TextField>
-
-            <TextField
-              type="date"
-              size="small"
-              label="Date"
-              InputLabelProps={{ shrink: true }}
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              sx={{ ...fieldSx, width: 150 }}
+            
+            <DatePicker
+              label="From Date"
+              value={toDayjs(dateFrom)}
+              maxDate={dateTo ? toDayjs(dateTo)! : undefined}
+              minDate={dayjs().subtract(1, "year")}
+              onChange={(newValue) => setDateFrom(fromDayjs(newValue))}
+              format="DD-MM-YYYY"
+              slotProps={{
+                textField: { size: "small", sx: { ...fieldSx, width: 150 } },
+                day: {
+                  sx: {
+                    "&.MuiPickersDay-root.Mui-selected": {
+                      backgroundColor: BRAND,
+                      "&:hover": { backgroundColor: BRAND_DARK },
+                    },
+                  },
+                },
+              }}
             />
 
+            <DatePicker
+              label="To Date"
+              value={toDayjs(dateTo)}
+              minDate={dateFrom ? toDayjs(dateFrom)! : dayjs().subtract(1, "year")}
+              onChange={(newValue) => setDateTo(fromDayjs(newValue))}
+              format="DD-MM-YYYY"
+              slotProps={{
+                textField: { size: "small", sx: { ...fieldSx, width: 150 } },
+                day: {
+                  sx: {
+                    "&.MuiPickersDay-root.Mui-selected": {
+                      backgroundColor: BRAND,
+                      "&:hover": { backgroundColor: BRAND_DARK },
+                    },
+                  },
+                },
+              }}
+            />
+            
             <TextField
               select
               size="small"
@@ -1584,6 +1657,7 @@ export default function AdminBulkOrdersPage() {
         </DialogActions>
       </Dialog>
     </Box>
+    </LocalizationProvider>
   );
 }
 

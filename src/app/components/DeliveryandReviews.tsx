@@ -901,6 +901,16 @@ export function DeliverySection() {
   );
 }
 
+function getReadingDuration(text: string) {
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  const wordsPerMs = 180 / 60000; // ~220 wpm reading speed
+  const readingTime = words / wordsPerMs;
+  const MIN_DURATION = 3500;
+  const MAX_DURATION = 9000;
+  return Math.min(Math.max(readingTime, MIN_DURATION), MAX_DURATION);
+}
+
+
 /* ═══════════════════════════════════════════
    CUSTOMER REVIEWS SECTION
 ═══════════════════════════════════════════ */
@@ -908,6 +918,7 @@ export function CustomerReviewsSection() {
   const [reviews, setReviews] = useState<DisplayReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
@@ -947,12 +958,13 @@ export function CustomerReviewsSection() {
   }, []);
 
   useEffect(() => {
-    if (reviews.length === 0) return;
-    const t = setInterval(() => {
+    if (reviews.length === 0 || paused) return;
+    const duration = getReadingDuration(reviews[active].quote);
+    const t = setTimeout(() => {
       setActive((prev) => (prev + 1) % reviews.length);
-    }, 3500);
-    return () => clearInterval(t);
-  }, [reviews.length]);
+    }, duration);
+    return () => clearTimeout(t);
+  }, [active, reviews, paused]);
 
   const prev = () =>
     setActive((p) => (p - 1 + reviews.length) % reviews.length);
@@ -1100,6 +1112,8 @@ export function CustomerReviewsSection() {
 
           {/* Card */}
           <Box
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
             sx={{
               flex: 1,
               background: "#fdf8f0",
@@ -1281,6 +1295,8 @@ export function CustomerReviewsSection() {
                     <Box
                       key={i}
                       onClick={() => setActive(i)}
+                      onMouseEnter={() => setPaused(true)}
+                      onMouseLeave={() => setPaused(false)}
                       sx={{
                         background: isActive ? "#fdf8f0" : "#fff",
                         border: `1.5px solid ${isActive ? "rgba(194,90,48,0.3)" : "rgba(90,56,37,0.1)"}`,
