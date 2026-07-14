@@ -109,6 +109,9 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [otpError, setOtpError] = useState("");
   const [resendCount, setResendCount] = useState(0);
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(
+    null,
+  );
   const [timer, setTimer] = useState(0);
 
   const [paymentInProgress, setPaymentInProgress] = useState(false);
@@ -178,6 +181,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
     setOtp(["", "", "", ""]);
     setOtpError("");
     setResendCount(0);
+    setRemainingAttempts(null);
     setTimer(0);
   };
 
@@ -210,17 +214,21 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
     const res = await fetch("/api/auth/send-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mobile: cleanMobile }),
+      body: JSON.stringify({ mobile: cleanMobile, isResend: true }),
     });
 
     const data = await res.json();
     if (!res.ok) {
       setOtpError(data.message || "Failed to resend OTP. Try again.");
+      if (typeof data.remainingAttempts === "number") {
+        setRemainingAttempts(data.remainingAttempts);
+      }
       return;
     }
 
     // Update resend count and timer
     setResendCount(data.resendCount ?? resendCount + 1);
+    setRemainingAttempts(data.remainingAttempts ?? null);
     setTimer(data.resendCooldown ?? 60);
   };
 
@@ -240,6 +248,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
       setMobileError("");
       setOtp(["", "", "", ""]);
       setOtpError("");
+      setRemainingAttempts(null);
       setTimer(60);
       setCustomerId(null);
       setToken(null);
@@ -604,6 +613,14 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                       Resend OTP
                     </Button>
                   )}
+
+                  {/* NEW — attempts-left indicator */}
+                  {remainingAttempts !== null && remainingAttempts > 0 && (
+                    <Typography fontSize={12} color="gray" sx={{ mt: 0.5 }}>
+                      You have {remainingAttempts} resend attempt
+                      {remainingAttempts === 1 ? "" : "s"} remaining.
+                    </Typography>
+                  )}
                 </Box>
               </Box>
             )}
@@ -868,7 +885,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                       const res = await fetch("/api/auth/send-otp", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ mobile }),
+                        body: JSON.stringify({ mobile, isResend: false }),
                       });
                       const data = await res.json();
                       if (!res.ok) {
@@ -877,6 +894,7 @@ export default function CheckoutDialog({ open, onClose, cartItems }: Props) {
                         return;
                       }
                       setMobileError("");
+                      setRemainingAttempts(data.remainingAttempts ?? null);
                       setStep("otp");
                     } catch (error: any) {
                       if (error instanceof Yup.ValidationError) {

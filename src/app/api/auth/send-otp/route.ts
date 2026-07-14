@@ -3,15 +3,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendTemplateMessage } from "@/lib/whatsapp/client";
 import { buildOtpTemplate } from "@/lib/whatsapp/messages";
 
-const OTP_LIMIT = 5;
-const COOLDOWN = 60 * 1000; // 60 sec
-const WINDOW = 24 * 60 * 60 * 1000; // 24 hours
+const RESEND_LIMIT = 3; // max "Resend OTP" clicks allowed (initial send is NOT one of these)
+const COOLDOWN = 60 * 1000; // 60 sec between any send/resend
+const BLOCK_DURATION = 60 * 60 * 1000; // 1 hour block once resend limit is hit
 const OTP_EXPIRY_TIME = 1 * 60 * 1000; // 1 minute
 
 export async function POST(req: NextRequest) {
   try {
-    const { mobile } = await req.json();
+    const { mobile, isResend } = await req.json();
     const cleanMobile = (mobile || "").replace(/\s/g, "");
+
+    // Default to `true` (i.e. "treat as a resend") when the flag is missing,
+    // so any client that hasn't been updated yet falls on the stricter side
+    // instead of silently getting unlimited free sends.
+    const isResendRequest = isResend !== false;
 
     // 1. Validate mobile
     if (!cleanMobile || !/^[6-9]\d{9}$/.test(cleanMobile)) {
@@ -33,38 +38,42 @@ export async function POST(req: NextRequest) {
       where: { phone: cleanMobile },
     });
 
-    const count = otpRecord?.resendCount ?? 0;
+    let resendCount = otpRecord?.resendCount ?? 0;
+    let blockStartedAt = otpRecord?.otpWindowStart
+      ? new Date(otpRecord.otpWindowStart)
+      : null;
 
     const lastSentAt = otpRecord?.lastSentAt
       ? new Date(otpRecord.lastSentAt)
       : null;
 
-    const windowStart = otpRecord?.otpWindowStart
-      ? new Date(otpRecord.otpWindowStart)
-      : now;
+    // 4. Auto-reset once 1 hour has passed since the block began
+    const isBlockActive =
+      resendCount >= RESEND_LIMIT &&
+      blockStartedAt &&
+      now.getTime() - blockStartedAt.getTime() < BLOCK_DURATION;
 
-    // 4. Check window expiry (24h reset)
-    const isWindowExpired =
-      otpRecord?.otpWindowStart &&
-      now.getTime() - windowStart.getTime() >= WINDOW;
+    if (resendCount >= RESEND_LIMIT && !isBlockActive) {
+      // Block window has expired (or was never properly set) — reset.
+      resendCount = 0;
+      blockStartedAt = null;
+    }
 
-    const effectiveCount = isWindowExpired ? 0 : count;
-    const effectiveWindowStart = isWindowExpired ? now : windowStart;
-
-    // 5. Limit check
-    if (effectiveCount >= OTP_LIMIT) {
-      const nextAvailableAt = new Date(effectiveWindowStart.getTime() + WINDOW);
-
+    // 5. Block check (applies to BOTH initial sends and resends —
+    // once a phone number is blocked, no new OTPs go out for that hour)
+    if (isBlockActive) {
       return NextResponse.json(
         {
-          message: "Maximum OTP limit reached. Try after 24 hours.",
-          nextAvailableAt,
+          message:
+            "You've reached the maximum OTP limit. Please try again after 1 hour.",
+          blockedUntil: new Date(blockStartedAt!.getTime() + BLOCK_DURATION),
+          remainingAttempts: 0,
         },
         { status: 429 },
       );
     }
 
-    // 6. Cooldown check (60 sec)
+    // 6. Cooldown check (60 sec) — applies to every send, initial or resend
     if (lastSentAt && now.getTime() - lastSentAt.getTime() < COOLDOWN) {
       const remainingSeconds = Math.ceil(
         (COOLDOWN - (now.getTime() - lastSentAt.getTime())) / 1000,
@@ -83,8 +92,7 @@ export async function POST(req: NextRequest) {
     const expiry = new Date(Date.now() + OTP_EXPIRY_TIME);
 
     // 8. Send WhatsApp OTP via the approved Authentication template
-    // (free-form text OTPs are blocked/flagged in production — Meta requires
-    // an Authentication-category template for one-time passcodes)
+    // (unchanged — free-form text OTPs are blocked/flagged in production)
     try {
       const tpl = buildOtpTemplate(otp);
       await sendTemplateMessage(
@@ -102,8 +110,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 9. FIXED COUNT LOGIC (IMPORTANT FIX)
-    const resetCount = isWindowExpired ? 1 : count + 1;
+    // 9. Only resends increment the counter. Initial sends leave it untouched.
+    const updatedResendCount = isResendRequest ? resendCount + 1 : resendCount;
+
+    // Start (or keep) the block clock the moment the limit is reached.
+    const updatedBlockStartedAt =
+      updatedResendCount >= RESEND_LIMIT
+        ? (blockStartedAt ?? now)
+        : blockStartedAt;
 
     await prisma.oTPVerification.upsert({
       where: { phone: cleanMobile },
@@ -111,8 +125,8 @@ export async function POST(req: NextRequest) {
         otpCode: otp,
         expiresAt: expiry,
         lastSentAt: now,
-        resendCount: resetCount,
-        otpWindowStart: effectiveWindowStart,
+        resendCount: updatedResendCount,
+        otpWindowStart: updatedBlockStartedAt,
         verified: false,
         customerId: customer?.id,
       },
@@ -121,8 +135,8 @@ export async function POST(req: NextRequest) {
         otpCode: otp,
         expiresAt: expiry,
         lastSentAt: now,
-        resendCount: 1,
-        otpWindowStart: now,
+        resendCount: isResendRequest ? 1 : 0,
+        otpWindowStart: isResendRequest && 1 >= RESEND_LIMIT ? now : null,
         verified: false,
         customerId: customer?.id,
       },
@@ -132,8 +146,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "OTP sent successfully",
-      resendCount: resetCount,
-      remainingAttempts: OTP_LIMIT - resetCount,
+      isResend: isResendRequest,
+      resendCount: updatedResendCount,
+      remainingAttempts: Math.max(RESEND_LIMIT - updatedResendCount, 0),
       resendCooldown: 60,
     });
   } catch (error) {
