@@ -99,8 +99,6 @@ export default function BroadcastPage() {
       }
 
       setImageUrl(data.imageUrl);
-
-      console.log("Cloudinary URL:", data.imageUrl);
     } catch (error) {
       console.error("Error uploading image:", error);
       URL.revokeObjectURL(objectUrl);

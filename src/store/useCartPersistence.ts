@@ -40,8 +40,6 @@ export const useCartPersistence = () => {
         parsedCart.forEach((item) => {
           dispatch(addToCart(item));
         });
-
-        console.log("✅ Cart hydrated from localStorage:", parsedCart);
       }
     } catch (error) {
       console.error("❌ Failed to hydrate cart from localStorage:", error);
@@ -60,11 +58,9 @@ export const useCartPersistence = () => {
     try {
       if (cartItems.length > 0) {
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
-        console.log("💾 Cart persisted to localStorage:", cartItems);
       } else {
         // Remove from storage if cart is empty
         localStorage.removeItem(CART_STORAGE_KEY);
-        console.log("🗑️ Cart cleared from localStorage");
       }
     } catch (error) {
       console.error("❌ Failed to persist cart to localStorage:", error);
