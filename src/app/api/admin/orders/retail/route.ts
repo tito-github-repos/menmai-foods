@@ -43,8 +43,9 @@ export async function GET(req: NextRequest) {
     const dateFilter = getDateFilter(range, startDate, endDate);
 
     const orders = await prisma.order.findMany({
-      where: dateFilter ? { orderedAt: dateFilter } : undefined,
-      orderBy: { orderedAt: "desc" },
+      // Filtering by updatedAt now, to match the "date" field we display below
+      where: dateFilter ? { updatedAt: dateFilter } : undefined,
+      orderBy: { updatedAt: "desc" },
       include: {
         Customer: {
           select: { fullName: true, phone: true },
@@ -78,7 +79,7 @@ export async function GET(req: NextRequest) {
         address,
         orderStatus:   o.orderStatus,
         paymentStatus: o.Payment?.paymentStatus ?? o.paymentStatus,
-        date:          o.orderedAt.toISOString(),
+        date:          o.updatedAt.toISOString(),
       };
     });
 
