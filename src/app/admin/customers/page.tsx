@@ -437,7 +437,9 @@ export default function CustomersPage() {
                               fontWeight={600}
                               textAlign="center"
                             >
-                              {customer.totalOrders}
+                              {customer.totalOrders > 0
+                                ? customer.totalOrders
+                                : "—"}
                             </Typography>
                           </TableCell>
 
@@ -460,7 +462,10 @@ export default function CustomersPage() {
                               color="var(--primary-teal-mid)"
                               whiteSpace="nowrap"
                             >
-                              ₹{customer.totalSpent.toLocaleString("en-IN")}
+                              {/* ₹{customer.totalSpent.toLocaleString("en-IN")} */}
+                              {customer.totalSpent > 0
+                                ? `₹${customer.totalSpent.toLocaleString("en-IN")}`
+                                : "—"}
                             </Typography>
                           </TableCell>
 
@@ -681,7 +686,10 @@ export default function CustomersPage() {
                       {[
                         {
                           label: "Orders",
-                          value: String(customer.totalOrders),
+                          value:
+                            customer.totalOrders > 0
+                              ? String(customer.totalOrders)
+                              : "—",
                           teal: false,
                         },
                         {
@@ -691,7 +699,10 @@ export default function CustomersPage() {
                         },
                         {
                           label: "Total spent",
-                          value: `₹${customer.totalSpent.toLocaleString("en-IN")}`,
+                          value:
+                            customer.totalSpent > 0
+                              ? `₹${customer.totalSpent.toLocaleString("en-IN")}`
+                              : "—",
                           teal: true,
                         },
                       ].map((stat, i) => (
