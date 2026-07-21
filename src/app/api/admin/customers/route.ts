@@ -8,16 +8,15 @@ export async function GET() {
     const customers = await prisma.customer.findMany({
       orderBy: { createdAt: "desc" },
       include: {
-        // Get all orders to compute totalOrders, lastOrderDate, totalSpent
         Order: {
           select: {
-            totalAmount: true,
-            orderedAt:   true,
-            orderStatus: true,
+            totalAmount:   true,
+            orderedAt:     true,
+            updatedAt:     true,
+            paymentStatus: true,
           },
-          orderBy: { orderedAt: "desc" },
+          orderBy: { updatedAt: "desc" }, // most recently updated order first
         },
-        // Get the default address (or first address if no default)
         CustomerAddress: {
           select: {
             fullAddress: true,
@@ -26,14 +25,13 @@ export async function GET() {
             pincode:     true,
             isDefault:   true,
           },
-          orderBy: { isDefault: "desc" }, // default address comes first
+          orderBy: { isDefault: "desc" },
           take: 1,
         },
       },
     });
 
     const data = customers.map((c) => {
-      // Build address string from the first (default) address
       const addr = c.CustomerAddress[0];
       const address = addr
         ? [addr.fullAddress, addr.area, addr.city, addr.pincode]
@@ -41,24 +39,26 @@ export async function GET() {
             .join(", ")
         : "—";
 
-      // Exclude cancelled/expired/abandoned from spent total
-      const validOrders = c.Order.filter(
-        (o) => !["CANCELLED", "EXPIRED", "ABANDONED"].includes(o.orderStatus)
-      );
+      // Only orders that were actually PAID — pending/failed/refunded never count
+      const paidOrders = c.Order.filter((o) => o.paymentStatus === "PAID");
 
-      const totalOrders  = c.Order.length;
-      const totalSpent   = validOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-      // Last order date = most recent orderedAt (orders are already desc sorted)
-      const lastOrderDate = c.Order[0]?.orderedAt?.toISOString() ?? null;
+      const totalOrders = paidOrders.length;
+      const totalSpent  = paidOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+
+      // paidOrders[0] is the PAID order with the most recent updatedAt
+      // (c.Order was pre-sorted desc by updatedAt), so this reflects
+      // whichever paid order last had any change — including a payment
+      // confirmation that landed after the original orderedAt.
+      const lastOrderDate = paidOrders[0]?.updatedAt?.toISOString() ?? null;
 
       return {
-        id:            c.id,
-        name:          c.fullName,
-        phone:         c.phone,
-        email:         c.email ?? null,
-        totalOrders,
-        lastOrderDate,
-        totalSpent,
+        id: c.id,
+        name: c.fullName,
+        phone: c.phone,
+        email: c.email ?? null,
+        totalOrders,   // 0 if the customer has never completed a paid order
+        lastOrderDate, // null if never paid — frontend shows "—"
+        totalSpent,    // 0 if never paid — frontend shows "—"
         address,
       };
     });
