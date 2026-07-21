@@ -8,15 +8,6 @@ export async function POST(req: Request) {
 
     const { name, phone, email, address, notes } = body;
 
-    console.log("=================================");
-    console.log("New Enquiry Received");
-    console.log("Name:", name);
-    console.log("Phone:", phone);
-    console.log("Email:", email);
-    console.log("Address:", address);
-    console.log("Notes:", notes);
-    console.log("=================================");
-
     // ADMIN EMAIL
     const adminMail = await resend.emails.send({
       from: "Menmai Foods <enquiry@menmaifoods.com>",
@@ -36,9 +27,6 @@ export async function POST(req: Request) {
         <p>This enquiry was submitted from the Menmai Foods website.</p>
       `,
     });
-
-    console.log("Admin Mail Response:");
-    console.log(adminMail);
 
     // CUSTOMER ACKNOWLEDGEMENT EMAIL
     const customerMail = await resend.emails.send({
@@ -65,9 +53,6 @@ export async function POST(req: Request) {
         <p><strong>Menmai Foods</strong></p>
       `,
     });
-
-    console.log("Customer Mail Response:");
-    console.log(customerMail);
 
     return NextResponse.json({
       success: true,

@@ -71,7 +71,6 @@ const productDisplay = {
    BULK ORDER FORM TYPES
 ───────────────────────────────────────── */
 
-
 interface BulkForm {
   name: string;
   phone: string;
@@ -424,11 +423,10 @@ export default function HomePage() {
 
   const [bulkForm, setBulkForm] = useState<BulkForm>({
     name: "",
-  phone: "",
-  email: "",
-  address: "",
-  notes: "",
-
+    phone: "",
+    email: "",
+    address: "",
+    notes: "",
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof BulkForm, string>>>(
@@ -456,48 +454,42 @@ export default function HomePage() {
   //   setSnackOpen(true);
   // };
 
-
-const handleBulkSubmit = async () => {
-  console.log("Submit clicked");
-
-  // Stop here if form is invalid
-  if (!validate()) {
-    console.log("Validation failed");
-    return;
-  }
-
-  console.log("Validation passed - calling API");
-
-  try {
-    const response = await fetch("/api/enquiry", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(bulkForm),
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      setBulkSubmitted(true);
-      setSnackOpen(true);
-
-      setBulkForm({
-        name: "",
-        phone: "",
-        email: "",
-        address: "",
-        notes: "",
-      });
-    } else {
-      alert("Failed to send enquiry");
+  const handleBulkSubmit = async () => {
+    // Stop here if form is invalid
+    if (!validate()) {
+      return;
     }
-  } catch (error) {
-    console.error(error);
-    alert("Something went wrong");
-  }
-};
+
+    try {
+      const response = await fetch("/api/enquiry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(bulkForm),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setBulkSubmitted(true);
+        setSnackOpen(true);
+
+        setBulkForm({
+          name: "",
+          phone: "",
+          email: "",
+          address: "",
+          notes: "",
+        });
+      } else {
+        alert("Failed to send enquiry");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong");
+    }
+  };
 
   const [bulkSubmitted, setBulkSubmitted] = useState(false);
   const [snackOpen, setSnackOpen] = useState(false); // ← ADD
@@ -1775,8 +1767,7 @@ const handleBulkSubmit = async () => {
                       maxWidth: 260,
                     }}
                   >
-                    We will contact to you as soon
-                    as possible.
+                    We will contact to you as soon as possible.
                   </Typography>
                   <Button
                     onClick={() => setBulkSubmitted(false)}
@@ -2284,4 +2275,3 @@ const handleBulkSubmit = async () => {
     </>
   );
 }
-

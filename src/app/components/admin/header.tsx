@@ -16,7 +16,6 @@ export default function AdminHeader({ handleDrawerToggle }: Props) {
   const pathname = usePathname();
 
   const { data: session } = useSession();
-  console.log("SESSION:", session);
 
 
   const userName = session?.user?.name || "Admin";

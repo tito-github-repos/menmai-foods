@@ -44,11 +44,6 @@ export async function sendWhatsAppMessage(
   payload: WhatsAppSendMessageRequest,
 ): Promise<WhatsAppSendMessageResponse> {
   const url = getWhatsAppUrl();
-  console.log("WhatsApp Request:", {
-    url,
-    to: payload.to,
-    type: payload.type,
-  });
 
   const response = await fetch(url, {
     method: "POST",
@@ -60,12 +55,6 @@ export async function sendWhatsAppMessage(
   });
 
   const data = (await response.json()) as WhatsAppSendMessageResponse;
-
-  console.log("WhatsApp Response:", {
-    status: response.status,
-    messages: data.messages,
-    error: data.error,
-  });
 
   if (!response.ok) {
     throw new Error(
