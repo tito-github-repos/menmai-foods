@@ -64,14 +64,6 @@ export default withAuth(
         const host = req.headers.get("host") || "";
         const { pathname } = req.nextUrl;
 
-        // TEMP DEBUG — remove after confirming logs
-        console.log("AUTH_CHECK_V2", {
-          pathname,
-          host,
-          hasToken: !!token,
-          role: (token as any)?.role,
-        });
-
         const isAdminSubdomain = host.startsWith("admin.");
 
         // ─────────────────────────────────────────

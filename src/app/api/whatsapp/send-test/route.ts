@@ -15,14 +15,10 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("Sending WhatsApp test message to:", body.to);
-
     const response = await sendTextMessage(
       body.to,
       body.message ?? "Menmai Foods WhatsApp Cloud API test message.",
     );
-
-    console.log("WhatsApp API response:", response);
 
     return NextResponse.json({
       ok: true,

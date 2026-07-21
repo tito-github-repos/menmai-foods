@@ -59,8 +59,6 @@ export function CartHydrationWrapper({
             })
           );
         });
-
-        console.log("✅ Cart hydrated from localStorage");
       }
     } catch (error) {
       console.error("❌ Failed to hydrate cart:", error);
